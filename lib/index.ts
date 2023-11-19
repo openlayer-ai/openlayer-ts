@@ -12,66 +12,52 @@ import { Stream } from 'openai/streaming';
 
 interface ChatCompletionData {
   input: string | string[] | number[] | number[][] | null;
+  latency: number;
   output: string | null;
   tokens?: number;
-  latency: number;
 }
 
-type CreateChatCompletionReturnType = ReturnType<
-  typeof OpenAI.Chat.Completions.prototype.create
->;
-
-type CreateCompletionReturnType = ReturnType<
-  typeof OpenAI.Completions.prototype.create
->;
-
-type CreateChatCompletion = (
-  ...args: Parameters<typeof OpenAI.Chat.Completions.prototype.create>
-) => CreateChatCompletionReturnType;
-
-type CreateCompletion = (
-  ...args: Parameters<typeof OpenAI.Completions.prototype.create>
-) => CreateCompletionReturnType;
-
 class OpenAIMonitor {
-  private originalCreateChatCompletion: CreateChatCompletion;
-  private originalCreateCompletion: CreateCompletion;
+  private OpenAIClient: OpenAI;
   private monitoringOn: boolean = false;
-  private data: ChatCompletionData[] = [];
+  public data: ChatCompletionData[] = [];
 
   constructor(
+    openAiApiKey: string,
     private openlayerApiKey?: string,
-    private openlayerProjectName?: string,
-    private publish: boolean = true
+    private openlayerProjectName?: string
   ) {
-    // If credentials are not provided, read them from environment variables
+    this.OpenAIClient = new OpenAI({ apiKey: openAiApiKey });
     this.openlayerApiKey = openlayerApiKey;
     this.openlayerProjectName = openlayerProjectName;
 
-    this.originalCreateChatCompletion =
-      OpenAI.Chat.Completions.prototype.create;
-    this.originalCreateCompletion = OpenAI.Completions.prototype.create;
-
-    if (this.publish && (!this.openlayerApiKey || !this.openlayerProjectName)) {
+    if (!this.openlayerApiKey || !this.openlayerProjectName) {
       throw new Error(
         'Openlayer API key and project name are required for publishing.'
       );
     }
-
-    // Initialize Openlayer client and load inference pipeline here
-    // ...
   }
+
+  private formatChatCompletionInput = (
+    messages: ChatCompletionMessageParam[]
+  ) =>
+    messages
+      .filter(({ role }) => role === 'user')
+      .map(({ content }) => content)
+      .join('\n')
+      .trim();
+
+  private uploadDataToOpenlayer = async (): Promise<void> => {
+    // Implement the logic to upload the data to Openlayer
+    // This might involve an HTTP POST request with the data
+    console.log(this.data);
+  };
 
   public startMonitoring() {
     if (this.monitoringOn) {
       console.warn('Monitoring is already on!');
       return;
     }
-
-    OpenAI.Chat.Completions.prototype.create =
-      this.monkeyPatchedCreateChatCompletion.bind(this) as any;
-    OpenAI.Completions.prototype.create =
-      this.monkeyPatchedCreateCompletion.bind(this) as any;
 
     this.monitoringOn = true;
     console.info('Monitoring started.');
@@ -83,165 +69,140 @@ class OpenAIMonitor {
       return;
     }
 
-    OpenAI.Chat.Completions.prototype.create = this
-      .originalCreateChatCompletion as unknown as typeof OpenAI.Chat.Completions.prototype.create;
-    OpenAI.Completions.prototype.create = this
-      .originalCreateCompletion as unknown as typeof OpenAI.Completions.prototype.create;
-
     this.monitoringOn = false;
     console.info('Monitoring stopped.');
   }
 
-  private formatInput = (messages: ChatCompletionMessageParam[]) =>
-    messages
-      .filter(({ role }) => role === 'user')
-      .map(({ content }) => content)
-      .join('\n')
-      .trim();
+  public createChatCompletion = async (
+    body: ChatCompletionCreateParams,
+    options?: RequestOptions
+  ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> => {
+    if (!this.monitoringOn) {
+      throw new Error('Monitoring is not active.');
+    }
 
-  private monkeyPatchedCreateCompletion(
+    // Start a timer to measure latency
+    const startTime = Date.now();
+    // Accumulate output for streamed responses
+    let outputData = '';
+
+    const response = await this.OpenAIClient.chat.completions.create(
+      body,
+      options
+    );
+
+    if (body.stream) {
+      const streamedResponse = response as Stream<ChatCompletionChunk>;
+
+      for await (const chunk of streamedResponse) {
+        // Process each chunk - for example, accumulate input data
+        outputData += chunk.choices[0].delta.content;
+      }
+
+      const endTime = Date.now();
+      const latency = endTime - startTime;
+
+      // Process complete streamed data here
+      this.data.push({
+        input: this.formatChatCompletionInput(body.messages),
+        latency: latency,
+        output: outputData,
+      });
+    } else {
+      const nonStreamedResponse = response as ChatCompletion;
+      // Handle regular (non-streamed) response
+      const endTime = Date.now();
+      const latency = endTime - startTime;
+
+      this.data.push({
+        input: this.formatChatCompletionInput(body.messages),
+        output: nonStreamedResponse.choices[0].message.content,
+        latency: latency,
+        tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
+      });
+    }
+
+    this.uploadDataToOpenlayer();
+    return response;
+  };
+
+  public createCompletion = async (
     body: CompletionCreateParams,
     options?: RequestOptions
-  ): CreateCompletionReturnType {
+  ): Promise<Completion | Stream<Completion>> => {
+    if (!this.monitoringOn) {
+      throw new Error('Monitoring is not active.');
+    }
+
+    // Start a timer to measure latency
     const startTime = Date.now();
+
     // Accumulate output and tokens data for streamed responses
     let outputData = '';
     let tokensData = 0;
 
-    const responsePromise = this.originalCreateCompletion
-      .call(OpenAI.Completions, body, options)
-      .then(async (response) => {
-        if (body.stream) {
-          const streamedResponse = response as Stream<Completion>;
+    const response = await this.OpenAIClient.completions.create(body, options);
 
-          for await (const chunk of streamedResponse) {
-            // Process each chunk - for example, accumulate input data
-            outputData += chunk.choices[0].text.trim();
-            tokensData += chunk.usage?.total_tokens ?? 0;
-          }
+    if (body.stream) {
+      const streamedResponse = response as Stream<Completion>;
 
-          const endTime = Date.now();
-          const latency = endTime - startTime;
+      for await (const chunk of streamedResponse) {
+        // Process each chunk - for example, accumulate input data
+        outputData += chunk.choices[0].text.trim();
+        tokensData += chunk.usage?.total_tokens ?? 0;
+      }
 
-          // Process complete streamed data here
-          this.data.push({
-            input: body.prompt,
-            latency: latency,
-            output: outputData,
-            tokens: tokensData,
-          });
+      const endTime = Date.now();
+      const latency = endTime - startTime;
 
-          if (this.publish) {
-            this.uploadDataToOpenlayer();
-          }
-
-          return response;
-        } else {
-          const nonStreamedResponse = response as Completion;
-          // Handle regular (non-streamed) response
-          const endTime = Date.now();
-          const latency = endTime - startTime;
-
-          this.data.push({
-            input: body.prompt,
-            output: nonStreamedResponse.choices[0].text,
-            latency: latency,
-            tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
-          });
-
-          if (this.publish) {
-            this.uploadDataToOpenlayer();
-          }
-
-          return response;
-        }
+      // Process complete streamed data here
+      this.data.push({
+        input: body.prompt,
+        latency: latency,
+        output: outputData,
+        tokens: tokensData,
       });
+    } else {
+      const nonStreamedResponse = response as Completion;
+      // Handle regular (non-streamed) response
+      const endTime = Date.now();
+      const latency = endTime - startTime;
 
-    return responsePromise as unknown as CreateCompletionReturnType;
-  }
-
-  private monkeyPatchedCreateChatCompletion(
-    body: ChatCompletionCreateParams,
-    options?: RequestOptions
-  ): CreateChatCompletionReturnType {
-    const startTime = Date.now();
-    // Accumulate output and tokens data for streamed responses
-    let outputData = '';
-
-    const responsePromise = this.originalCreateChatCompletion
-      .call(OpenAI.Chat.Completions, body, options)
-      .then(async (response) => {
-        if (body.stream) {
-          const streamedResponse = response as Stream<ChatCompletionChunk>;
-
-          for await (const chunk of streamedResponse) {
-            // Process each chunk - for example, accumulate input data
-            outputData += chunk.choices[0].delta.content;
-          }
-
-          const endTime = Date.now();
-          const latency = endTime - startTime;
-
-          // Process complete streamed data here
-          this.data.push({
-            input: this.formatInput(body.messages),
-            latency: latency,
-            output: outputData,
-          });
-
-          if (this.publish) {
-            this.uploadDataToOpenlayer();
-          }
-
-          return response;
-        } else {
-          const nonStreamedResponse = response as ChatCompletion;
-          // Handle regular (non-streamed) response
-          const endTime = Date.now();
-          const latency = endTime - startTime;
-
-          this.data.push({
-            input: this.formatInput(body.messages),
-            output: nonStreamedResponse.choices[0].message.content,
-            latency: latency,
-            tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
-          });
-
-          if (this.publish) {
-            this.uploadDataToOpenlayer();
-          }
-
-          return response;
-        }
+      this.data.push({
+        input: body.prompt,
+        output: nonStreamedResponse.choices[0].text,
+        latency: latency,
+        tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
       });
+    }
 
-    return responsePromise as unknown as CreateChatCompletionReturnType;
-  }
-
-  private async uploadDataToOpenlayer(): Promise<void> {
-    // Implement the logic to upload the data to Openlayer
-    // This might involve an HTTP POST request with the data
-    console.log(this.data);
-  }
-
-  // ... other private methods
+    this.uploadDataToOpenlayer();
+    return response;
+  };
 }
 
 // Usage Example
 (async () => {
-  const monitor = new OpenAIMonitor('TEST', 'TEST');
+  const monitor = new OpenAIMonitor(
+    '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',
+    'TEST',
+    'TEST'
+  );
+
   monitor.startMonitoring();
 
-  const openai = new OpenAI({
-    apiKey: '',
-  });
-
-  const chatCompletion = await openai.chat.completions.create({
+  const chatCompletion = await monitor.createChatCompletion({
     messages: [{ role: 'user', content: 'Say this is a test' }],
     model: 'gpt-3.5-turbo',
   });
 
+  const completion = await monitor.createCompletion({
+    model: 'gpt-3.5-turbo-instruct',
+    prompt: 'Say this is a test',
+  });
+
   console.log('Client chat completion:', chatCompletion);
+  console.log('Client completion:', completion);
 
   monitor.stopMonitoring();
 })();
