@@ -9,6 +9,8 @@ import {
   CompletionCreateParams,
 } from 'openai/resources';
 import { Stream } from 'openai/streaming';
+import { v4 as uuid } from 'uuid';
+import { RequestParameters, resolvedQuery } from './utils/request';
 
 interface ChatCompletionData {
   input: string | string[] | number[] | number[][] | null;
@@ -17,22 +19,48 @@ interface ChatCompletionData {
   tokens?: number;
 }
 
+type ConstructorProps = {
+  openAiApiKey: string;
+  openlayerApiKey?: string;
+  openlayerInferencePipelineName?: string;
+  openlayerProjectName?: string;
+  openlayerServerUrl?: string;
+};
+
 class OpenAIMonitor {
   private OpenAIClient: OpenAI;
+
   private monitoringOn: boolean = false;
+
+  private openlayerApiKey?: string;
+
+  private openlayerProjectName?: string;
+
+  private openlayerInferencePipelineName?: string;
+
+  private openlayerServerUrl: string = 'https://api.openlayer.com/v1';
+
   private version = '0.1.0a16';
 
-  constructor(
-    openAiApiKey: string,
-    private openlayerApiKey?: string,
-    private openlayerProjectName?: string,
-    private openlayerInferencePipelineName?: string,
-    private openlayerServerUrl: string = 'https://api.openlayer.com/v1'
-  ) {
-    this.OpenAIClient = new OpenAI({ apiKey: openAiApiKey });
+  constructor({
+    openAiApiKey,
+    openlayerApiKey,
+    openlayerInferencePipelineName,
+    openlayerProjectName,
+    openlayerServerUrl,
+  }: ConstructorProps) {
+    this.OpenAIClient = new OpenAI({
+      apiKey: openAiApiKey,
+      dangerouslyAllowBrowser: true,
+    });
+
     this.openlayerApiKey = openlayerApiKey;
+    this.openlayerInferencePipelineName = openlayerInferencePipelineName;
     this.openlayerProjectName = openlayerProjectName;
-    this.openlayerServerUrl = this.openlayerServerUrl;
+
+    if (openlayerServerUrl) {
+      this.openlayerServerUrl = openlayerServerUrl;
+    }
 
     if (!this.openlayerApiKey || !this.openlayerProjectName) {
       throw new Error(
@@ -50,23 +78,42 @@ class OpenAIMonitor {
       .join('\n')
       .trim();
 
+  private resolvedQuery = (endpoint: string, args: RequestParameters = {}) =>
+    resolvedQuery(this.openlayerServerUrl, endpoint, {
+      version: this.version,
+      ...args,
+    });
+
   private uploadDataToOpenlayer = async (
     data: ChatCompletionData
   ): Promise<void> => {
     const uploadToInferencePipeline = async (id: string) => {
-      const dataStreamEndpoint = `/inference-pipelines/${id}/data-stream?version=${this.version}`;
-      const dataStreamUrl = `${this.openlayerServerUrl}${dataStreamEndpoint}`;
+      const dataStreamEndpoint = `/inference-pipelines/${id}/data-stream`;
+      const dataStreamQuery = this.resolvedQuery(dataStreamEndpoint);
 
-      const response = await fetch(dataStreamUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.openlayerApiKey}`,
-        },
+      const response = await fetch(dataStreamQuery, {
         body: JSON.stringify({
-          dataset: [data],
-          datasetConfig: {},
+          config: {
+            groundTruthColumnName: null,
+            inferenceIdColumnName: 'id',
+            inputVariableNames: ['input'],
+            latencyColumnName: 'latency',
+            outputColumnName: 'output',
+            timestampColumnName: 'timestamp',
+            tokensColumnName: 'tokens',
+          },
+          rows: [
+            {
+              id: uuid(),
+              ...data,
+            },
+          ],
         }),
+        headers: {
+          Authorization: `Bearer ${this.openlayerApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
       });
 
       if (!response.ok) {
@@ -84,18 +131,25 @@ class OpenAIMonitor {
     }
 
     try {
-      const projectsEndpoint = `/projects?perPage=100&name=${this.openlayerProjectName}&version=${this.version}`;
-      const projectsUrl = `${this.openlayerServerUrl}${projectsEndpoint}`;
+      const projectsEndpoint = '/projects';
+      const projectsQueryParameters = {
+        name: this.openlayerProjectName,
+      };
 
-      const projectsResponse = await fetch(projectsUrl, {
-        method: 'GET',
+      const projectsQuery = this.resolvedQuery(
+        projectsEndpoint,
+        projectsQueryParameters
+      );
+
+      const projectsResponse = await fetch(projectsQuery, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${this.openlayerApiKey}`,
+          'Content-Type': 'application/json',
         },
+        method: 'GET',
       });
 
-      const { items: projects, ...data } = await projectsResponse.json();
+      const { items: projects } = await projectsResponse.json();
 
       if (!Array.isArray(projects)) {
         throw new Error('Invalid response from Openlayer');
@@ -109,15 +163,22 @@ class OpenAIMonitor {
         throw new Error('Project not found');
       }
 
-      const inferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines?perPage=100&name=${this.openlayerInferencePipelineName}&version=${this.version}`;
-      const inferencePipelineUrl = `${this.openlayerServerUrl}${inferencePipelineEndpoint}`;
+      const inferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines`;
+      const inferencePipelineQueryParameters = {
+        name: this.openlayerInferencePipelineName,
+      };
 
-      const inferencePipelineResponse = await fetch(inferencePipelineUrl, {
-        method: 'GET',
+      const inferencePipelineQuery = this.resolvedQuery(
+        inferencePipelineEndpoint,
+        inferencePipelineQueryParameters
+      );
+
+      const inferencePipelineResponse = await fetch(inferencePipelineQuery, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${this.openlayerApiKey}`,
+          'Content-Type': 'application/json',
         },
+        method: 'GET',
       });
 
       const { items: inferencePipelines } =
@@ -130,18 +191,18 @@ class OpenAIMonitor {
           )
         : undefined;
 
-      if (!inferencePipeline?.id) {
-        const createInferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines?version=${this.version}`;
-        const createInferencePipelineUrl = `${this.openlayerServerUrl}${createInferencePipelineEndpoint}`;
+      if (inferencePipeline?.id) {
+        const { id: inferencePipelineId } = inferencePipeline;
+        await uploadToInferencePipeline(inferencePipelineId);
+      } else {
+        const createInferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines`;
+        const createInferencePipelineQuery = this.resolvedQuery(
+          createInferencePipelineEndpoint
+        );
 
         const createInferencePipelineResponse = await fetch(
-          createInferencePipelineUrl,
+          createInferencePipelineQuery,
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${this.openlayerApiKey}`,
-            },
             body: JSON.stringify({
               description: '',
               name:
@@ -149,19 +210,21 @@ class OpenAIMonitor {
                   ? 'production'
                   : this.openlayerInferencePipelineName,
             }),
+            headers: {
+              Authorization: `Bearer ${this.openlayerApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
           }
         );
 
-        const { id: inferencePipelineId, ...response } =
+        const { id: inferencePipelineId } =
           await createInferencePipelineResponse.json();
 
         if (!inferencePipelineId) {
           throw new Error('Error creating inference pipeline');
         }
 
-        await uploadToInferencePipeline(inferencePipelineId);
-      } else {
-        const { id: inferencePipelineId } = inferencePipeline;
         await uploadToInferencePipeline(inferencePipelineId);
       }
     } catch (error) {
@@ -221,7 +284,7 @@ class OpenAIMonitor {
 
       this.uploadDataToOpenlayer({
         input: this.formatChatCompletionInput(body.messages),
-        latency: latency,
+        latency,
         output: outputData,
       });
     } else {
@@ -232,8 +295,8 @@ class OpenAIMonitor {
 
       this.uploadDataToOpenlayer({
         input: this.formatChatCompletionInput(body.messages),
+        latency,
         output: nonStreamedResponse.choices[0].message.content,
-        latency: latency,
         tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
       });
     }
@@ -272,7 +335,7 @@ class OpenAIMonitor {
 
       this.uploadDataToOpenlayer({
         input: body.prompt,
-        latency: latency,
+        latency,
         output: outputData,
         tokens: tokensData,
       });
@@ -284,8 +347,8 @@ class OpenAIMonitor {
 
       this.uploadDataToOpenlayer({
         input: body.prompt,
+        latency,
         output: nonStreamedResponse.choices[0].text,
-        latency: latency,
         tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
       });
     }
