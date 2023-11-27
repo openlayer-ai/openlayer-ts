@@ -79,10 +79,7 @@ class OpenAIMonitor {
       .trim();
 
   private resolvedQuery = (endpoint: string, args: RequestParameters = {}) =>
-    resolvedQuery(this.openlayerServerUrl, endpoint, {
-      version: this.version,
-      ...args,
-    });
+    resolvedQuery(this.openlayerServerUrl, endpoint, args);
 
   private uploadDataToOpenlayer = async (
     data: ChatCompletionData
@@ -134,6 +131,7 @@ class OpenAIMonitor {
       const projectsEndpoint = '/projects';
       const projectsQueryParameters = {
         name: this.openlayerProjectName,
+        version: this.version,
       };
 
       const projectsQuery = this.resolvedQuery(
@@ -166,6 +164,7 @@ class OpenAIMonitor {
       const inferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines`;
       const inferencePipelineQueryParameters = {
         name: this.openlayerInferencePipelineName,
+        version: this.version,
       };
 
       const inferencePipelineQuery = this.resolvedQuery(
@@ -197,7 +196,8 @@ class OpenAIMonitor {
       } else {
         const createInferencePipelineEndpoint = `/projects/${project.id}/inference-pipelines`;
         const createInferencePipelineQuery = this.resolvedQuery(
-          createInferencePipelineEndpoint
+          createInferencePipelineEndpoint,
+          { version: this.version }
         );
 
         const createInferencePipelineResponse = await fetch(
