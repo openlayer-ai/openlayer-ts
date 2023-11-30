@@ -16,6 +16,7 @@ interface ChatCompletionData {
   input: string | string[] | number[] | number[][] | null;
   latency: number;
   output: string | null;
+  timestamp: number;
   tokens?: number;
 }
 
@@ -95,14 +96,15 @@ class OpenAIMonitor {
             inferenceIdColumnName: 'id',
             inputVariableNames: ['input'],
             latencyColumnName: 'latency',
+            numOfTokenColumnName: 'tokens',
             outputColumnName: 'output',
             timestampColumnName: 'timestamp',
-            tokensColumnName: 'tokens',
           },
           rows: [
             {
-              id: uuid(),
               ...data,
+              id: uuid(),
+              timestamp: data.timestamp / 1000,
             },
           ],
         }),
@@ -286,6 +288,7 @@ class OpenAIMonitor {
         input: this.formatChatCompletionInput(body.messages),
         latency,
         output: outputData,
+        timestamp: startTime,
       });
     } else {
       const nonStreamedResponse = response as ChatCompletion;
@@ -297,6 +300,7 @@ class OpenAIMonitor {
         input: this.formatChatCompletionInput(body.messages),
         latency,
         output: nonStreamedResponse.choices[0].message.content,
+        timestamp: startTime,
         tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
       });
     }
@@ -337,6 +341,7 @@ class OpenAIMonitor {
         input: body.prompt,
         latency,
         output: outputData,
+        timestamp: startTime,
         tokens: tokensData,
       });
     } else {
@@ -349,6 +354,7 @@ class OpenAIMonitor {
         input: body.prompt,
         latency,
         output: nonStreamedResponse.choices[0].text,
+        timestamp: startTime,
         tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
       });
     }
