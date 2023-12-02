@@ -104,7 +104,7 @@ class OpenAIMonitor {
             {
               ...data,
               id: uuid(),
-              timestamp: data.timestamp / 1000,
+              timestamp: Math.round(data.timestamp / 1000),
             },
           ],
         }),
