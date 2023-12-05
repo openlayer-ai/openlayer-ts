@@ -12,7 +12,7 @@ import { Stream } from 'openai/streaming';
 import { v4 as uuid } from 'uuid';
 import { RequestParameters, resolvedQuery } from './utils/request';
 
-interface ChatCompletionData {
+export interface ChatCompletionData {
   input: string | string[] | number[] | number[][] | null;
   latency: number;
   output: string | null;
@@ -82,7 +82,7 @@ class OpenAIMonitor {
   private resolvedQuery = (endpoint: string, args: RequestParameters = {}) =>
     resolvedQuery(this.openlayerServerUrl, endpoint, args);
 
-  private uploadDataToOpenlayer = async (
+  public uploadDataToOpenlayer = async (
     data: ChatCompletionData
   ): Promise<void> => {
     const uploadToInferencePipeline = async (id: string) => {
