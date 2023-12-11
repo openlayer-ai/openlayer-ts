@@ -27,13 +27,13 @@ const inputs = [
 await Promise.all(
   inputs.map(async (input) => {
     // Call the LLM
-    const llmResult = await chatModel.predict(text);
+    const output = await chatModel.predict(text);
 
     // Stream the results to Openlayer
     await openlayer.streamData(
       {
         input,
-        output: llmResult,
+        output,
       },
       inferencePipeline.id
     );
