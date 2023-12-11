@@ -27,7 +27,7 @@ const inputs = [
 await Promise.all(
   inputs.map(async (input) => {
     // Call the LLM
-    const output = await chatModel.predict(text);
+    const output = await chatModel.predict(input);
 
     // Stream the results to Openlayer
     await openlayer.streamData(
