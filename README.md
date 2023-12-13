@@ -26,6 +26,10 @@ Install with npm
 npm i openlayer
 ```
 
+## Usage
+
+[Example usage available in our docs](https://docs.openlayer.com/quickstarts/llm-quickstart)
+
 ## Documentation
 
 The official documentation for this library can be found [here](https://docs.openlayer.com).
