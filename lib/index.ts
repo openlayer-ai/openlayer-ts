@@ -322,7 +322,7 @@ export class OpenlayerClient {
       const projectsEndpoint = '/projects';
       const projectsQuery = this.resolvedQuery(projectsEndpoint);
 
-      const projectsResponse = await fetch(projectsQuery, {
+      const response = await fetch(projectsQuery, {
         body: JSON.stringify({
           description,
           name,
@@ -335,10 +335,13 @@ export class OpenlayerClient {
         method: 'POST',
       });
 
-      const { items: projects } = await projectsResponse.json();
+      const data = await response.json();
+      const { items: projects, error } = data;
 
       if (!Array.isArray(projects)) {
-        throw new Error('Invalid response from Openlayer');
+        throw new Error(
+          typeof error === 'string' ? error : 'Invalid response from Openlayer'
+        );
       }
 
       const project = projects.find((p) => p.name === name);
@@ -412,7 +415,7 @@ export class OpenlayerClient {
       projectsQueryParameters
     );
 
-    const projectsResponse = await fetch(projectsQuery, {
+    const response = await fetch(projectsQuery, {
       headers: {
         Authorization: `Bearer ${this.openlayerApiKey}`,
         'Content-Type': 'application/json',
@@ -420,10 +423,13 @@ export class OpenlayerClient {
       method: 'GET',
     });
 
-    const { items: projects } = await projectsResponse.json();
+    const data = await response.json();
+    const { items: projects, error } = data;
 
     if (!Array.isArray(projects)) {
-      throw new Error('Invalid response from Openlayer');
+      throw new Error(
+        typeof error === 'string' ? error : 'Invalid response from Openlayer'
+      );
     }
 
     const project = projects.find((p) => p.name === name);
