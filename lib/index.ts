@@ -30,11 +30,6 @@ export interface StreamingData {
   output: string;
 
   /**
-   * The full prompt history for the chat completion.
-   */
-  prompt?: ChatCompletionMessageParam[];
-
-  /**
    * A timestamp representing when the chat completion occurred. Optional.
    */
   timestamp?: number;
@@ -80,9 +75,9 @@ interface StreamingDataConfig {
   outputColumnName: string | null;
 
   /**
-   * The name of the column that stores the prompt template. Can be null.
+   * The full prompt history for the chat completion.
    */
-  promptColumnName: string | null;
+  prompt?: ChatCompletionMessageParam[];
 
   /**
    * The name of the column that stores timestamp data. Can be null.
@@ -183,7 +178,6 @@ export class OpenlayerClient {
     latencyColumnName: 'latency',
     numOfTokenColumnName: 'tokens',
     outputColumnName: 'output',
-    promptColumnName: 'prompt',
     timestampColumnName: 'timestamp',
   };
 
@@ -547,6 +541,7 @@ export class OpenAIMonitor {
     const config = {
       ...this.openlayerClient.defaultConfig,
       inputVariableNames,
+      prompt,
     };
 
     if (body.stream) {
@@ -564,7 +559,6 @@ export class OpenAIMonitor {
         {
           latency,
           output: outputData,
-          prompt,
           timestamp: startTime,
           ...inputVariablesMap,
         },
@@ -585,7 +579,6 @@ export class OpenAIMonitor {
         {
           latency,
           output,
-          prompt,
           timestamp: startTime,
           tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
           ...inputVariablesMap,
