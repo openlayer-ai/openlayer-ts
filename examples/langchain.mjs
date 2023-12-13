@@ -35,6 +35,10 @@ await Promise.all(
         input,
         output,
       },
+      {
+        ...openlayer.defaultConfig,
+        inputVariableNames: ['input'],
+      },
       inferencePipeline.id
     );
   })

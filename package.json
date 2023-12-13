@@ -1,6 +1,6 @@
 {
   "name": "openlayer",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "The Openlayer TypeScript client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

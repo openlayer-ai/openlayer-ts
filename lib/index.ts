@@ -14,15 +14,10 @@ import { RequestParameters, resolvedQuery } from './utils/request';
 
 /**
  * Represents the data structure for a chat completion.
+ * Object keys represent a column name and the values represent the column value.
  */
-export interface ChatCompletionData {
-  [key: string]: any;
-
-  /**
-   * The input data for the chat completion. It can be a string, an array of strings,
-   * or a nested array of numbers.
-   */
-  input: string | string[] | number[] | number[][];
+export interface StreamingData {
+  [columnName: string]: any;
 
   /**
    * The latency of the chat completion in milliseconds. Optional.
@@ -48,7 +43,7 @@ export interface ChatCompletionData {
 /**
  * Configuration settings for uploading chat completion data to Openlayer.
  */
-interface ChatCompletionConfig {
+interface StreamingDataConfig {
   /**
    * The name of the column that stores the ground truth data. Can be null.
    */
@@ -62,7 +57,7 @@ interface ChatCompletionConfig {
   /**
    * An array of names for input variable columns. Can be null.
    */
-  inputVariableNames: string[] | null;
+  inputVariableNames?: string[] | null;
 
   /**
    * The name of the column that stores latency data. Can be null.
@@ -78,6 +73,11 @@ interface ChatCompletionConfig {
    * The name of the column that stores output data. Can be null.
    */
   outputColumnName: string | null;
+
+  /**
+   * The full prompt history for the chat completion.
+   */
+  prompt?: ChatCompletionMessageParam[];
 
   /**
    * The name of the column that stores timestamp data. Can be null.
@@ -172,10 +172,9 @@ type OpenlayerTaskType =
 export class OpenlayerClient {
   private openlayerApiKey?: string;
 
-  private openlayerDefaultDataConfig: ChatCompletionConfig = {
+  public defaultConfig: StreamingDataConfig = {
     groundTruthColumnName: null,
     inferenceIdColumnName: 'id',
-    inputVariableNames: ['input'],
     latencyColumnName: 'latency',
     numOfTokenColumnName: 'tokens',
     outputColumnName: 'output',
@@ -211,13 +210,14 @@ export class OpenlayerClient {
 
   /**
    * Streams data to the Openlayer inference pipeline.
-   * @param {ChatCompletionData} data - The chat completion data to be streamed.
+   * @param {StreamingData} data - The chat completion data to be streamed.
    * @param {string} inferencePipelineId - The ID of the Openlayer inference pipeline to which data is streamed.
    * @returns {Promise<void>} A promise that resolves when the data has been successfully streamed.
    * @throws {Error} Throws an error if the Openlayer API key is not set or an error occurs in the streaming process.
    */
   public streamData = async (
-    data: ChatCompletionData,
+    data: StreamingData,
+    config: StreamingDataConfig,
     inferencePipelineId: string
   ): Promise<void> => {
     if (!this.openlayerApiKey) {
@@ -230,7 +230,7 @@ export class OpenlayerClient {
 
       const response = await fetch(dataStreamQuery, {
         body: JSON.stringify({
-          config: this.openlayerDefaultDataConfig,
+          config,
           rows: [
             {
               ...data,
@@ -476,12 +476,13 @@ export class OpenAIMonitor {
 
   private formatChatCompletionInput = (
     messages: ChatCompletionMessageParam[]
-  ) =>
-    messages
-      .filter(({ role }) => role === 'user')
-      .map(({ content }) => content)
-      .join('\n')
-      .trim();
+  ): ChatCompletionMessageParam[] =>
+    messages.map(
+      ({ content, role }, i) =>
+        (role === 'user'
+          ? `{{ message_${i} }}`
+          : content) as unknown as ChatCompletionMessageParam
+    );
 
   /**
    * Creates a chat completion using the OpenAI client and streams the result to Openlayer.
@@ -519,6 +520,23 @@ export class OpenAIMonitor {
       options
     );
 
+    const prompt = this.formatChatCompletionInput(body.messages);
+    const inputVariableNames = prompt
+      .filter(({ role }) => role === 'user')
+      .map(({ content }) => content) as string[];
+    const inputVariables = body.messages
+      .filter(({ role }) => role === 'user')
+      .map(({ content }) => content) as string[];
+    const inputVariablesMap = inputVariableNames.reduce(
+      (acc, name, i) => ({ ...acc, [name]: inputVariables[i] }),
+      {}
+    );
+
+    const config = {
+      ...this.openlayerClient.defaultConfig,
+      inputVariableNames,
+    };
+
     if (body.stream) {
       const streamedResponse = response as Stream<ChatCompletionChunk>;
 
@@ -532,11 +550,13 @@ export class OpenAIMonitor {
 
       this.openlayerClient.streamData(
         {
-          input: this.formatChatCompletionInput(body.messages),
           latency,
           output: outputData,
+          prompt,
           timestamp: startTime,
+          ...inputVariablesMap,
         },
+        config,
         inferencePipeline.id
       );
     } else {
@@ -551,12 +571,14 @@ export class OpenAIMonitor {
 
       this.openlayerClient.streamData(
         {
-          input: this.formatChatCompletionInput(body.messages),
           latency,
           output,
+          prompt,
           timestamp: startTime,
           tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
+          ...inputVariablesMap,
         },
+        config,
         inferencePipeline.id
       );
     }
@@ -603,6 +625,11 @@ export class OpenAIMonitor {
 
     const response = await this.openAIClient.completions.create(body, options);
 
+    const config = {
+      ...this.openlayerClient.defaultConfig,
+      inputVariableNames: ['input'],
+    };
+
     if (body.stream) {
       const streamedResponse = response as Stream<Completion>;
 
@@ -623,6 +650,7 @@ export class OpenAIMonitor {
           timestamp: startTime,
           tokens: tokensData,
         },
+        config,
         inferencePipeline.id
       );
     } else {
@@ -639,6 +667,7 @@ export class OpenAIMonitor {
           timestamp: startTime,
           tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
         },
+        config,
         inferencePipeline.id
       );
     }
