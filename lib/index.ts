@@ -278,56 +278,6 @@ export class OpenlayerClient {
     resolvedQuery(this.openlayerServerUrl, endpoint, args);
 
   /**
-   * Streams data to the Openlayer inference pipeline.
-   * @param {StreamingData} data - The chat completion data to be streamed.
-   * @param {string} inferencePipelineId - The ID of the Openlayer inference pipeline to which data is streamed.
-   * @returns {Promise<void>} A promise that resolves when the data has been successfully streamed.
-   * @throws {Error} Throws an error if the Openlayer API key is not set or an error occurs in the streaming process.
-   */
-  public streamData = async (
-    data: StreamingData,
-    config: StreamingDataConfig,
-    inferencePipelineId: string
-  ): Promise<void> => {
-    if (!this.openlayerApiKey) {
-      throw new Error('Openlayer API key are required for streaming data.');
-    }
-
-    try {
-      const dataStreamEndpoint = `/inference-pipelines/${inferencePipelineId}/data-stream`;
-      const dataStreamQuery = this.resolvedQuery(dataStreamEndpoint);
-
-      const response = await fetch(dataStreamQuery, {
-        body: JSON.stringify({
-          config,
-          rows: [
-            {
-              ...data,
-              id: uuid(),
-              timestamp: Math.round((data.timestamp ?? Date.now()) / 1000),
-            },
-          ],
-        }),
-        headers: {
-          Authorization: `Bearer ${this.openlayerApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        console.error('Error making POST request:', response.status);
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error streaming data to Openlayer:', error);
-      throw error;
-    }
-  };
-
-  /**
    * Creates a new inference pipeline in Openlayer or loads an existing one.
    * @param {string} projectId - The ID of the project containing the inference pipeline.
    * @param {string} [name='production'] - The name of the inference pipeline, defaults to 'production'.
@@ -508,6 +458,56 @@ export class OpenlayerClient {
     }
 
     return project;
+  };
+
+  /**
+   * Streams data to the Openlayer inference pipeline.
+   * @param {StreamingData} data - The chat completion data to be streamed.
+   * @param {string} inferencePipelineId - The ID of the Openlayer inference pipeline to which data is streamed.
+   * @returns {Promise<void>} A promise that resolves when the data has been successfully streamed.
+   * @throws {Error} Throws an error if the Openlayer API key is not set or an error occurs in the streaming process.
+   */
+  public streamData = async (
+    data: StreamingData,
+    config: StreamingDataConfig,
+    inferencePipelineId: string
+  ): Promise<void> => {
+    if (!this.openlayerApiKey) {
+      throw new Error('Openlayer API key are required for streaming data.');
+    }
+
+    try {
+      const dataStreamEndpoint = `/inference-pipelines/${inferencePipelineId}/data-stream`;
+      const dataStreamQuery = this.resolvedQuery(dataStreamEndpoint);
+
+      const response = await fetch(dataStreamQuery, {
+        body: JSON.stringify({
+          config,
+          rows: [
+            {
+              ...data,
+              id: uuid(),
+              timestamp: Math.round((data.timestamp ?? Date.now()) / 1000),
+            },
+          ],
+        }),
+        headers: {
+          Authorization: `Bearer ${this.openlayerApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        console.error('Error making POST request:', response.status);
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error streaming data to Openlayer:', error);
+      throw error;
+    }
   };
 }
 
@@ -724,8 +724,11 @@ export class OpenAIMonitor {
     const startTime = Date.now();
 
     // Accumulate output and tokens data for streamed responses
+    let streamedModel = body.model;
     let streamedOutput = '';
     let streamedTokens = 0;
+    let streamedInputTokens = 0;
+    let streamedOutputTokens = 0;
 
     const response = await this.openAIClient.completions.create(body, options);
 
@@ -739,15 +742,24 @@ export class OpenAIMonitor {
 
       for await (const chunk of streamedResponse) {
         // Process each chunk - for example, accumulate input data
+        streamedModel = chunk.model;
         streamedOutput += chunk.choices[0].text.trim();
         streamedTokens += chunk.usage?.total_tokens ?? 0;
+        streamedInputTokens += chunk.usage?.prompt_tokens ?? 0;
+        streamedOutputTokens += chunk.usage?.completion_tokens ?? 0;
       }
 
       const endTime = Date.now();
       const latency = endTime - startTime;
+      const cost = this.cost(
+        streamedModel,
+        streamedInputTokens,
+        streamedOutputTokens
+      );
 
       this.openlayerClient.streamData(
         {
+          cost,
           input: body.prompt,
           latency,
           output: streamedOutput,
