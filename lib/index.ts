@@ -20,6 +20,11 @@ export interface StreamingData {
   [columnName: string]: any;
 
   /**
+   * The total estimated cost of the chat completion in USD. Optional.
+   */
+  cost?: number;
+
+  /**
    * The latency of the chat completion in milliseconds. Optional.
    */
   latency?: number;
@@ -168,6 +173,70 @@ type OpenlayerTaskType =
   | 'tabular-classification'
   | 'tabular-regression'
   | 'text-classification';
+
+type Pricing = {
+  input: number;
+  output: number;
+};
+
+const OpenAIPricing: { [key: string]: Pricing } = {
+  'babbage-002': {
+    input: 0.0004,
+    output: 0.0004,
+  },
+  'davinci-002': {
+    input: 0.002,
+    output: 0.002,
+  },
+  'gpt-3.5-turbo': {
+    input: 0.003,
+    output: 0.006,
+  },
+  'gpt-3.5-turbo-0301': {
+    input: 0.0015,
+    output: 0.002,
+  },
+  'gpt-3.5-turbo-0613': {
+    input: 0.0015,
+    output: 0.002,
+  },
+  'gpt-3.5-turbo-1106': {
+    input: 0.001,
+    output: 0.002,
+  },
+  'gpt-3.5-turbo-16k-0613': {
+    input: 0.003,
+    output: 0.004,
+  },
+  'gpt-3.5-turbo-instruct': {
+    input: 0.0015,
+    output: 0.002,
+  },
+  'gpt-4': {
+    input: 0.03,
+    output: 0.06,
+  },
+  'gpt-4-0314': {
+    input: 0.03,
+    output: 0.06,
+  },
+  'gpt-4-1106-preview': {
+    input: 0.01,
+    output: 0.03,
+  },
+  'gpt-4-1106-vision-preview': {
+    input: 0.01,
+    output: 0.03,
+  },
+  'gpt-4-32k': {
+    input: 0.06,
+    output: 0.12,
+  },
+  'gpt-4-32k-0314': {
+    input: 0.06,
+    output: 0.12,
+  },
+};
 
 export class OpenlayerClient {
   private openlayerApiKey?: string;
@@ -480,6 +549,21 @@ export class OpenAIMonitor {
     });
   }
 
+  private cost = (model: string, inputTokens: number, outputTokens: number) => {
+    const pricing: Pricing | undefined = OpenAIPricing[model];
+    const inputCost =
+      typeof pricing === 'undefined'
+        ? undefined
+        : (inputTokens / 1000) * pricing.input;
+    const outputCost =
+      typeof pricing === 'undefined'
+        ? undefined
+        : (outputTokens / 1000) * pricing.output;
+    return typeof pricing === 'undefined'
+      ? undefined
+      : (inputCost ?? 0) + (outputCost ?? 0);
+  };
+
   private formatChatCompletionInput = (
     messages: ChatCompletionMessageParam[]
   ): ChatCompletionMessageParam[] =>
@@ -499,7 +583,8 @@ export class OpenAIMonitor {
    */
   public createChatCompletion = async (
     body: ChatCompletionCreateParams,
-    options?: RequestOptions
+    options?: RequestOptions,
+    additionalLogs?: StreamingData
   ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> => {
     if (!this.monitoringOn) {
       throw new Error('Monitoring is not active.');
@@ -519,7 +604,7 @@ export class OpenAIMonitor {
     // Start a timer to measure latency
     const startTime = Date.now();
     // Accumulate output for streamed responses
-    let outputData = '';
+    let streamedOutput = '';
 
     const response = await this.openAIClient.chat.completions.create(
       body,
@@ -549,7 +634,8 @@ export class OpenAIMonitor {
 
       for await (const chunk of streamedResponse) {
         // Process each chunk - for example, accumulate input data
-        outputData += chunk.choices[0].delta.content;
+        const chunkOutput = chunk.choices[0].delta.content ?? '';
+        streamedOutput += chunkOutput;
       }
 
       const endTime = Date.now();
@@ -558,9 +644,10 @@ export class OpenAIMonitor {
       this.openlayerClient.streamData(
         {
           latency,
-          output: outputData,
+          output: streamedOutput,
           timestamp: startTime,
           ...inputVariablesMap,
+          ...additionalLogs,
         },
         config,
         inferencePipeline.id
@@ -571,17 +658,28 @@ export class OpenAIMonitor {
       const endTime = Date.now();
       const latency = endTime - startTime;
       const output = nonStreamedResponse.choices[0].message.content;
+      const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
+      const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
+      const outputTokens = nonStreamedResponse.usage?.completion_tokens ?? 0;
+      const cost = this.cost(
+        nonStreamedResponse.model,
+        inputTokens,
+        outputTokens
+      );
+
       if (typeof output !== 'string') {
         throw new Error('No output received from OpenAI.');
       }
 
       this.openlayerClient.streamData(
         {
+          cost,
           latency,
           output,
           timestamp: startTime,
-          tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
+          tokens,
           ...inputVariablesMap,
+          ...additionalLogs,
         },
         config,
         inferencePipeline.id
@@ -600,7 +698,8 @@ export class OpenAIMonitor {
    */
   public createCompletion = async (
     body: CompletionCreateParams,
-    options?: RequestOptions
+    options?: RequestOptions,
+    additionalLogs?: StreamingData
   ): Promise<Completion | Stream<Completion>> => {
     if (!this.monitoringOn) {
       throw new Error('Monitoring is not active.');
@@ -625,8 +724,8 @@ export class OpenAIMonitor {
     const startTime = Date.now();
 
     // Accumulate output and tokens data for streamed responses
-    let outputData = '';
-    let tokensData = 0;
+    let streamedOutput = '';
+    let streamedTokens = 0;
 
     const response = await this.openAIClient.completions.create(body, options);
 
@@ -640,8 +739,8 @@ export class OpenAIMonitor {
 
       for await (const chunk of streamedResponse) {
         // Process each chunk - for example, accumulate input data
-        outputData += chunk.choices[0].text.trim();
-        tokensData += chunk.usage?.total_tokens ?? 0;
+        streamedOutput += chunk.choices[0].text.trim();
+        streamedTokens += chunk.usage?.total_tokens ?? 0;
       }
 
       const endTime = Date.now();
@@ -651,9 +750,10 @@ export class OpenAIMonitor {
         {
           input: body.prompt,
           latency,
-          output: outputData,
+          output: streamedOutput,
           timestamp: startTime,
-          tokens: tokensData,
+          tokens: streamedTokens,
+          ...additionalLogs,
         },
         config,
         inferencePipeline.id
@@ -663,14 +763,24 @@ export class OpenAIMonitor {
       // Handle regular (non-streamed) response
       const endTime = Date.now();
       const latency = endTime - startTime;
+      const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
+      const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
+      const outputTokens = nonStreamedResponse.usage?.completion_tokens ?? 0;
+      const cost = this.cost(
+        nonStreamedResponse.model,
+        inputTokens,
+        outputTokens
+      );
 
       this.openlayerClient.streamData(
         {
+          cost,
           input: body.prompt,
           latency,
           output: nonStreamedResponse.choices[0].text,
           timestamp: startTime,
-          tokens: nonStreamedResponse.usage?.total_tokens ?? 0,
+          tokens,
+          ...additionalLogs,
         },
         config,
         inferencePipeline.id
