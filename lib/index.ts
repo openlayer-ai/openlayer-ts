@@ -258,7 +258,7 @@ export class OpenlayerClient {
 
   private openlayerServerUrl: string = 'https://api.openlayer.com/v1';
 
-  private version = '0.1.0a19';
+  private version = '0.1.0a20';
 
   /**
    * Constructs an OpenlayerClient instance.
