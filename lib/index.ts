@@ -50,6 +50,11 @@ export interface StreamingData {
  */
 interface StreamingDataConfig {
   /**
+   * The name of the column that stores the request cost data. Can be null.
+   */
+  costColumnName: string | null;
+
+  /**
    * The name of the column that stores the ground truth data. Can be null.
    */
   groundTruthColumnName: string | null;
@@ -242,6 +247,7 @@ export class OpenlayerClient {
   private openlayerApiKey?: string;
 
   public defaultConfig: StreamingDataConfig = {
+    costColumnName: 'cost',
     groundTruthColumnName: null,
     inferenceIdColumnName: 'id',
     latencyColumnName: 'latency',
@@ -252,7 +258,7 @@ export class OpenlayerClient {
 
   private openlayerServerUrl: string = 'https://api.openlayer.com/v1';
 
-  private version = '0.1.0a16';
+  private version = '0.1.0a19';
 
   /**
    * Constructs an OpenlayerClient instance.
