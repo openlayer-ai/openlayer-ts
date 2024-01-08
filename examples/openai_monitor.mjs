@@ -7,7 +7,8 @@ import { OpenAIMonitor } from 'openlayer';
 const monitor = new OpenAIMonitor({
   openAiApiKey: 'YOUR_OPENAI_API_KEY',
   openlayerApiKey: 'YOUR_OPENLAYER_API_KEY',
-  openlayerProjectName: 'YOUR_PROJECT_NAME',
+  openlayerInferencePipelineName: 'production',
+  openlayerProjectName: 'YOUR_OPENLAYER_PROJECT_NAME',
 });
 
 monitor.startMonitoring();
@@ -27,9 +28,10 @@ const inputs = [
   },
 ];
 
-inputs.map(async ({ promptVersion, systemMessage, userMessage }) => {
+for (let i = 0; i < inputs.length; i++) {
+  const { promptVersion, systemMessage, userMessage } = inputs[i];
   // Stream the results to Openlayer
-  const chatCompletion = await monitor.createChatCompletion(
+  await monitor.createChatCompletion(
     {
       messages: [
         {
@@ -49,5 +51,4 @@ inputs.map(async ({ promptVersion, systemMessage, userMessage }) => {
       promptVersion,
     }
   );
-  console.log(chatCompletion);
-});
+}

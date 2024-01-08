@@ -24,28 +24,27 @@ const inputs = [
   'What would be a good name for a company that makes colorful socks?',
 ];
 
-await Promise.all(
-  inputs.map(async (input) => {
-    // Call the LLM
-    const output = await chatModel.predict(input);
+for (let i = 0; i < inputs.length; i++) {
+  const input = inputs[i];
+  // Call the LLM
+  const output = await chatModel.predict(input);
 
-    // Stream the results to Openlayer
-    await openlayer.streamData(
-      {
-        input,
-        output,
-      },
-      {
-        ...openlayer.defaultConfig,
-        inputVariableNames: ['input'],
-        prompt: [
-          {
-            content: '{{ input }}',
-            role: 'user',
-          },
-        ],
-      },
-      inferencePipeline.id
-    );
-  })
-);
+  // Stream the results to Openlayer
+  await openlayer.streamData(
+    {
+      input,
+      output,
+    },
+    {
+      ...openlayer.defaultConfig,
+      inputVariableNames: ['input'],
+      prompt: [
+        {
+          content: '{{ input }}',
+          role: 'user',
+        },
+      ],
+    },
+    inferencePipeline.id
+  );
+}

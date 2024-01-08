@@ -296,36 +296,36 @@ export class OpenlayerClient {
   ): Promise<OpenlayerInferencePipeline> => {
     try {
       return await this.loadInferencePipeline(projectId, name);
-    } catch {
-      const createInferencePipelineEndpoint = `/projects/${projectId}/inference-pipelines`;
-      const createInferencePipelineQuery = this.resolvedQuery(
-        createInferencePipelineEndpoint,
-        { version: this.version }
-      );
+    } catch {}
 
-      const createInferencePipelineResponse = await fetch(
-        createInferencePipelineQuery,
-        {
-          body: JSON.stringify({
-            description: '',
-            name,
-          }),
-          headers: {
-            Authorization: `Bearer ${this.openlayerApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-        }
-      );
+    const createInferencePipelineEndpoint = `/projects/${projectId}/inference-pipelines`;
+    const createInferencePipelineQuery = this.resolvedQuery(
+      createInferencePipelineEndpoint,
+      { version: this.version }
+    );
 
-      const inferencePipeline = await createInferencePipelineResponse.json();
-
-      if (!inferencePipeline?.id) {
-        throw new Error('Error creating inference pipeline');
+    const createInferencePipelineResponse = await fetch(
+      createInferencePipelineQuery,
+      {
+        body: JSON.stringify({
+          description: '',
+          name,
+        }),
+        headers: {
+          Authorization: `Bearer ${this.openlayerApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
       }
+    );
 
-      return inferencePipeline;
+    const inferencePipeline = await createInferencePipelineResponse.json();
+
+    if (!inferencePipeline?.id) {
+      throw new Error('Error creating inference pipeline');
     }
+
+    return inferencePipeline;
   };
 
   /**
@@ -343,40 +343,40 @@ export class OpenlayerClient {
   ): Promise<OpenlayerProject> => {
     try {
       return await this.loadProject(name);
-    } catch {
-      const projectsEndpoint = '/projects';
-      const projectsQuery = this.resolvedQuery(projectsEndpoint);
+    } catch {}
 
-      const response = await fetch(projectsQuery, {
-        body: JSON.stringify({
-          description,
-          name,
-          taskType,
-        }),
-        headers: {
-          Authorization: `Bearer ${this.openlayerApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      });
+    const projectsEndpoint = '/projects';
+    const projectsQuery = this.resolvedQuery(projectsEndpoint);
 
-      const data = await response.json();
-      const { items: projects, error } = data;
+    const response = await fetch(projectsQuery, {
+      body: JSON.stringify({
+        description,
+        name,
+        taskType,
+      }),
+      headers: {
+        Authorization: `Bearer ${this.openlayerApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    });
 
-      if (!Array.isArray(projects)) {
-        throw new Error(
-          typeof error === 'string' ? error : 'Invalid response from Openlayer'
-        );
-      }
+    const data = await response.json();
+    const { items: projects, error } = data;
 
-      const project = projects.find((p) => p.name === name);
-
-      if (!project?.id) {
-        throw new Error('Project not found');
-      }
-
-      return project;
+    if (!Array.isArray(projects)) {
+      throw new Error(
+        typeof error === 'string' ? error : 'Invalid response from Openlayer'
+      );
     }
+
+    const project = projects.find((p) => p.name === name);
+
+    if (!project?.id) {
+      throw new Error('Project not found');
+    }
+
+    return project;
   };
 
   /**
@@ -409,14 +409,16 @@ export class OpenlayerClient {
       method: 'GET',
     });
 
-    const { items: inferencePipelines } =
+    const { items: inferencePipelines, error } =
       await inferencePipelineResponse.json();
     const inferencePipeline = Array.isArray(inferencePipelines)
       ? inferencePipelines.find((p) => p.name === name)
       : undefined;
 
     if (!inferencePipeline?.id) {
-      throw new Error('Inference pipeline not found');
+      throw new Error(
+        typeof error === 'string' ? error : 'Inference pipeline not found'
+      );
     }
 
     return inferencePipeline;
@@ -622,7 +624,7 @@ export class OpenAIMonitor {
     const inputVariableNames = prompt
       .filter(({ role }) => role === 'user')
       .map(({ content }) =>
-        (content as string).replace(/{{\s*|\s*}}/g, '')
+        String(content).replace(/{{\s*|\s*}}/g, '')
       ) as string[];
     const inputVariables = body.messages
       .filter(({ role }) => role === 'user')
