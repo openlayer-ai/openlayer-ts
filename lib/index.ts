@@ -258,7 +258,7 @@ export class OpenlayerClient {
 
   private openlayerServerUrl: string = 'https://api.openlayer.com/v1';
 
-  private version = '0.1.0a20';
+  private version = '0.1.0a21';
 
   /**
    * Constructs an OpenlayerClient instance.
@@ -575,9 +575,10 @@ export class OpenAIMonitor {
   ): ChatCompletionMessageParam[] =>
     messages.map(
       ({ content, role }, i) =>
-        (role === 'user'
-          ? `{{ message_${i} }}`
-          : content) as unknown as ChatCompletionMessageParam
+        ({
+          content: role === 'user' ? `{{ message_${i} }}` : content,
+          role,
+        }) as unknown as ChatCompletionMessageParam
     );
 
   /**
@@ -620,7 +621,9 @@ export class OpenAIMonitor {
     const prompt = this.formatChatCompletionInput(body.messages);
     const inputVariableNames = prompt
       .filter(({ role }) => role === 'user')
-      .map(({ content }) => content) as string[];
+      .map(({ content }) =>
+        (content as string).replace(/{{\s*|\s*}}/g, '')
+      ) as string[];
     const inputVariables = body.messages
       .filter(({ role }) => role === 'user')
       .map(({ content }) => content) as string[];

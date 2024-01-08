@@ -38,6 +38,12 @@ await Promise.all(
       {
         ...openlayer.defaultConfig,
         inputVariableNames: ['input'],
+        prompt: [
+          {
+            content: '{{ input }}',
+            role: 'user',
+          },
+        ],
       },
       inferencePipeline.id
     );
