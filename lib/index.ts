@@ -528,6 +528,8 @@ export class OpenlayerClient {
 }
 
 export class OpenAIMonitor {
+  private inferencePipeline?: OpenlayerInferencePipeline;
+
   private openlayerClient: OpenlayerClient;
 
   private openAIClient: OpenAI;
@@ -537,6 +539,8 @@ export class OpenAIMonitor {
   private openlayerInferencePipelineName: string = 'production';
 
   private monitoringOn: boolean = false;
+
+  private project?: OpenlayerProject;
 
   /**
    * Constructs an OpenAIMonitor instance.
@@ -607,16 +611,9 @@ export class OpenAIMonitor {
       throw new Error('Monitoring is not active.');
     }
 
-    const project = await this.openlayerClient.createProject(
-      this.openlayerProjectName,
-      'llm-base'
-    );
-
-    const inferencePipeline =
-      await this.openlayerClient.createInferencePipeline(
-        project.id,
-        this.openlayerInferencePipelineName
-      );
+    if (typeof this.inferencePipeline === 'undefined') {
+      throw new Error('No inference pipeline found.');
+    }
 
     // Start a timer to measure latency
     const startTime = Date.now();
@@ -669,7 +666,7 @@ export class OpenAIMonitor {
           ...additionalLogs,
         },
         config,
-        inferencePipeline.id
+        this.inferencePipeline.id
       );
     } else {
       const nonStreamedResponse = response as ChatCompletion;
@@ -702,7 +699,7 @@ export class OpenAIMonitor {
           ...additionalLogs,
         },
         config,
-        inferencePipeline.id
+        this.inferencePipeline.id
       );
     }
 
@@ -725,20 +722,13 @@ export class OpenAIMonitor {
       throw new Error('Monitoring is not active.');
     }
 
+    if (typeof this.inferencePipeline === 'undefined') {
+      throw new Error('No inference pipeline found.');
+    }
+
     if (!body.prompt) {
       throw new Error('No prompt provided.');
     }
-
-    const project = await this.openlayerClient.createProject(
-      this.openlayerProjectName,
-      'llm-base'
-    );
-
-    const inferencePipeline =
-      await this.openlayerClient.createInferencePipeline(
-        project.id,
-        this.openlayerInferencePipelineName
-      );
 
     // Start a timer to measure latency
     const startTime = Date.now();
@@ -788,7 +778,7 @@ export class OpenAIMonitor {
           ...additionalLogs,
         },
         config,
-        inferencePipeline.id
+        this.inferencePipeline.id
       );
     } else {
       const nonStreamedResponse = response as Completion;
@@ -815,7 +805,7 @@ export class OpenAIMonitor {
           ...additionalLogs,
         },
         config,
-        inferencePipeline.id
+        this.inferencePipeline.id
       );
     }
 
@@ -825,14 +815,31 @@ export class OpenAIMonitor {
   /**
    * Starts monitoring for the OpenAI Monitor instance. If monitoring is already active, a warning is logged.
    */
-  public startMonitoring() {
+  public async startMonitoring() {
     if (this.monitoringOn) {
-      console.warn('Monitoring is already on!');
+      console.warn('Monitor is already on.');
       return;
     }
 
+    console.info(
+      'Starting monitor: creating or loading an Openlayer project and inference pipeline...'
+    );
+
     this.monitoringOn = true;
-    console.info('Monitoring started.');
+    this.project = await this.openlayerClient.createProject(
+      this.openlayerProjectName,
+      'llm-base'
+    );
+
+    if (typeof this.project !== 'undefined') {
+      this.inferencePipeline =
+        await this.openlayerClient.createInferencePipeline(
+          this.project.id,
+          this.openlayerInferencePipelineName
+        );
+    }
+
+    console.info('Monitor started');
   }
 
   /**
@@ -840,11 +847,14 @@ export class OpenAIMonitor {
    */
   public stopMonitoring() {
     if (!this.monitoringOn) {
-      console.warn('Monitoring is not active.');
+      console.warn('Monitor is not active.');
       return;
     }
 
     this.monitoringOn = false;
-    console.info('Monitoring stopped.');
+    this.project = undefined;
+    this.inferencePipeline = undefined;
+
+    console.info('Monitor stopped.');
   }
 }

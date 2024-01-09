@@ -11,7 +11,7 @@ const monitor = new OpenAIMonitor({
   openlayerProjectName: 'YOUR_OPENLAYER_PROJECT_NAME',
 });
 
-monitor.startMonitoring();
+await monitor.startMonitoring();
 
 const inputs = [
   {
