@@ -36,7 +36,7 @@ for (let i = 0; i < inputs.length; i++) {
       messages: [
         {
           content: systemMessage,
-          role: 'assistant',
+          role: 'system',
         },
         {
           content: userMessage,
@@ -52,3 +52,5 @@ for (let i = 0; i < inputs.length; i++) {
     }
   );
 }
+
+monitor.stopMonitoring();
