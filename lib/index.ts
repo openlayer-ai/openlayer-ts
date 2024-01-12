@@ -225,6 +225,10 @@ const OpenAIPricing: { [key: string]: Pricing } = {
     input: 0.03,
     output: 0.06,
   },
+  'gpt-4-0613': {
+    input: 0.03,
+    output: 0.06,
+  },
   'gpt-4-1106-preview': {
     input: 0.01,
     output: 0.03,
@@ -240,6 +244,10 @@ const OpenAIPricing: { [key: string]: Pricing } = {
   'gpt-4-32k-0314': {
     input: 0.06,
     output: 0.12,
+  },
+  'gpt-4-32k-0613': {
+    input: 0.03,
+    output: 0.06,
   },
 };
 
@@ -686,6 +694,7 @@ export class OpenAIMonitor {
         {
           cost,
           latency,
+          model: nonStreamedResponse.model,
           output,
           timestamp: startTime,
           tokens,
