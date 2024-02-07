@@ -292,7 +292,7 @@ export class OpenlayerClient {
     }
 
     if (!this.openlayerApiKey) {
-      throw new Error('Openlayer API key are required for publishing.');
+      console.error('Openlayer API key are required for publishing.');
     }
   }
 
@@ -489,7 +489,6 @@ export class OpenlayerClient {
    * @param {StreamingData} data - The chat completion data to be streamed.
    * @param {string} inferencePipelineId - The ID of the Openlayer inference pipeline to which data is streamed.
    * @returns {Promise<void>} A promise that resolves when the data has been successfully streamed.
-   * @throws {Error} Throws an error if the Openlayer API key is not set or an error occurs in the streaming process.
    */
   public streamData = async (
     data: StreamingData,
@@ -497,7 +496,8 @@ export class OpenlayerClient {
     inferencePipelineId: string
   ): Promise<void> => {
     if (!this.openlayerApiKey) {
-      throw new Error('Openlayer API key are required for streaming data.');
+      console.error('Openlayer API key are required for streaming data.');
+      return;
     }
 
     try {
@@ -524,13 +524,12 @@ export class OpenlayerClient {
 
       if (!response.ok) {
         console.error('Error making POST request:', response.status);
-        throw new Error(`Error: ${response.status}`);
+        console.error(`Error: ${response.status}`);
       }
 
-      return await response.json();
+      await response.json();
     } catch (error) {
       console.error('Error streaming data to Openlayer:', error);
-      throw error;
     }
   };
 }
@@ -616,11 +615,9 @@ export class OpenAIMonitor {
     additionalLogs?: StreamingData
   ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> => {
     if (!this.monitoringOn) {
-      throw new Error('Monitoring is not active.');
-    }
-
-    if (typeof this.inferencePipeline === 'undefined') {
-      throw new Error('No inference pipeline found.');
+      console.warn('Monitoring is not active.');
+    } else if (typeof this.inferencePipeline === 'undefined') {
+      console.error('No inference pipeline found.');
     }
 
     // Start a timer to measure latency
@@ -633,82 +630,89 @@ export class OpenAIMonitor {
       options
     );
 
-    const prompt = this.formatChatCompletionInput(body.messages);
-    const inputVariableNames = prompt
-      .filter(({ role }) => role === 'user')
-      .map(({ content }) =>
-        String(content).replace(/{{\s*|\s*}}/g, '')
-      ) as string[];
-    const inputVariables = body.messages
-      .filter(({ role }) => role === 'user')
-      .map(({ content }) => content) as string[];
-    const inputVariablesMap = inputVariableNames.reduce(
-      (acc, name, i) => ({ ...acc, [name]: inputVariables[i] }),
-      {}
-    );
+    try {
+      if (this.monitoringOn && typeof this.inferencePipeline !== 'undefined') {
+        const prompt = this.formatChatCompletionInput(body.messages);
+        const inputVariableNames = prompt
+          .filter(({ role }) => role === 'user')
+          .map(({ content }) =>
+            String(content).replace(/{{\s*|\s*}}/g, '')
+          ) as string[];
+        const inputVariables = body.messages
+          .filter(({ role }) => role === 'user')
+          .map(({ content }) => content) as string[];
+        const inputVariablesMap = inputVariableNames.reduce(
+          (acc, name, i) => ({ ...acc, [name]: inputVariables[i] }),
+          {}
+        );
 
-    const config = {
-      ...this.openlayerClient.defaultConfig,
-      inputVariableNames,
-      prompt,
-    };
+        const config = {
+          ...this.openlayerClient.defaultConfig,
+          inputVariableNames,
+          prompt,
+        };
 
-    if (body.stream) {
-      const streamedResponse = response as Stream<ChatCompletionChunk>;
+        if (body.stream) {
+          const streamedResponse = response as Stream<ChatCompletionChunk>;
 
-      for await (const chunk of streamedResponse) {
-        // Process each chunk - for example, accumulate input data
-        const chunkOutput = chunk.choices[0].delta.content ?? '';
-        streamedOutput += chunkOutput;
+          for await (const chunk of streamedResponse) {
+            // Process each chunk - for example, accumulate input data
+            const chunkOutput = chunk.choices[0].delta.content ?? '';
+            streamedOutput += chunkOutput;
+          }
+
+          const endTime = Date.now();
+          const latency = endTime - startTime;
+
+          this.openlayerClient.streamData(
+            {
+              latency,
+              output: streamedOutput,
+              timestamp: startTime,
+              ...inputVariablesMap,
+              ...additionalLogs,
+            },
+            config,
+            this.inferencePipeline.id
+          );
+        } else {
+          const nonStreamedResponse = response as ChatCompletion;
+          // Handle regular (non-streamed) response
+          const endTime = Date.now();
+          const latency = endTime - startTime;
+          const output = nonStreamedResponse.choices[0].message.content;
+          const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
+          const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
+          const outputTokens =
+            nonStreamedResponse.usage?.completion_tokens ?? 0;
+          const cost = this.cost(
+            nonStreamedResponse.model,
+            inputTokens,
+            outputTokens
+          );
+
+          if (typeof output === 'string') {
+            this.openlayerClient.streamData(
+              {
+                cost,
+                latency,
+                model: nonStreamedResponse.model,
+                output,
+                timestamp: startTime,
+                tokens,
+                ...inputVariablesMap,
+                ...additionalLogs,
+              },
+              config,
+              this.inferencePipeline.id
+            );
+          } else {
+            console.error('No output received from OpenAI.');
+          }
+        }
       }
-
-      const endTime = Date.now();
-      const latency = endTime - startTime;
-
-      this.openlayerClient.streamData(
-        {
-          latency,
-          output: streamedOutput,
-          timestamp: startTime,
-          ...inputVariablesMap,
-          ...additionalLogs,
-        },
-        config,
-        this.inferencePipeline.id
-      );
-    } else {
-      const nonStreamedResponse = response as ChatCompletion;
-      // Handle regular (non-streamed) response
-      const endTime = Date.now();
-      const latency = endTime - startTime;
-      const output = nonStreamedResponse.choices[0].message.content;
-      const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
-      const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
-      const outputTokens = nonStreamedResponse.usage?.completion_tokens ?? 0;
-      const cost = this.cost(
-        nonStreamedResponse.model,
-        inputTokens,
-        outputTokens
-      );
-
-      if (typeof output !== 'string') {
-        throw new Error('No output received from OpenAI.');
-      }
-
-      this.openlayerClient.streamData(
-        {
-          cost,
-          latency,
-          model: nonStreamedResponse.model,
-          output,
-          timestamp: startTime,
-          tokens,
-          ...inputVariablesMap,
-          ...additionalLogs,
-        },
-        config,
-        this.inferencePipeline.id
-      );
+    } catch (error) {
+      console.error(error);
     }
 
     return response;
@@ -719,23 +723,20 @@ export class OpenAIMonitor {
    * @param {CompletionCreateParams} body - The parameters for creating a completion.
    * @param {RequestOptions} [options] - Optional request options.
    * @returns {Promise<Completion | Stream<Completion>>} Promise that resolves to a Completion or a Stream.
-   * @throws {Error} Throws an error if monitoring is not active or if no prompt is provided.
    */
   public createCompletion = async (
     body: CompletionCreateParams,
     options?: RequestOptions,
     additionalLogs?: StreamingData
   ): Promise<Completion | Stream<Completion>> => {
-    if (!this.monitoringOn) {
-      throw new Error('Monitoring is not active.');
-    }
-
-    if (typeof this.inferencePipeline === 'undefined') {
-      throw new Error('No inference pipeline found.');
-    }
-
     if (!body.prompt) {
-      throw new Error('No prompt provided.');
+      console.error('No prompt provided.');
+    }
+
+    if (!this.monitoringOn) {
+      console.warn('Monitoring is not active.');
+    } else if (typeof this.inferencePipeline === 'undefined') {
+      console.error('No inference pipeline found.');
     }
 
     // Start a timer to measure latency
@@ -750,71 +751,78 @@ export class OpenAIMonitor {
 
     const response = await this.openAIClient.completions.create(body, options);
 
-    const config = {
-      ...this.openlayerClient.defaultConfig,
-      inputVariableNames: ['input'],
-    };
+    try {
+      if (this.monitoringOn && typeof this.inferencePipeline !== 'undefined') {
+        const config = {
+          ...this.openlayerClient.defaultConfig,
+          inputVariableNames: ['input'],
+        };
 
-    if (body.stream) {
-      const streamedResponse = response as Stream<Completion>;
+        if (body.stream) {
+          const streamedResponse = response as Stream<Completion>;
 
-      for await (const chunk of streamedResponse) {
-        // Process each chunk - for example, accumulate input data
-        streamedModel = chunk.model;
-        streamedOutput += chunk.choices[0].text.trim();
-        streamedTokens += chunk.usage?.total_tokens ?? 0;
-        streamedInputTokens += chunk.usage?.prompt_tokens ?? 0;
-        streamedOutputTokens += chunk.usage?.completion_tokens ?? 0;
+          for await (const chunk of streamedResponse) {
+            // Process each chunk - for example, accumulate input data
+            streamedModel = chunk.model;
+            streamedOutput += chunk.choices[0].text.trim();
+            streamedTokens += chunk.usage?.total_tokens ?? 0;
+            streamedInputTokens += chunk.usage?.prompt_tokens ?? 0;
+            streamedOutputTokens += chunk.usage?.completion_tokens ?? 0;
+          }
+
+          const endTime = Date.now();
+          const latency = endTime - startTime;
+          const cost = this.cost(
+            streamedModel,
+            streamedInputTokens,
+            streamedOutputTokens
+          );
+
+          this.openlayerClient.streamData(
+            {
+              cost,
+              input: body.prompt,
+              latency,
+              output: streamedOutput,
+              timestamp: startTime,
+              tokens: streamedTokens,
+              ...additionalLogs,
+            },
+            config,
+            this.inferencePipeline.id
+          );
+        } else {
+          const nonStreamedResponse = response as Completion;
+          // Handle regular (non-streamed) response
+          const endTime = Date.now();
+          const latency = endTime - startTime;
+          const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
+          const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
+          const outputTokens =
+            nonStreamedResponse.usage?.completion_tokens ?? 0;
+          const cost = this.cost(
+            nonStreamedResponse.model,
+            inputTokens,
+            outputTokens
+          );
+
+          this.openlayerClient.streamData(
+            {
+              cost,
+              input: body.prompt,
+              latency,
+              output: nonStreamedResponse.choices[0].text,
+              timestamp: startTime,
+              tokens,
+              ...additionalLogs,
+            },
+            config,
+            this.inferencePipeline.id
+          );
+        }
       }
-
-      const endTime = Date.now();
-      const latency = endTime - startTime;
-      const cost = this.cost(
-        streamedModel,
-        streamedInputTokens,
-        streamedOutputTokens
-      );
-
-      this.openlayerClient.streamData(
-        {
-          cost,
-          input: body.prompt,
-          latency,
-          output: streamedOutput,
-          timestamp: startTime,
-          tokens: streamedTokens,
-          ...additionalLogs,
-        },
-        config,
-        this.inferencePipeline.id
-      );
-    } else {
-      const nonStreamedResponse = response as Completion;
-      // Handle regular (non-streamed) response
-      const endTime = Date.now();
-      const latency = endTime - startTime;
-      const tokens = nonStreamedResponse.usage?.total_tokens ?? 0;
-      const inputTokens = nonStreamedResponse.usage?.prompt_tokens ?? 0;
-      const outputTokens = nonStreamedResponse.usage?.completion_tokens ?? 0;
-      const cost = this.cost(
-        nonStreamedResponse.model,
-        inputTokens,
-        outputTokens
-      );
-
-      this.openlayerClient.streamData(
-        {
-          cost,
-          input: body.prompt,
-          latency,
-          output: nonStreamedResponse.choices[0].text,
-          timestamp: startTime,
-          tokens,
-          ...additionalLogs,
-        },
-        config,
-        this.inferencePipeline.id
-      );
+    } catch (error) {
+      console.error(error);
     }
 
     return response;
@@ -833,21 +841,27 @@ export class OpenAIMonitor {
       'Starting monitor: creating or loading an Openlayer project and inference pipeline...'
     );
 
-    this.monitoringOn = true;
-    this.project = await this.openlayerClient.createProject(
-      this.openlayerProjectName,
-      'llm-base'
-    );
+    try {
+      this.monitoringOn = true;
+      this.project = await this.openlayerClient.createProject(
+        this.openlayerProjectName,
+        'llm-base'
+      );
 
-    if (typeof this.project !== 'undefined') {
-      this.inferencePipeline =
-        await this.openlayerClient.createInferencePipeline(
-          this.project.id,
-          this.openlayerInferencePipelineName
-        );
+      if (typeof this.project !== 'undefined') {
+        this.inferencePipeline =
+          await this.openlayerClient.createInferencePipeline(
+            this.project.id,
+            this.openlayerInferencePipelineName
+          );
+      }
+
+      console.info('Monitor started');
+    } catch (error) {
+      console.error('An error occurred while starting the monitor:', error);
+
+      this.stopMonitoring();
     }
-
-    console.info('Monitor started');
   }
 
   /**
