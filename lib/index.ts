@@ -279,7 +279,6 @@ export class OpenlayerClient {
   /**
    * Constructs an OpenlayerClient instance.
    * @param {OpenlayerClientConstructorProps} props - The config for the Openlayer client. The API key is required.
-   * @throws {Error} Throws an error if the Openlayer API key is not provided.
    */
   constructor({
     openlayerApiKey,
@@ -607,7 +606,7 @@ export class OpenAIMonitor {
    * @param {ChatCompletionCreateParams} body - The parameters for creating a chat completion.
    * @param {RequestOptions} [options] - Optional request options.
    * @returns {Promise<ChatCompletion | Stream<ChatCompletionChunk>>} Promise of a ChatCompletion or a Stream
-   * @throws {Error} Throws an error if monitoring is not active or if no output is received from OpenAI.
+   * @throws {Error} Throws errors from the OpenAI client.
    */
   public createChatCompletion = async (
     body: ChatCompletionCreateParams,
@@ -723,6 +722,7 @@ export class OpenAIMonitor {
    * @param {CompletionCreateParams} body - The parameters for creating a completion.
    * @param {RequestOptions} [options] - Optional request options.
    * @returns {Promise<Completion | Stream<Completion>>} Promise that resolves to a Completion or a Stream.
+   * @throws {Error} Throws errors from the OpenAI client.
    */
   public createCompletion = async (
     body: CompletionCreateParams,
