@@ -7,11 +7,14 @@ import { OpenAIMonitor } from 'openlayer';
 const monitor = new OpenAIMonitor({
   openAiApiKey: 'YOUR_OPENAI_API_KEY',
   openlayerApiKey: 'YOUR_OPENLAYER_API_KEY',
+  // EITHER specify an existing inference pipeline ID
+  openlayerInferencePipelineId: 'YOUR_OPENLAYER_INFERENCE_PIPELINE_ID',
+  // OR the project and inference pipeline names to create or load one
   openlayerInferencePipelineName: 'production',
   openlayerProjectName: 'YOUR_OPENLAYER_PROJECT_NAME',
 });
 
-await monitor.startMonitoring();
+await monitor.initialize();
 
 const inputs = [
   {
