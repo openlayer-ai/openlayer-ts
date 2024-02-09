@@ -1,6 +1,6 @@
 {
   "name": "openlayer",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "description": "The Openlayer TypeScript client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,7 +20,6 @@
     "eslint-plugin-typescript-sort-keys": "^3.1.0",
     "node-fetch": "^3.3.2",
     "openai": "^4.19.0",
-    "openlayer": "^0.1.31",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

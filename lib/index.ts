@@ -943,10 +943,10 @@ export class OpenAIMonitor {
 
       this.openlayerClient.streamData(
         {
-          'OpenAI Assistant ID': assistant_id,
-          'OpenAI Thread ID': thread_id,
           cost,
           latency,
+          openai_assistant_id: assistant_id,
+          openai_thread_id: thread_id,
           output: resolvedOutput,
           timestamp: run.created_at,
           tokens: total_tokens,
