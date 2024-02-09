@@ -2,22 +2,25 @@
  * This example shows how to use Openlayer to monitor runs from OpenAI assistants.
  */
 
-import { OpenAIMonitor } from 'openlayer';
 import OpenAI from 'openai';
+import { OpenAIMonitor } from 'openlayer';
 
 const openai = new OpenAI({
-  apiKey: 'sk-...',
+  apiKey: 'YOUR_OPENAI_API_KEY',
 });
 
 // Create monitor with your credentials
 const monitor = new OpenAIMonitor({
-  openAiApiKey: 'sk-..',
+  openAiApiKey: 'YOUR_OPENAI_API_KEY',
   openlayerApiKey: 'YOUR_OPENLAYER_API_KEY',
+  // EITHER specify an existing inference pipeline ID
+  openlayerInferencePipelineId: 'YOUR_OPENLAYER_INFERENCE_PIPELINE_ID',
+  // OR the project and inference pipeline names to create or load one
   openlayerInferencePipelineName: 'production',
   openlayerProjectName: 'YOUR_OPENLAYER_PROJECT_NAME',
 });
 
-await monitor.startMonitoring();
+await monitor.initialize();
 
 // Create the assistant
 const assistant = await openai.beta.assistants.create({
@@ -49,5 +52,5 @@ while (runStatus.status !== 'completed') {
   runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
 
   // Monitor the run. If complete, it will be sent to Openlayer
-  await monitor.logThreadRun(runStatus);
+  await monitor.monitorThreadRun(runStatus);
 }

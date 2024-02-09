@@ -104,15 +104,14 @@ interface StreamingDataConfig {
 
 type OpenlayerClientConstructorProps = {
   openlayerApiKey?: string;
-  openlayerInferencePipelineName?: string;
-  openlayerProjectName?: string;
   openlayerServerUrl?: string;
 };
 
 type OpenAIMonitorConstructorProps = OpenlayerClientConstructorProps & {
   openAiApiKey: string;
+  openlayerInferencePipelineId?: string;
   openlayerInferencePipelineName?: string;
-  openlayerProjectName: string;
+  openlayerProjectName?: string;
 };
 
 type OpenlayerInferencePipeline = {
@@ -541,19 +540,15 @@ export class OpenlayerClient {
 }
 
 export class OpenAIMonitor {
-  private inferencePipeline?: OpenlayerInferencePipeline;
-
   private openlayerClient: OpenlayerClient;
 
   private openAIClient: OpenAI;
 
-  private openlayerProjectName: string;
+  private openlayerProjectName?: string;
+
+  private openlayerInferencePipelineId?: string;
 
   private openlayerInferencePipelineName: string = 'production';
-
-  private monitoringOn: boolean = false;
-
-  private project?: OpenlayerProject;
 
   /**
    * Constructs an OpenAIMonitor instance.
@@ -563,10 +558,13 @@ export class OpenAIMonitor {
     openAiApiKey,
     openlayerApiKey,
     openlayerProjectName,
+    openlayerInferencePipelineId,
     openlayerInferencePipelineName,
     openlayerServerUrl,
   }: OpenAIMonitorConstructorProps) {
     this.openlayerProjectName = openlayerProjectName;
+    this.openlayerInferencePipelineId = openlayerInferencePipelineId;
+
     if (openlayerInferencePipelineName) {
       this.openlayerInferencePipelineName = openlayerInferencePipelineName;
     }
@@ -667,9 +665,7 @@ export class OpenAIMonitor {
     options?: RequestOptions,
     additionalLogs?: StreamingData
   ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> => {
-    if (!this.monitoringOn) {
-      console.warn('Monitoring is not active.');
-    } else if (typeof this.inferencePipeline === 'undefined') {
+    if (typeof this.openlayerInferencePipelineId === 'undefined') {
       console.error('No inference pipeline found.');
     }
 
@@ -684,7 +680,7 @@ export class OpenAIMonitor {
     );
 
     try {
-      if (this.monitoringOn && typeof this.inferencePipeline !== 'undefined') {
+      if (typeof this.openlayerInferencePipelineId !== 'undefined') {
         const prompt = this.chatCompletionPrompt(body.messages);
         const { inputVariableNames, inputVariablesMap } = this.inputVariables(
           prompt,
@@ -718,7 +714,7 @@ export class OpenAIMonitor {
               ...additionalLogs,
             },
             config,
-            this.inferencePipeline.id
+            this.openlayerInferencePipelineId
           );
         } else {
           const nonStreamedResponse = response as ChatCompletion;
@@ -749,7 +745,7 @@ export class OpenAIMonitor {
                 ...additionalLogs,
               },
               config,
-              this.inferencePipeline.id
+              this.openlayerInferencePipelineId
             );
           } else {
             console.error('No output received from OpenAI.');
@@ -780,9 +776,7 @@ export class OpenAIMonitor {
       console.error('No prompt provided.');
     }
 
-    if (!this.monitoringOn) {
-      console.warn('Monitoring is not active.');
-    } else if (typeof this.inferencePipeline === 'undefined') {
+    if (typeof this.openlayerInferencePipelineId === 'undefined') {
       console.error('No inference pipeline found.');
     }
 
@@ -799,7 +793,7 @@ export class OpenAIMonitor {
     const response = await this.openAIClient.completions.create(body, options);
 
     try {
-      if (this.monitoringOn && typeof this.inferencePipeline !== 'undefined') {
+      if (typeof this.openlayerInferencePipelineId !== 'undefined') {
         const config = {
           ...this.openlayerClient.defaultConfig,
           inputVariableNames: ['input'],
@@ -836,7 +830,7 @@ export class OpenAIMonitor {
               ...additionalLogs,
             },
             config,
-            this.inferencePipeline.id
+            this.openlayerInferencePipelineId
           );
         } else {
           const nonStreamedResponse = response as Completion;
@@ -864,7 +858,7 @@ export class OpenAIMonitor {
               ...additionalLogs,
             },
             config,
-            this.inferencePipeline.id
+            this.openlayerInferencePipelineId
           );
         }
       }
@@ -883,8 +877,8 @@ export class OpenAIMonitor {
    * @param {StreamingData} [additionalLogs] - Optional metadata logs to include with the request sent to Openlayer.
    * @returns {Promise<void>} A promise that resolves when the run data has been successfully published to Openlayer.
    */
-  public async logThreadRun(run: Run, additionalLogs?: StreamingData) {
-    if (typeof this.inferencePipeline === 'undefined') {
+  public async monitorThreadRun(run: Run, additionalLogs?: StreamingData) {
+    if (typeof this.openlayerInferencePipelineId === 'undefined') {
       console.error('No inference pipeline found.');
       return;
     }
@@ -949,18 +943,18 @@ export class OpenAIMonitor {
 
       this.openlayerClient.streamData(
         {
-          assistant_id,
+          'OpenAI Assistant ID': assistant_id,
+          'OpenAI Thread ID': thread_id,
           cost,
           latency,
           output: resolvedOutput,
-          thread_id,
           timestamp: run.created_at,
           tokens: total_tokens,
           ...inputVariablesMap,
           ...additionalLogs,
         },
         config,
-        this.inferencePipeline.id
+        this.openlayerInferencePipelineId
       );
     } catch (error) {
       console.error('Error logging thread run:', error);
@@ -970,52 +964,46 @@ export class OpenAIMonitor {
   /**
    * Starts monitoring for the OpenAI Monitor instance. If monitoring is already active, a warning is logged.
    */
-  public async startMonitoring() {
-    if (this.monitoringOn) {
-      console.warn('Monitor is already on.');
+  public async initialize() {
+    console.info(
+      'Initializing monitor: creating or loading an Openlayer project and inference pipeline...'
+    );
+
+    if (typeof this.openlayerInferencePipelineId !== 'undefined') {
+      console.info(
+        'Monitor initialized: using inference pipeline ID provided.'
+      );
       return;
     }
 
-    console.info(
-      'Starting monitor: creating or loading an Openlayer project and inference pipeline...'
-    );
-
     try {
-      this.monitoringOn = true;
-      this.project = await this.openlayerClient.createProject(
+      if (typeof this.openlayerProjectName === 'undefined') {
+        console.error('No project name provided.');
+        return;
+      }
+
+      const project = await this.openlayerClient.createProject(
         this.openlayerProjectName,
         'llm-base'
       );
 
-      if (typeof this.project !== 'undefined') {
-        this.inferencePipeline =
+      if (typeof project !== 'undefined') {
+        const inferencePipeline =
           await this.openlayerClient.createInferencePipeline(
-            this.project.id,
+            project.id,
             this.openlayerInferencePipelineName
           );
+
+        if (typeof inferencePipeline?.id === 'undefined') {
+          console.error('Unable to locate inference pipeline.');
+        } else {
+          this.openlayerInferencePipelineId = inferencePipeline.id;
+        }
       }
 
       console.info('Monitor started');
     } catch (error) {
       console.error('An error occurred while starting the monitor:', error);
-
-      this.stopMonitoring();
     }
-  }
-
-  /**
-   * Stops monitoring for the OpenAI Monitor instance. If monitoring is not active, a warning is logged.
-   */
-  public stopMonitoring() {
-    if (!this.monitoringOn) {
-      console.warn('Monitor is not active.');
-      return;
-    }
-
-    this.monitoringOn = false;
-    this.project = undefined;
-    this.inferencePipeline = undefined;
-
-    console.info('Monitor stopped.');
   }
 }
