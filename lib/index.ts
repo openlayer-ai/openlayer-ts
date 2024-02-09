@@ -878,12 +878,12 @@ export class OpenAIMonitor {
    * @returns {Promise<void>} A promise that resolves when the run data has been successfully published to Openlayer.
    */
   public async monitorThreadRun(run: Run, additionalLogs?: StreamingData) {
-    if (typeof this.openlayerInferencePipelineId === 'undefined') {
-      console.error('No inference pipeline found.');
+    if (run.status !== 'completed') {
       return;
     }
 
-    if (run.status !== 'completed') {
+    if (typeof this.openlayerInferencePipelineId === 'undefined') {
+      console.error('No inference pipeline found.');
       return;
     }
 
