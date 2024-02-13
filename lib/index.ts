@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import OpenAI from 'openai';
 import { RequestOptions } from 'openai/core';
 import {
@@ -340,7 +341,9 @@ export class OpenlayerClient {
       }
     );
 
-    const inferencePipeline = await createInferencePipelineResponse.json();
+    const inferencePipeline = (await createInferencePipelineResponse.json()) as
+      | OpenlayerInferencePipeline
+      | undefined;
 
     if (!inferencePipeline?.id) {
       throw new Error('Error creating inference pipeline');
@@ -382,7 +385,11 @@ export class OpenlayerClient {
       method: 'POST',
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      error?: string;
+      items?: OpenlayerProject[];
+    };
+
     const { items: projects, error } = data;
 
     if (!Array.isArray(projects)) {
@@ -431,7 +438,11 @@ export class OpenlayerClient {
     });
 
     const { items: inferencePipelines, error } =
-      await inferencePipelineResponse.json();
+      (await inferencePipelineResponse.json()) as {
+        error?: string;
+        items?: OpenlayerInferencePipeline[];
+      };
+
     const inferencePipeline = Array.isArray(inferencePipelines)
       ? inferencePipelines.find((p) => p.name === name)
       : undefined;
@@ -472,7 +483,10 @@ export class OpenlayerClient {
     });
 
     const data = await response.json();
-    const { items: projects, error } = data;
+    const { items: projects, error } = data as {
+      error?: string;
+      items?: OpenlayerProject[];
+    };
 
     if (!Array.isArray(projects)) {
       throw new Error(
