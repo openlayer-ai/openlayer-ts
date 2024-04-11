@@ -25,13 +25,12 @@ export class CLIHandler {
   public runFromCLI() {
     program
       .requiredOption('--dataset-path <path>', 'Path to the dataset')
-      .requiredOption('--dataset-name <name>', 'Name of the dataset')
-      .option('--output-path <path>', 'Path to dump the results', 'output');
+      .requiredOption('--output-dir <path>', 'Directory to place results');
 
     program.parse(process.argv);
 
     const options = program.opts();
-    const { datasetPath, datasetName, outputPath } = options;
+    const { datasetPath, outputDir } = options;
 
     // Load dataset
     const datasetFullPath = path.resolve(datasetPath);
@@ -49,9 +48,9 @@ export class CLIHandler {
       .then((results) => {
         /*
          * Wait for all rows to be run
-         * Write resultsnow  to output path slash dataset name or log to console
+         * Write results now to output dir or log to console
          */
-        this.writeOutput(results, outputPath, datasetName);
+        this.writeOutput(results, outputDir);
         console.log('Results processing completed. Check console for output.');
       })
       .catch((err) => {
@@ -59,18 +58,14 @@ export class CLIHandler {
       });
   }
 
-  private writeOutput(
-    results: RunReturn[],
-    outputDir: string,
-    datasetName: string
-  ) {
+  private writeOutput(results: RunReturn[], outputDir: string) {
     const config: Config = {
       metadata: { outputTimestamp: Date.now() },
       outputColumnName: 'output',
     };
 
     // Construct an output directory {outputDir}/{datasetName}/
-    const outputDirPath = path.join(path.resolve(outputDir), datasetName);
+    const outputDirPath = path.resolve(outputDir);
     fs.mkdirSync(outputDirPath, { recursive: true });
 
     const datasetPath = path.join(outputDirPath, 'dataset.json');
