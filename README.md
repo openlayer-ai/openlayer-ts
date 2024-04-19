@@ -1,5 +1,5 @@
 <div align="left">
-  <img src="static/logo.png"><br>
+  <img src="static/logo-purple-text.svg"><br>
 </div>
 
 # Openlayer | JavaScript/TypeScript Library
