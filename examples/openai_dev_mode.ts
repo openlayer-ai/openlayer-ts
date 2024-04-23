@@ -4,10 +4,10 @@
  * node dist/run.js --dataset-path {{ path }} --dataset-name {{ name }}
  */
 
-import { RunReturn } from 'openlayer/lib/utils/run';
-import { OpenAIMonitor } from 'openlayer';
-import { CLIHandler } from 'openlayer/cli/cliHandler';
 import { ChatCompletion } from 'openai/resources';
+import { OpenAIMonitor } from 'openlayer';
+import { CLIHandler } from 'openlayer/cli';
+import { RunReturn } from 'openlayer/run';
 
 export class MyModel {
   private monitor: OpenAIMonitor;

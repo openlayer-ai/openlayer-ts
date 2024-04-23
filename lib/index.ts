@@ -16,7 +16,7 @@ import {
 import { Run } from 'openai/resources/beta/threads/runs/runs';
 import { Stream } from 'openai/streaming';
 import { v4 as uuid } from 'uuid';
-import { RequestParameters, resolvedQuery } from './utils/request';
+import { RequestParameters, resolvedQuery } from './request';
 
 /* eslint-disable camelcase */
 
