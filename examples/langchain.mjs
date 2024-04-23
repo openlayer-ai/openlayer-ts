@@ -4,6 +4,8 @@
 
 import { ChatOpenAI } from 'langchain/chat_models/openai';
 import { OpenlayerClient } from 'openlayer';
+import { RunReturn } from 'openlayer/run';
+import { CLIHandler } from 'openlayer/cli';
 
 // Instantiate the Openlayer client with your API key
 const openlayer = new OpenlayerClient({

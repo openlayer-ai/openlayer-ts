@@ -13,7 +13,7 @@
 import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config, RunReturn } from '../utils/run';
+import { Config, RunReturn } from './run';
 
 export class CLIHandler {
   private run: (...args: any[]) => Promise<any>;
