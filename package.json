@@ -1,9 +1,9 @@
 {
   "name": "openlayer",
-  "version": "0.1.40",
+  "version": "0.1.44",
   "description": "The Openlayer TypeScript client",
-  "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "scripts": {
     "prepublish": "npm run build",
     "build": "tsc",
@@ -26,18 +26,5 @@
   "devDependencies": {
     "@types/uuid": "^9.0.7",
     "typescript": "^5.2.2"
-  },
-  "exports": {
-    ".": {
-      "import": "./lib/index.ts"
-    },
-    "./cli": {
-      "import": "./lib/cli.ts",
-      "types": "./lib/cli.d.ts"
-    },
-    "./run": {
-      "import": "./lib/run.ts",
-      "types": "./lib/run.d.ts"
-    }
   }
 }
