@@ -41,7 +41,7 @@ export class MyModel {
         ],
         model,
       },
-      undefined
+      undefined,
     );
     const result = (response as ChatCompletion).choices[0].message.content;
     return { otherFields: { model }, output: result };
