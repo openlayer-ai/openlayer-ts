@@ -3,29 +3,37 @@
  */
 
 import OpenAI from 'openai';
-import { OpenAIMonitor } from 'openlayer';
+import Openlayer from 'openlayer';
+import OpenAIMonitor from 'openlayer/lib/core/openai-monitor';
 
+const openAiApiKey = 'YOUR_OPENAI_API_KEY';
+const openlayerApiKey = 'YOUR_OPENLAYER_API_KEY';
+/*
+ * Specify the inference pipeline ID you want to stream the results to
+ * You can create an inference pipeline in the Openlayer UI
+ */
+const openlayerInferencePipelineId = 'YOUR_OPENLAYER_INFERENCE_PIPELINE_ID';
+
+// Instantiate the OpenAI client with your API key
 const openai = new OpenAI({
-  apiKey: 'YOUR_OPENAI_API_KEY',
+  apiKey: openAiApiKey,
+});
+
+// Instantiate the Openlayer client with your API key
+const openlayerClient = new Openlayer({
+  apiKey: openlayerApiKey,
 });
 
 // Create monitor with your credentials
 const monitor = new OpenAIMonitor({
-  openAiApiKey: 'YOUR_OPENAI_API_KEY',
-  openlayerApiKey: 'YOUR_OPENLAYER_API_KEY',
-  // EITHER specify an existing inference pipeline ID
-  openlayerInferencePipelineId: 'YOUR_OPENLAYER_INFERENCE_PIPELINE_ID',
-  // OR the project and inference pipeline names to create or load one
-  openlayerInferencePipelineName: 'production',
-  openlayerProjectName: 'YOUR_OPENLAYER_PROJECT_NAME',
+  openAiApiKey,
+  openlayerClient,
+  openlayerInferencePipelineId,
 });
-
-await monitor.initialize();
 
 // Create the assistant
 const assistant = await openai.beta.assistants.create({
-  description:
-    'You are great at creating and explaining beautiful data visualizations.',
+  description: 'You are great at creating and explaining beautiful data visualizations.',
   model: 'gpt-4',
   name: 'Data visualizer',
   tools: [{ type: 'code_interpreter' }],
@@ -35,7 +43,7 @@ const assistant = await openai.beta.assistants.create({
 const thread = await openai.beta.threads.create({
   messages: [
     {
-      content: 'Create a data visualization of the american GDP.',
+      content: 'Create a data visualization of the American GDP.',
       role: 'user',
     },
   ],
@@ -48,7 +56,7 @@ const run = await openai.beta.threads.runs.create(thread.id, {
 
 // Keep polling the run results
 let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-while (runStatus.status !== 'completed') {
+while (!['cancelled', 'expired', 'failed', 'completed'].includes(runStatus.status)) {
   runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
 
   // Monitor the run. If complete, it will be sent to Openlayer
