@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (2024-06-10)
+
+Full Changelog: [v0.2.0...v0.2.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.0...v0.2.1)
+
+### Chores
+
+* **internal:** version bump ([#13](https://github.com/openlayer-ai/openlayer-ts/issues/13)) ([f0dbf8b](https://github.com/openlayer-ai/openlayer-ts/commit/f0dbf8b19ec08829b1a68053cff0e7ea6c139a75))
+
 ## 0.2.0 (2024-06-10)
 
 Full Changelog: [v0.1.45...v0.2.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.1.45...v0.2.0)
