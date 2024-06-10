@@ -152,9 +152,9 @@ class OpenAIMonitor {
     }));
 
   private threadPrompt = async (
-    fromMessages: Threads.ThreadMessagesPage,
+    fromMessages: Threads.MessagesPage,
   ): Promise<ChatCompletionMessageParam[]> => {
-    const messages: Threads.Messages.ThreadMessage[] = [];
+    const messages: Threads.Messages.Message[] = [];
     for await (const page of fromMessages.iterPages()) {
       messages.push(...page.getPaginatedItems());
     }
