@@ -1,39 +1,412 @@
-<div align="left">
-  <img src="static/logo-purple-text.svg"><br>
-</div>
+# Openlayer Node API Library
 
-# Openlayer | JavaScript/TypeScript Library
+[![NPM version](https://img.shields.io/npm/v/openlayer.svg)](https://npmjs.org/package/openlayer) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/openlayer)
 
-[![npm version](https://badge.fury.io/js/openlayer.svg)](https://badge.fury.io/js/openlayer)
+This library provides convenient access to the Openlayer REST API from server-side TypeScript or JavaScript.
 
-## What is it?
+The REST API documentation can be found [on openlayer.com](https://openlayer.com/docs/api-reference/rest/overview). The full API of this library can be found in [api.md](api.md).
 
-Openlayer is a debugging workspace for ML & Data Science. Openlayer combines and builds upon SOTA techniques in explainability, model and dataset versioning, synthetic data generation, data-centric testing and much more to form a powerful, **unified platform for model development**.
-
-👉 [Join our Discord community!](https://discord.gg/t6wS2g6MMB) We'd love to meet you and help you get started with Openlayer!
-
-This is the official JavaScript/TypeScript library for interacting with the Openlayer platform. Navigate [here](https://docs.openlayer.com) for a quickstart guide and for in-depth tutorials.
-
-## Main Features
-
-This library's primary function is to enable you to easily package your models and datasets and add them to your Openlayer account.
+It is generated with [Stainless](https://www.stainlessapi.com/).
 
 ## Installation
 
-Install with npm
-
-```console
-npm i openlayer
+```sh
+npm install git+ssh://git@github.com:openlayer-ai/openlayer-ts.git
 ```
+
+> [!NOTE]
+> Once this package is [published to npm](https://app.stainlessapi.com/docs/guides/publish), this will become: `npm install openlayer`
 
 ## Usage
 
-[Example usage available in our docs](https://docs.openlayer.com/quickstarts/llm-quickstart)
+The full API of this library can be found in [api.md](api.md).
 
-## Documentation
+<!-- prettier-ignore -->
+```js
+import Openlayer from 'openlayer';
 
-The official documentation for this library can be found [here](https://docs.openlayer.com).
+const openlayer = new Openlayer({
+  apiKey: process.env['OPENLAYER_API_KEY'], // This is the default and can be omitted
+});
 
-## Contributing
+async function main() {
+  const dataStreamResponse = await openlayer.inferencePipelines.data.stream(
+    '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+    {
+      config: {
+        inputVariableNames: ['user_query'],
+        outputColumnName: 'output',
+        numOfTokenColumnName: 'tokens',
+        costColumnName: 'cost',
+        timestampColumnName: 'timestamp',
+      },
+      rows: [
+        {
+          user_query: "what's the meaning of life?",
+          output: '42',
+          tokens: 7,
+          cost: 0.02,
+          timestamp: 1620000000,
+        },
+      ],
+    },
+  );
 
-All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome! Just send us a message on [Discord](https://discord.gg/t6wS2g6MMB).
+  console.log(dataStreamResponse.success);
+}
+
+main();
+```
+
+### Request & Response types
+
+This library includes TypeScript definitions for all request params and response fields. You may import and use them like so:
+
+<!-- prettier-ignore -->
+```ts
+import Openlayer from 'openlayer';
+
+const openlayer = new Openlayer({
+  apiKey: process.env['OPENLAYER_API_KEY'], // This is the default and can be omitted
+});
+
+async function main() {
+  const params: Openlayer.InferencePipelines.DataStreamParams = {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
+    },
+    rows: [
+      {
+        user_query: "what's the meaning of life?",
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1620000000,
+      },
+    ],
+  };
+  const dataStreamResponse: Openlayer.InferencePipelines.DataStreamResponse =
+    await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
+}
+
+main();
+```
+
+Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
+
+## Handling errors
+
+When the library is unable to connect to the API,
+or if the API returns a non-success status code (i.e., 4xx or 5xx response),
+a subclass of `APIError` will be thrown:
+
+<!-- prettier-ignore -->
+```ts
+async function main() {
+  const dataStreamResponse = await openlayer.inferencePipelines.data
+    .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      config: {
+        inputVariableNames: ['user_query'],
+        outputColumnName: 'output',
+        numOfTokenColumnName: 'tokens',
+        costColumnName: 'cost',
+        timestampColumnName: 'timestamp',
+      },
+      rows: [
+        {
+          user_query: "what's the meaning of life?",
+          output: '42',
+          tokens: 7,
+          cost: 0.02,
+          timestamp: 1620000000,
+        },
+      ],
+    })
+    .catch(async (err) => {
+      if (err instanceof Openlayer.APIError) {
+        console.log(err.status); // 400
+        console.log(err.name); // BadRequestError
+        console.log(err.headers); // {server: 'nginx', ...}
+      } else {
+        throw err;
+      }
+    });
+}
+
+main();
+```
+
+Error codes are as followed:
+
+| Status Code | Error Type                 |
+| ----------- | -------------------------- |
+| 400         | `BadRequestError`          |
+| 401         | `AuthenticationError`      |
+| 403         | `PermissionDeniedError`    |
+| 404         | `NotFoundError`            |
+| 422         | `UnprocessableEntityError` |
+| 429         | `RateLimitError`           |
+| >=500       | `InternalServerError`      |
+| N/A         | `APIConnectionError`       |
+
+### Retries
+
+Certain errors will be automatically retried 2 times by default, with a short exponential backoff.
+Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict,
+429 Rate Limit, and >=500 Internal errors will all be retried by default.
+
+You can use the `maxRetries` option to configure or disable this:
+
+<!-- prettier-ignore -->
+```js
+// Configure the default for all requests:
+const openlayer = new Openlayer({
+  maxRetries: 0, // default is 2
+});
+
+// Or, configure per-request:
+await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+  maxRetries: 5,
+});
+```
+
+### Timeouts
+
+Requests time out after 1 minute by default. You can configure this with a `timeout` option:
+
+<!-- prettier-ignore -->
+```ts
+// Configure the default for all requests:
+const openlayer = new Openlayer({
+  timeout: 20 * 1000, // 20 seconds (default is 1 minute)
+});
+
+// Override per-request:
+await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+  timeout: 5 * 1000,
+});
+```
+
+On timeout, an `APIConnectionTimeoutError` is thrown.
+
+Note that requests which time out will be [retried twice by default](#retries).
+
+## Advanced Usage
+
+### Accessing raw Response data (e.g., headers)
+
+The "raw" `Response` returned by `fetch()` can be accessed through the `.asResponse()` method on the `APIPromise` type that all methods return.
+
+You can also use the `.withResponse()` method to get the raw `Response` along with the parsed data.
+
+<!-- prettier-ignore -->
+```ts
+const openlayer = new Openlayer();
+
+const response = await openlayer.inferencePipelines.data
+  .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
+    },
+    rows: [
+      {
+        user_query: "what's the meaning of life?",
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1620000000,
+      },
+    ],
+  })
+  .asResponse();
+console.log(response.headers.get('X-My-Header'));
+console.log(response.statusText); // access the underlying Response object
+
+const { data: dataStreamResponse, response: raw } = await openlayer.inferencePipelines.data
+  .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
+    },
+    rows: [
+      {
+        user_query: "what's the meaning of life?",
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1620000000,
+      },
+    ],
+  })
+  .withResponse();
+console.log(raw.headers.get('X-My-Header'));
+console.log(dataStreamResponse.success);
+```
+
+### Making custom/undocumented requests
+
+This library is typed for convenient access to the documented API. If you need to access undocumented
+endpoints, params, or response properties, the library can still be used.
+
+#### Undocumented endpoints
+
+To make requests to undocumented endpoints, you can use `client.get`, `client.post`, and other HTTP verbs.
+Options on the client, such as retries, will be respected when making these requests.
+
+```ts
+await client.post('/some/path', {
+  body: { some_prop: 'foo' },
+  query: { some_query_arg: 'bar' },
+});
+```
+
+#### Undocumented request params
+
+To make requests using undocumented parameters, you may use `// @ts-expect-error` on the undocumented
+parameter. This library doesn't validate at runtime that the request matches the type, so any extra values you
+send will be sent as-is.
+
+```ts
+client.foo.create({
+  foo: 'my_param',
+  bar: 12,
+  // @ts-expect-error baz is not yet public
+  baz: 'undocumented option',
+});
+```
+
+For requests with the `GET` verb, any extra params will be in the query, all other requests will send the
+extra param in the body.
+
+If you want to explicitly send an extra argument, you can do so with the `query`, `body`, and `headers` request
+options.
+
+#### Undocumented response properties
+
+To access undocumented response properties, you may access the response object with `// @ts-expect-error` on
+the response object, or cast the response object to the requisite type. Like the request params, we do not
+validate or strip extra properties from the response from the API.
+
+### Customizing the fetch client
+
+By default, this library uses `node-fetch` in Node, and expects a global `fetch` function in other environments.
+
+If you would prefer to use a global, web-standards-compliant `fetch` function even in a Node environment,
+(for example, if you are running Node with `--experimental-fetch` or using NextJS which polyfills with `undici`),
+add the following import before your first import `from "Openlayer"`:
+
+```ts
+// Tell TypeScript and the package to use the global web fetch instead of node-fetch.
+// Note, despite the name, this does not add any polyfills, but expects them to be provided if needed.
+import 'openlayer/shims/web';
+import Openlayer from 'openlayer';
+```
+
+To do the inverse, add `import "openlayer/shims/node"` (which does import polyfills).
+This can also be useful if you are getting the wrong TypeScript types for `Response` ([more details](https://github.com/openlayer-ai/openlayer-ts/tree/main/src/_shims#readme)).
+
+### Logging and middleware
+
+You may also provide a custom `fetch` function when instantiating the client,
+which can be used to inspect or alter the `Request` or `Response` before/after each request:
+
+```ts
+import { fetch } from 'undici'; // as one example
+import Openlayer from 'openlayer';
+
+const client = new Openlayer({
+  fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    console.log('About to make a request', url, init);
+    const response = await fetch(url, init);
+    console.log('Got response', response);
+    return response;
+  },
+});
+```
+
+Note that if given a `DEBUG=true` environment variable, this library will log all requests and responses automatically.
+This is intended for debugging purposes only and may change in the future without notice.
+
+### Configuring an HTTP(S) Agent (e.g., for proxies)
+
+By default, this library uses a stable agent for all http/https requests to reuse TCP connections, eliminating many TCP & TLS handshakes and shaving around 100ms off most requests.
+
+If you would like to disable or customize this behavior, for example to use the API behind a proxy, you can pass an `httpAgent` which is used for all requests (be they http or https), for example:
+
+<!-- prettier-ignore -->
+```ts
+import http from 'http';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+// Configure the default for all requests:
+const openlayer = new Openlayer({
+  httpAgent: new HttpsProxyAgent(process.env.PROXY_URL),
+});
+
+// Override per-request:
+await openlayer.inferencePipelines.data.stream(
+  '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+  {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
+    },
+    rows: [
+      {
+        user_query: "what's the meaning of life?",
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1620000000,
+      },
+    ],
+  },
+  {
+    httpAgent: new http.Agent({ keepAlive: false }),
+  },
+);
+```
+
+## Semantic versioning
+
+This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
+
+1. Changes that only affect static types, without breaking runtime behavior.
+2. Changes to library internals which are technically public but not intended or documented for external use. _(Please open a GitHub issue to let us know if you are relying on such internals)_.
+3. Changes that we do not expect to impact the vast majority of users in practice.
+
+We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
+
+We are keen for your feedback; please open an [issue](https://www.github.com/openlayer-ai/openlayer-ts/issues) with questions, bugs, or suggestions.
+
+## Requirements
+
+TypeScript >= 4.5 is supported.
+
+The following runtimes are supported:
+
+- Node.js 18 LTS or later ([non-EOL](https://endoflife.date/nodejs)) versions.
+- Deno v1.28.0 or higher, using `import Openlayer from "npm:openlayer"`.
+- Bun 1.0 or later.
+- Cloudflare Workers.
+- Vercel Edge Runtime.
+- Jest 28 or greater with the `"node"` environment (`"jsdom"` is not supported at this time).
+- Nitro v2.6 or greater.
+
+Note that React Native is not supported at this time.
+
+If you are interested in other runtime environments, please open or upvote an issue on GitHub.
