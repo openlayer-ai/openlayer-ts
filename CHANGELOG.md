@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2024-06-27)
+
+Full Changelog: [v0.2.1...v0.3.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.1...v0.3.0)
+
+### Features
+
+* **api:** update via SDK Studio ([#16](https://github.com/openlayer-ai/openlayer-ts/issues/16)) ([699ba47](https://github.com/openlayer-ai/openlayer-ts/commit/699ba477252cac4546237afd55f5375171fff381))
+
 ## 0.2.1 (2024-06-10)
 
 Full Changelog: [v0.2.0...v0.2.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.0...v0.2.1)
