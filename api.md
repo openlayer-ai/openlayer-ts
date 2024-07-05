@@ -2,10 +2,12 @@
 
 Types:
 
+- <code><a href="./src/resources/projects/projects.ts">ProjectCreateResponse</a></code>
 - <code><a href="./src/resources/projects/projects.ts">ProjectListResponse</a></code>
 
 Methods:
 
+- <code title="post /projects">client.projects.<a href="./src/resources/projects/projects.ts">create</a>({ ...params }) -> ProjectCreateResponse</code>
 - <code title="get /projects">client.projects.<a href="./src/resources/projects/projects.ts">list</a>({ ...params }) -> ProjectListResponse</code>
 
 ## Commits
@@ -22,10 +24,12 @@ Methods:
 
 Types:
 
+- <code><a href="./src/resources/projects/inference-pipelines.ts">InferencePipelineCreateResponse</a></code>
 - <code><a href="./src/resources/projects/inference-pipelines.ts">InferencePipelineListResponse</a></code>
 
 Methods:
 
+- <code title="post /projects/{id}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">create</a>(id, { ...params }) -> InferencePipelineCreateResponse</code>
 - <code title="get /projects/{id}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">list</a>(id, { ...params }) -> InferencePipelineListResponse</code>
 
 # Commits

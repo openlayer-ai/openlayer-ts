@@ -2,8 +2,16 @@
 
 export { CommitListResponse, CommitListParams, Commits } from './commits';
 export {
+  InferencePipelineCreateResponse,
   InferencePipelineListResponse,
+  InferencePipelineCreateParams,
   InferencePipelineListParams,
   InferencePipelines,
 } from './inference-pipelines';
-export { ProjectListResponse, ProjectListParams, Projects } from './projects';
+export {
+  ProjectCreateResponse,
+  ProjectListResponse,
+  ProjectCreateParams,
+  ProjectListParams,
+  Projects,
+} from './projects';
