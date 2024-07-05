@@ -27,29 +27,9 @@ const openlayer = new Openlayer({
 });
 
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data.stream(
-    '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-    {
-      config: {
-        inputVariableNames: ['user_query'],
-        outputColumnName: 'output',
-        numOfTokenColumnName: 'tokens',
-        costColumnName: 'cost',
-        timestampColumnName: 'timestamp',
-      },
-      rows: [
-        {
-          user_query: "what's the meaning of life?",
-          output: '42',
-          tokens: 7,
-          cost: 0.02,
-          timestamp: 1620000000,
-        },
-      ],
-    },
-  );
+  const projectCreateResponse = await openlayer.projects.create({ name: 'My Project', taskType: 'llm-base' });
 
-  console.log(dataStreamResponse.success);
+  console.log(projectCreateResponse.id);
 }
 
 main();
@@ -68,26 +48,8 @@ const openlayer = new Openlayer({
 });
 
 async function main() {
-  const params: Openlayer.InferencePipelines.DataStreamParams = {
-    config: {
-      inputVariableNames: ['user_query'],
-      outputColumnName: 'output',
-      numOfTokenColumnName: 'tokens',
-      costColumnName: 'cost',
-      timestampColumnName: 'timestamp',
-    },
-    rows: [
-      {
-        user_query: "what's the meaning of life?",
-        output: '42',
-        tokens: 7,
-        cost: 0.02,
-        timestamp: 1620000000,
-      },
-    ],
-  };
-  const dataStreamResponse: Openlayer.InferencePipelines.DataStreamResponse =
-    await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
+  const params: Openlayer.ProjectCreateParams = { name: 'My Project', taskType: 'llm-base' };
+  const projectCreateResponse: Openlayer.ProjectCreateResponse = await openlayer.projects.create(params);
 }
 
 main();
@@ -104,25 +66,8 @@ a subclass of `APIError` will be thrown:
 <!-- prettier-ignore -->
 ```ts
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data
-    .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-      config: {
-        inputVariableNames: ['user_query'],
-        outputColumnName: 'output',
-        numOfTokenColumnName: 'tokens',
-        costColumnName: 'cost',
-        timestampColumnName: 'timestamp',
-      },
-      rows: [
-        {
-          user_query: "what's the meaning of life?",
-          output: '42',
-          tokens: 7,
-          cost: 0.02,
-          timestamp: 1620000000,
-        },
-      ],
-    })
+  const projectCreateResponse = await openlayer.projects
+    .create({ name: 'My Project', taskType: 'llm-base' })
     .catch(async (err) => {
       if (err instanceof Openlayer.APIError) {
         console.log(err.status); // 400
@@ -166,7 +111,7 @@ const openlayer = new Openlayer({
 });
 
 // Or, configure per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await openlayer.projects.create({ name: 'My Project', taskType: 'llm-base' }, {
   maxRetries: 5,
 });
 ```
@@ -183,7 +128,7 @@ const openlayer = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await openlayer.projects.create({ name: 'My Project', taskType: 'llm-base' }, {
   timeout: 5 * 1000,
 });
 ```
@@ -204,51 +149,15 @@ You can also use the `.withResponse()` method to get the raw `Response` along wi
 ```ts
 const openlayer = new Openlayer();
 
-const response = await openlayer.inferencePipelines.data
-  .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-    config: {
-      inputVariableNames: ['user_query'],
-      outputColumnName: 'output',
-      numOfTokenColumnName: 'tokens',
-      costColumnName: 'cost',
-      timestampColumnName: 'timestamp',
-    },
-    rows: [
-      {
-        user_query: "what's the meaning of life?",
-        output: '42',
-        tokens: 7,
-        cost: 0.02,
-        timestamp: 1620000000,
-      },
-    ],
-  })
-  .asResponse();
+const response = await openlayer.projects.create({ name: 'My Project', taskType: 'llm-base' }).asResponse();
 console.log(response.headers.get('X-My-Header'));
 console.log(response.statusText); // access the underlying Response object
 
-const { data: dataStreamResponse, response: raw } = await openlayer.inferencePipelines.data
-  .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-    config: {
-      inputVariableNames: ['user_query'],
-      outputColumnName: 'output',
-      numOfTokenColumnName: 'tokens',
-      costColumnName: 'cost',
-      timestampColumnName: 'timestamp',
-    },
-    rows: [
-      {
-        user_query: "what's the meaning of life?",
-        output: '42',
-        tokens: 7,
-        cost: 0.02,
-        timestamp: 1620000000,
-      },
-    ],
-  })
+const { data: projectCreateResponse, response: raw } = await openlayer.projects
+  .create({ name: 'My Project', taskType: 'llm-base' })
   .withResponse();
 console.log(raw.headers.get('X-My-Header'));
-console.log(dataStreamResponse.success);
+console.log(projectCreateResponse.id);
 ```
 
 ### Making custom/undocumented requests
@@ -352,26 +261,8 @@ const openlayer = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream(
-  '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-  {
-    config: {
-      inputVariableNames: ['user_query'],
-      outputColumnName: 'output',
-      numOfTokenColumnName: 'tokens',
-      costColumnName: 'cost',
-      timestampColumnName: 'timestamp',
-    },
-    rows: [
-      {
-        user_query: "what's the meaning of life?",
-        output: '42',
-        tokens: 7,
-        cost: 0.02,
-        timestamp: 1620000000,
-      },
-    ],
-  },
+await openlayer.projects.create(
+  { name: 'My Project', taskType: 'llm-base' },
   {
     httpAgent: new http.Agent({ keepAlive: false }),
   },
