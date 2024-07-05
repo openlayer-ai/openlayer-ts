@@ -191,7 +191,9 @@ export namespace Openlayer {
   export import RequestOptions = Core.RequestOptions;
 
   export import Projects = API.Projects;
+  export import ProjectCreateResponse = API.ProjectCreateResponse;
   export import ProjectListResponse = API.ProjectListResponse;
+  export import ProjectCreateParams = API.ProjectCreateParams;
   export import ProjectListParams = API.ProjectListParams;
 
   export import Commits = API.Commits;

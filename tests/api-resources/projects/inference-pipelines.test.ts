@@ -9,6 +9,32 @@ const openlayer = new Openlayer({
 });
 
 describe('resource inferencePipelines', () => {
+  test('create: only required params', async () => {
+    const responsePromise = openlayer.projects.inferencePipelines.create(
+      '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+      { description: 'This pipeline is used for production.', name: 'production' },
+    );
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('create: required and optional params', async () => {
+    const response = await openlayer.projects.inferencePipelines.create(
+      '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+      {
+        description: 'This pipeline is used for production.',
+        name: 'production',
+        referenceDatasetUri: 's3://...',
+        storageType: 's3',
+      },
+    );
+  });
+
   test('list', async () => {
     const responsePromise = openlayer.projects.inferencePipelines.list(
       '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',

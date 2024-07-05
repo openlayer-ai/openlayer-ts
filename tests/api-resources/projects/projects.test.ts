@@ -9,6 +9,34 @@ const openlayer = new Openlayer({
 });
 
 describe('resource projects', () => {
+  test('create: only required params', async () => {
+    const responsePromise = openlayer.projects.create({ name: 'My Project', taskType: 'llm-base' });
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('create: required and optional params', async () => {
+    const response = await openlayer.projects.create({
+      name: 'My Project',
+      taskType: 'llm-base',
+      description: 'My project description.',
+      gitRepo: {
+        gitId: 0,
+        branch: 'string',
+        rootDir: 'string',
+        gitAccountId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+      },
+      slackChannelId: 'C01B2PZQX1Z',
+      slackChannelName: '#my-project',
+      slackChannelNotificationsEnabled: true,
+    });
+  });
+
   test('list', async () => {
     const responsePromise = openlayer.projects.list();
     const rawResponse = await responsePromise.asResponse();
