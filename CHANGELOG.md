@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2 (2024-07-05)
+
+Full Changelog: [v0.2.1...v0.2.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.1...v0.2.2)
+
+### Features
+
+* **api:** update via SDK Studio ([#16](https://github.com/openlayer-ai/openlayer-ts/issues/16)) ([699ba47](https://github.com/openlayer-ai/openlayer-ts/commit/699ba477252cac4546237afd55f5375171fff381))
+
+
+### Chores
+
+* go live ([#18](https://github.com/openlayer-ai/openlayer-ts/issues/18)) ([fadc413](https://github.com/openlayer-ai/openlayer-ts/commit/fadc41325e5427f4b0d43281407b5f57f72f7854))
+* update SDK settings ([#19](https://github.com/openlayer-ai/openlayer-ts/issues/19)) ([862666d](https://github.com/openlayer-ai/openlayer-ts/commit/862666da0c19f2cdb373be7aa89660c1fab9df8f))
+
 ## 0.2.1 (2024-06-10)
 
 Full Changelog: [v0.2.0...v0.2.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.0...v0.2.1)
