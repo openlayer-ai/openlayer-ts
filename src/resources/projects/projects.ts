@@ -14,6 +14,13 @@ export class Projects extends APIResource {
   );
 
   /**
+   * Create a project under the current workspace.
+   */
+  create(body: ProjectCreateParams, options?: Core.RequestOptions): Core.APIPromise<ProjectCreateResponse> {
+    return this._client.post('/projects', { body, ...options });
+  }
+
+  /**
    * List the projects in a user's workspace.
    */
   list(query?: ProjectListParams, options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
@@ -26,6 +33,145 @@ export class Projects extends APIResource {
       return this.list({}, query);
     }
     return this._client.get('/projects', { query, ...options });
+  }
+}
+
+export interface ProjectCreateResponse {
+  /**
+   * The project id.
+   */
+  id: string;
+
+  /**
+   * The project creator id.
+   */
+  creatorId: string | null;
+
+  /**
+   * The project creation date.
+   */
+  dateCreated: string;
+
+  /**
+   * The project last updated date.
+   */
+  dateUpdated: string;
+
+  /**
+   * The number of tests in the development mode of the project.
+   */
+  developmentGoalCount: number;
+
+  /**
+   * The total number of tests in the project.
+   */
+  goalCount: number;
+
+  /**
+   * The number of inference pipelines in the project.
+   */
+  inferencePipelineCount: number;
+
+  /**
+   * Links to the project.
+   */
+  links: ProjectCreateResponse.Links;
+
+  /**
+   * The number of tests in the monitoring mode of the project.
+   */
+  monitoringGoalCount: number;
+
+  /**
+   * The project name.
+   */
+  name: string;
+
+  /**
+   * Whether the project is a sample project or a user-created project.
+   */
+  sample: boolean;
+
+  /**
+   * The source of the project.
+   */
+  source: 'web' | 'api' | 'null' | null;
+
+  /**
+   * The task type of the project.
+   */
+  taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
+
+  /**
+   * The number of versions (commits) in the project.
+   */
+  versionCount: number;
+
+  /**
+   * The workspace id.
+   */
+  workspaceId: string | null;
+
+  /**
+   * The project description.
+   */
+  description?: string | null;
+
+  gitRepo?: ProjectCreateResponse.GitRepo | null;
+
+  /**
+   * The slack channel id connected to the project.
+   */
+  slackChannelId?: string | null;
+
+  /**
+   * The slack channel connected to the project.
+   */
+  slackChannelName?: string | null;
+
+  /**
+   * Whether slack channel notifications are enabled for the project.
+   */
+  slackChannelNotificationsEnabled?: boolean;
+
+  /**
+   * The number of unread notifications in the project.
+   */
+  unreadNotificationCount?: number;
+}
+
+export namespace ProjectCreateResponse {
+  /**
+   * Links to the project.
+   */
+  export interface Links {
+    app: string;
+  }
+
+  export interface GitRepo {
+    id: string;
+
+    dateConnected: string;
+
+    dateUpdated: string;
+
+    gitAccountId: string;
+
+    gitId: number;
+
+    name: string;
+
+    private: boolean;
+
+    projectId: string;
+
+    slug: string;
+
+    url: string;
+
+    branch?: string;
+
+    rootDir?: string;
   }
 }
 
@@ -198,6 +344,52 @@ export namespace ProjectListResponse {
   }
 }
 
+export interface ProjectCreateParams {
+  /**
+   * The project name.
+   */
+  name: string;
+
+  /**
+   * The task type of the project.
+   */
+  taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
+
+  /**
+   * The project description.
+   */
+  description?: string | null;
+
+  gitRepo?: ProjectCreateParams.GitRepo | null;
+
+  /**
+   * The slack channel id connected to the project.
+   */
+  slackChannelId?: string | null;
+
+  /**
+   * The slack channel connected to the project.
+   */
+  slackChannelName?: string | null;
+
+  /**
+   * Whether slack channel notifications are enabled for the project.
+   */
+  slackChannelNotificationsEnabled?: boolean;
+}
+
+export namespace ProjectCreateParams {
+  export interface GitRepo {
+    gitAccountId: string;
+
+    gitId: number;
+
+    branch?: string;
+
+    rootDir?: string;
+  }
+}
+
 export interface ProjectListParams {
   /**
    * Filter list of items by project name.
@@ -221,12 +413,16 @@ export interface ProjectListParams {
 }
 
 export namespace Projects {
+  export import ProjectCreateResponse = ProjectsAPI.ProjectCreateResponse;
   export import ProjectListResponse = ProjectsAPI.ProjectListResponse;
+  export import ProjectCreateParams = ProjectsAPI.ProjectCreateParams;
   export import ProjectListParams = ProjectsAPI.ProjectListParams;
   export import Commits = CommitsAPI.Commits;
   export import CommitListResponse = CommitsAPI.CommitListResponse;
   export import CommitListParams = CommitsAPI.CommitListParams;
   export import InferencePipelines = InferencePipelinesAPI.InferencePipelines;
+  export import InferencePipelineCreateResponse = InferencePipelinesAPI.InferencePipelineCreateResponse;
   export import InferencePipelineListResponse = InferencePipelinesAPI.InferencePipelineListResponse;
+  export import InferencePipelineCreateParams = InferencePipelinesAPI.InferencePipelineCreateParams;
   export import InferencePipelineListParams = InferencePipelinesAPI.InferencePipelineListParams;
 }
