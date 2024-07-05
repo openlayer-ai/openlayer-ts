@@ -31,9 +31,6 @@ describe('resource projects', () => {
         rootDir: 'string',
         gitAccountId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
       },
-      slackChannelId: 'C01B2PZQX1Z',
-      slackChannelName: '#my-project',
-      slackChannelNotificationsEnabled: true,
     });
   });
 
