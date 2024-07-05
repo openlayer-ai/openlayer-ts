@@ -88,11 +88,6 @@ export interface ProjectCreateResponse {
   name: string;
 
   /**
-   * Whether the project is a sample project or a user-created project.
-   */
-  sample: boolean;
-
-  /**
    * The source of the project.
    */
   source: 'web' | 'api' | 'null' | null;
@@ -118,26 +113,6 @@ export interface ProjectCreateResponse {
   description?: string | null;
 
   gitRepo?: ProjectCreateResponse.GitRepo | null;
-
-  /**
-   * The slack channel id connected to the project.
-   */
-  slackChannelId?: string | null;
-
-  /**
-   * The slack channel connected to the project.
-   */
-  slackChannelName?: string | null;
-
-  /**
-   * Whether slack channel notifications are enabled for the project.
-   */
-  slackChannelNotificationsEnabled?: boolean;
-
-  /**
-   * The number of unread notifications in the project.
-   */
-  unreadNotificationCount?: number;
 }
 
 export namespace ProjectCreateResponse {
@@ -256,11 +231,6 @@ export namespace ProjectListResponse {
     name: string;
 
     /**
-     * Whether the project is a sample project or a user-created project.
-     */
-    sample: boolean;
-
-    /**
      * The source of the project.
      */
     source: 'web' | 'api' | 'null' | null;
@@ -286,26 +256,6 @@ export namespace ProjectListResponse {
     description?: string | null;
 
     gitRepo?: Item.GitRepo | null;
-
-    /**
-     * The slack channel id connected to the project.
-     */
-    slackChannelId?: string | null;
-
-    /**
-     * The slack channel connected to the project.
-     */
-    slackChannelName?: string | null;
-
-    /**
-     * Whether slack channel notifications are enabled for the project.
-     */
-    slackChannelNotificationsEnabled?: boolean;
-
-    /**
-     * The number of unread notifications in the project.
-     */
-    unreadNotificationCount?: number;
   }
 
   export namespace Item {
@@ -361,21 +311,6 @@ export interface ProjectCreateParams {
   description?: string | null;
 
   gitRepo?: ProjectCreateParams.GitRepo | null;
-
-  /**
-   * The slack channel id connected to the project.
-   */
-  slackChannelId?: string | null;
-
-  /**
-   * The slack channel connected to the project.
-   */
-  slackChannelName?: string | null;
-
-  /**
-   * Whether slack channel notifications are enabled for the project.
-   */
-  slackChannelNotificationsEnabled?: boolean;
 }
 
 export namespace ProjectCreateParams {
@@ -418,7 +353,5 @@ export namespace Projects {
   export import ProjectCreateParams = ProjectsAPI.ProjectCreateParams;
   export import ProjectListParams = ProjectsAPI.ProjectListParams;
   export import Commits = CommitsAPI.Commits;
-  export import CommitListResponse = CommitsAPI.CommitListResponse;
-  export import CommitListParams = CommitsAPI.CommitListParams;
   export import InferencePipelines = InferencePipelinesAPI.InferencePipelines;
 }
