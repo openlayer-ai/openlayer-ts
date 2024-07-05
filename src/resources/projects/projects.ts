@@ -421,8 +421,4 @@ export namespace Projects {
   export import CommitListResponse = CommitsAPI.CommitListResponse;
   export import CommitListParams = CommitsAPI.CommitListParams;
   export import InferencePipelines = InferencePipelinesAPI.InferencePipelines;
-  export import InferencePipelineCreateResponse = InferencePipelinesAPI.InferencePipelineCreateResponse;
-  export import InferencePipelineListResponse = InferencePipelinesAPI.InferencePipelineListResponse;
-  export import InferencePipelineCreateParams = InferencePipelinesAPI.InferencePipelineCreateParams;
-  export import InferencePipelineListParams = InferencePipelinesAPI.InferencePipelineListParams;
 }
