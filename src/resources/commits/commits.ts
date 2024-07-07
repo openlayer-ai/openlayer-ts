@@ -9,4 +9,6 @@ export class Commits extends APIResource {
 
 export namespace Commits {
   export import TestResults = TestResultsAPI.TestResults;
+  export import TestResultListResponse = TestResultsAPI.TestResultListResponse;
+  export import TestResultListParams = TestResultsAPI.TestResultListParams;
 }

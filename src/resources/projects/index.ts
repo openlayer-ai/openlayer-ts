@@ -1,7 +1,13 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-export { Commits } from './commits';
-export { InferencePipelines } from './inference-pipelines';
+export { CommitListResponse, CommitListParams, Commits } from './commits';
+export {
+  InferencePipelineCreateResponse,
+  InferencePipelineListResponse,
+  InferencePipelineCreateParams,
+  InferencePipelineListParams,
+  InferencePipelines,
+} from './inference-pipelines';
 export {
   ProjectCreateResponse,
   ProjectListResponse,
