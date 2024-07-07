@@ -14,14 +14,14 @@ export class Projects extends APIResource {
   );
 
   /**
-   * Create a project under the current workspace.
+   * Create a project in your workspace.
    */
   create(body: ProjectCreateParams, options?: Core.RequestOptions): Core.APIPromise<ProjectCreateResponse> {
     return this._client.post('/projects', { body, ...options });
   }
 
   /**
-   * List the projects in a user's workspace.
+   * List your workspace's projects.
    */
   list(query?: ProjectListParams, options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
   list(options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
