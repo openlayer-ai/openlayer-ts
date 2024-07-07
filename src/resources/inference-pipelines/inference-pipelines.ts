@@ -11,5 +11,9 @@ export class InferencePipelines extends APIResource {
 
 export namespace InferencePipelines {
   export import Data = DataAPI.Data;
+  export import DataStreamResponse = DataAPI.DataStreamResponse;
+  export import DataStreamParams = DataAPI.DataStreamParams;
   export import TestResults = TestResultsAPI.TestResults;
+  export import TestResultListResponse = TestResultsAPI.TestResultListResponse;
+  export import TestResultListParams = TestResultsAPI.TestResultListParams;
 }
