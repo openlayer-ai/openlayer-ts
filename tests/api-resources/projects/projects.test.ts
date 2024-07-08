@@ -25,12 +25,6 @@ describe('resource projects', () => {
       name: 'My Project',
       taskType: 'llm-base',
       description: 'My project description.',
-      gitRepo: {
-        gitId: 0,
-        branch: 'string',
-        rootDir: 'string',
-        gitAccountId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-      },
     });
   });
 
