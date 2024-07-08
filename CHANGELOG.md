@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 (2024-07-08)
+
+Full Changelog: [v0.2.2...v0.3.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.2...v0.3.0)
+
+### Features
+
+* **api:** OpenAPI spec update via Stainless API ([#23](https://github.com/openlayer-ai/openlayer-ts/issues/23)) ([5b4cd52](https://github.com/openlayer-ai/openlayer-ts/commit/5b4cd5246aed3ff1168fde683e56f53b4d4f5300))
+* **api:** OpenAPI spec update via Stainless API ([#24](https://github.com/openlayer-ai/openlayer-ts/issues/24)) ([66aedcb](https://github.com/openlayer-ai/openlayer-ts/commit/66aedcbcfa5a7684602da7b68cf680d48c337a95))
+* **api:** update via SDK Studio ([#20](https://github.com/openlayer-ai/openlayer-ts/issues/20)) ([2db48ab](https://github.com/openlayer-ai/openlayer-ts/commit/2db48ab38bead726c68039f679bd0fd601588ad9))
+* **api:** update via SDK Studio ([#25](https://github.com/openlayer-ai/openlayer-ts/issues/25)) ([b673070](https://github.com/openlayer-ai/openlayer-ts/commit/b6730709975f7f965e47d9cbff2ad18e01afe768))
+
+
+### Chores
+
+* go live ([#26](https://github.com/openlayer-ai/openlayer-ts/issues/26)) ([c8f17b6](https://github.com/openlayer-ai/openlayer-ts/commit/c8f17b649a5f2d3d134390d81c357f5e80bda83e))
+
 ## 0.2.2 (2024-07-05)
 
 Full Changelog: [v0.2.1...v0.2.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.1...v0.2.2)
