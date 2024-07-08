@@ -309,20 +309,6 @@ export interface ProjectCreateParams {
    * The project description.
    */
   description?: string | null;
-
-  gitRepo?: ProjectCreateParams.GitRepo | null;
-}
-
-export namespace ProjectCreateParams {
-  export interface GitRepo {
-    gitAccountId: string;
-
-    gitId: number;
-
-    branch?: string;
-
-    rootDir?: string;
-  }
 }
 
 export interface ProjectListParams {
