@@ -9,8 +9,8 @@ const openlayer = new Openlayer({
 });
 
 describe('resource rows', () => {
-  test('stream: only required params', async () => {
-    const responsePromise = openlayer.inferencePipelines.rows.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+  test('update: only required params', async () => {
+    const responsePromise = openlayer.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       inferenceId: 'inferenceId',
       row: {},
     });
@@ -23,8 +23,8 @@ describe('resource rows', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  test('stream: required and optional params', async () => {
-    const response = await openlayer.inferencePipelines.rows.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+  test('update: required and optional params', async () => {
+    const response = await openlayer.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       inferenceId: 'inferenceId',
       row: {},
       config: {
