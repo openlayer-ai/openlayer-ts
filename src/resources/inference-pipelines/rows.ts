@@ -8,11 +8,11 @@ export class Rows extends APIResource {
   /**
    * Update an inference data point in an inference pipeline.
    */
-  stream(
+  update(
     inferencePipelineId: string,
-    params: RowStreamParams,
+    params: RowUpdateParams,
     options?: Core.RequestOptions,
-  ): Core.APIPromise<RowStreamResponse> {
+  ): Core.APIPromise<RowUpdateResponse> {
     const { inferenceId, ...body } = params;
     return this._client.put(`/inference-pipelines/${inferencePipelineId}/rows`, {
       query: { inferenceId },
@@ -22,11 +22,11 @@ export class Rows extends APIResource {
   }
 }
 
-export interface RowStreamResponse {
+export interface RowUpdateResponse {
   success: true;
 }
 
-export interface RowStreamParams {
+export interface RowUpdateParams {
   /**
    * Query param: Specify the inference id as a query param.
    */
@@ -40,10 +40,10 @@ export interface RowStreamParams {
   /**
    * Body param:
    */
-  config?: RowStreamParams.Config | null;
+  config?: RowUpdateParams.Config | null;
 }
 
-export namespace RowStreamParams {
+export namespace RowUpdateParams {
   export interface Config {
     /**
      * Name of the column with the ground truths.
@@ -76,6 +76,6 @@ export namespace RowStreamParams {
 }
 
 export namespace Rows {
-  export import RowStreamResponse = RowsAPI.RowStreamResponse;
-  export import RowStreamParams = RowsAPI.RowStreamParams;
+  export import RowUpdateResponse = RowsAPI.RowUpdateResponse;
+  export import RowUpdateParams = RowsAPI.RowUpdateParams;
 }

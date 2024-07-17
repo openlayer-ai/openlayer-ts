@@ -16,8 +16,8 @@ export namespace InferencePipelines {
   export import DataStreamResponse = DataAPI.DataStreamResponse;
   export import DataStreamParams = DataAPI.DataStreamParams;
   export import Rows = RowsAPI.Rows;
-  export import RowStreamResponse = RowsAPI.RowStreamResponse;
-  export import RowStreamParams = RowsAPI.RowStreamParams;
+  export import RowUpdateResponse = RowsAPI.RowUpdateResponse;
+  export import RowUpdateParams = RowsAPI.RowUpdateParams;
   export import TestResults = TestResultsAPI.TestResults;
   export import TestResultListResponse = TestResultsAPI.TestResultListResponse;
   export import TestResultListParams = TestResultsAPI.TestResultListParams;
