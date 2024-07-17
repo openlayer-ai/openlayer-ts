@@ -60,11 +60,11 @@ Methods:
 
 Types:
 
-- <code><a href="./src/resources/inference-pipelines/rows.ts">RowStreamResponse</a></code>
+- <code><a href="./src/resources/inference-pipelines/rows.ts">RowUpdateResponse</a></code>
 
 Methods:
 
-- <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">stream</a>(inferencePipelineId, { ...params }) -> RowStreamResponse</code>
+- <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">update</a>(inferencePipelineId, { ...params }) -> RowUpdateResponse</code>
 
 ## TestResults
 
