@@ -56,6 +56,16 @@ Methods:
 
 - <code title="post /inference-pipelines/{inferencePipelineId}/data-stream">client.inferencePipelines.data.<a href="./src/resources/inference-pipelines/data.ts">stream</a>(inferencePipelineId, { ...params }) -> DataStreamResponse</code>
 
+## Rows
+
+Types:
+
+- <code><a href="./src/resources/inference-pipelines/rows.ts">RowStreamResponse</a></code>
+
+Methods:
+
+- <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">stream</a>(inferencePipelineId, { ...params }) -> RowStreamResponse</code>
+
 ## TestResults
 
 Types:
