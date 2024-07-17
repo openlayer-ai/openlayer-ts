@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 (2024-07-17)
+
+Full Changelog: [v0.3.0...v0.4.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.3.0...v0.4.0)
+
+### Features
+
+* **api:** OpenAPI spec update via Stainless API ([#27](https://github.com/openlayer-ai/openlayer-ts/issues/27)) ([8e1b3c7](https://github.com/openlayer-ai/openlayer-ts/commit/8e1b3c7c31113596ef4ef2539f49b824f2b93cff))
+* **api:** update via SDK Studio ([#29](https://github.com/openlayer-ai/openlayer-ts/issues/29)) ([1e7eed5](https://github.com/openlayer-ai/openlayer-ts/commit/1e7eed5acb7fe5ae931c5b0238eda0512fbd46b8))
+* **api:** update via SDK Studio ([#30](https://github.com/openlayer-ai/openlayer-ts/issues/30)) ([742ef6a](https://github.com/openlayer-ai/openlayer-ts/commit/742ef6ae37fedae5640a829fa149b947c8d362b5))
+
 ## 0.3.0 (2024-07-08)
 
 Full Changelog: [v0.2.2...v0.3.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.2.2...v0.3.0)
