@@ -50,7 +50,7 @@ describe('resource projects', () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       openlayer.projects.list(
-        { name: 'string', page: 1, perPage: 1, taskType: 'llm-base' },
+        { name: 'name', page: 1, perPage: 1, taskType: 'llm-base' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Openlayer.NotFoundError);
