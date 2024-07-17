@@ -57,7 +57,7 @@ describe('resource inferencePipelines', () => {
     await expect(
       openlayer.projects.inferencePipelines.list(
         '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-        { name: 'string', page: 1, perPage: 1 },
+        { name: 'name', page: 1, perPage: 1 },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Openlayer.NotFoundError);
