@@ -6,7 +6,7 @@ import * as DataAPI from './data';
 
 export class Data extends APIResource {
   /**
-   * Stream production data to an inference pipeline.
+   * Create an inference data point in an inference pipeline.
    */
   stream(
     inferencePipelineId: string,
@@ -33,7 +33,7 @@ export interface DataStreamParams {
     | DataStreamParams.TextClassificationData;
 
   /**
-   * A list of entries that represent rows of a csv file
+   * A list of inference data points with inputs and outputs
    */
   rows: Array<Record<string, unknown>>;
 }
