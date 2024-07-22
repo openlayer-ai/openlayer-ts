@@ -75,3 +75,15 @@ Types:
 Methods:
 
 - <code title="get /inference-pipelines/{inferencePipelineId}/results">client.inferencePipelines.testResults.<a href="./src/resources/inference-pipelines/test-results.ts">list</a>(inferencePipelineId, { ...params }) -> TestResultListResponse</code>
+
+# Storage
+
+## PresignedURL
+
+Types:
+
+- <code><a href="./src/resources/storage/presigned-url.ts">PresignedURLCreateResponse</a></code>
+
+Methods:
+
+- <code title="post /storage/presigned-url">client.storage.presignedURL.<a href="./src/resources/storage/presigned-url.ts">create</a>({ ...params }) -> PresignedURLCreateResponse</code>
