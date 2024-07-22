@@ -9,3 +9,4 @@ export {
   ProjectListParams,
   Projects,
 } from './projects/projects';
+export { Storage } from './storage/storage';
