@@ -116,6 +116,7 @@ export class Openlayer extends Core.APIClient {
   projects: API.Projects = new API.Projects(this);
   commits: API.Commits = new API.Commits(this);
   inferencePipelines: API.InferencePipelines = new API.InferencePipelines(this);
+  storage: API.Storage = new API.Storage(this);
 
   protected override defaultQuery(): Core.DefaultQuery | undefined {
     return this._options.defaultQuery;
@@ -199,6 +200,8 @@ export namespace Openlayer {
   export import Commits = API.Commits;
 
   export import InferencePipelines = API.InferencePipelines;
+
+  export import Storage = API.Storage;
 }
 
 export default Openlayer;
