@@ -200,6 +200,7 @@ export namespace Openlayer {
   export import Commits = API.Commits;
 
   export import InferencePipelines = API.InferencePipelines;
+  export import InferencePipelineRetrieveResponse = API.InferencePipelineRetrieveResponse;
 
   export import Storage = API.Storage;
 }
