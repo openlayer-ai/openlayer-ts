@@ -6,7 +6,7 @@ import * as DataAPI from './data';
 
 export class Data extends APIResource {
   /**
-   * Create an inference data point in an inference pipeline.
+   * Publish an inference data point to an inference pipeline.
    */
   stream(
     inferencePipelineId: string,

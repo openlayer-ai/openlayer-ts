@@ -46,6 +46,17 @@ Methods:
 
 # InferencePipelines
 
+Types:
+
+- <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineRetrieveResponse</a></code>
+- <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineUpdateResponse</a></code>
+
+Methods:
+
+- <code title="get /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieve</a>(inferencePipelineId) -> InferencePipelineRetrieveResponse</code>
+- <code title="put /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">update</a>(inferencePipelineId, { ...params }) -> InferencePipelineUpdateResponse</code>
+- <code title="delete /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">delete</a>(inferencePipelineId) -> void</code>
+
 ## Data
 
 Types:
@@ -75,3 +86,15 @@ Types:
 Methods:
 
 - <code title="get /inference-pipelines/{inferencePipelineId}/results">client.inferencePipelines.testResults.<a href="./src/resources/inference-pipelines/test-results.ts">list</a>(inferencePipelineId, { ...params }) -> TestResultListResponse</code>
+
+# Storage
+
+## PresignedURL
+
+Types:
+
+- <code><a href="./src/resources/storage/presigned-url.ts">PresignedURLCreateResponse</a></code>
+
+Methods:
+
+- <code title="post /storage/presigned-url">client.storage.presignedURL.<a href="./src/resources/storage/presigned-url.ts">create</a>({ ...params }) -> PresignedURLCreateResponse</code>
