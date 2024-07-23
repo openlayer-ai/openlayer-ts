@@ -201,6 +201,8 @@ export namespace Openlayer {
 
   export import InferencePipelines = API.InferencePipelines;
   export import InferencePipelineRetrieveResponse = API.InferencePipelineRetrieveResponse;
+  export import InferencePipelineUpdateResponse = API.InferencePipelineUpdateResponse;
+  export import InferencePipelineUpdateParams = API.InferencePipelineUpdateParams;
 
   export import Storage = API.Storage;
 }

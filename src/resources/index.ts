@@ -3,6 +3,8 @@
 export { Commits } from './commits/commits';
 export {
   InferencePipelineRetrieveResponse,
+  InferencePipelineUpdateResponse,
+  InferencePipelineUpdateParams,
   InferencePipelines,
 } from './inference-pipelines/inference-pipelines';
 export {
