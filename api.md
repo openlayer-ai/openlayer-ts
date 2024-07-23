@@ -49,10 +49,12 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineRetrieveResponse</a></code>
+- <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineUpdateResponse</a></code>
 
 Methods:
 
 - <code title="get /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieve</a>(inferencePipelineId) -> InferencePipelineRetrieveResponse</code>
+- <code title="put /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">update</a>(inferencePipelineId, { ...params }) -> InferencePipelineUpdateResponse</code>
 - <code title="delete /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">delete</a>(inferencePipelineId) -> void</code>
 
 ## Data

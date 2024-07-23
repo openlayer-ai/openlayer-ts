@@ -29,6 +29,41 @@ describe('resource inferencePipelines', () => {
     ).rejects.toThrow(Openlayer.NotFoundError);
   });
 
+  test('update', async () => {
+    const responsePromise = openlayer.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('update: request options instead of params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      openlayer.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+        path: '/_stainless_unknown_path',
+      }),
+    ).rejects.toThrow(Openlayer.NotFoundError);
+  });
+
+  test('update: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      openlayer.inferencePipelines.update(
+        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+        {
+          description: 'This pipeline is used for production.',
+          name: 'production',
+          referenceDatasetUri: 'referenceDatasetUri',
+        },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Openlayer.NotFoundError);
+  });
+
   test('delete', async () => {
     const responsePromise = openlayer.inferencePipelines.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
