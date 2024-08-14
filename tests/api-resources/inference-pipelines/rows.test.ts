@@ -3,14 +3,14 @@
 import Openlayer from 'openlayer';
 import { Response } from 'node-fetch';
 
-const openlayer = new Openlayer({
+const client = new Openlayer({
   apiKey: 'My API Key',
   baseURL: process.env['TEST_API_BASE_URL'] ?? 'http://127.0.0.1:4010',
 });
 
 describe('resource rows', () => {
   test('update: only required params', async () => {
-    const responsePromise = openlayer.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    const responsePromise = client.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       inferenceId: 'inferenceId',
       row: {},
     });
@@ -24,7 +24,7 @@ describe('resource rows', () => {
   });
 
   test('update: required and optional params', async () => {
-    const response = await openlayer.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    const response = await client.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       inferenceId: 'inferenceId',
       row: {},
       config: {
