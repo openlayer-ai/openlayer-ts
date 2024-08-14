@@ -201,7 +201,7 @@ You can also use the `.withResponse()` method to get the raw `Response` along wi
 ```ts
 const client = new Openlayer();
 
-const response = await openlayer.inferencePipelines.data
+const response = await client.inferencePipelines.data
   .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
@@ -349,7 +349,7 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream(
+await client.inferencePipelines.data.stream(
   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
   {
     config: {
