@@ -27,7 +27,7 @@ const client = new Openlayer({
 });
 
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data.stream(
+  const dataStreamResponse = await client.inferencePipelines.data.stream(
     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
     {
       config: {
@@ -87,7 +87,7 @@ async function main() {
     ],
   };
   const dataStreamResponse: Openlayer.InferencePipelines.DataStreamResponse =
-    await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
+    await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
 }
 
 main();
@@ -104,7 +104,7 @@ a subclass of `APIError` will be thrown:
 <!-- prettier-ignore -->
 ```ts
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data
+  const dataStreamResponse = await client.inferencePipelines.data
     .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       config: {
         inputVariableNames: ['user_query'],
@@ -166,7 +166,7 @@ const client = new Openlayer({
 });
 
 // Or, configure per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
   maxRetries: 5,
 });
 ```
@@ -183,7 +183,7 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
   timeout: 5 * 1000,
 });
 ```
@@ -204,7 +204,7 @@ You can also use the `.withResponse()` method to get the raw `Response` along wi
 ```ts
 const client = new Openlayer();
 
-const response = await openlayer.inferencePipelines.data
+const response = await client.inferencePipelines.data
   .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
@@ -227,7 +227,7 @@ const response = await openlayer.inferencePipelines.data
 console.log(response.headers.get('X-My-Header'));
 console.log(response.statusText); // access the underlying Response object
 
-const { data: dataStreamResponse, response: raw } = await openlayer.inferencePipelines.data
+const { data: dataStreamResponse, response: raw } = await client.inferencePipelines.data
   .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
@@ -352,7 +352,7 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream(
+await client.inferencePipelines.data.stream(
   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
   {
     config: {
