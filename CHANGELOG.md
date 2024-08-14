@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 (2024-08-14)
+
+Full Changelog: [v0.4.0...v0.5.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.4.0...v0.5.0)
+
+### Features
+
+* **api:** OpenAPI spec update via Stainless API ([#32](https://github.com/openlayer-ai/openlayer-ts/issues/32)) ([4093a32](https://github.com/openlayer-ai/openlayer-ts/commit/4093a322951a8aee5587e157de04a74b7fa742d8))
+* **api:** update via SDK Studio ([#37](https://github.com/openlayer-ai/openlayer-ts/issues/37)) ([d4677ae](https://github.com/openlayer-ai/openlayer-ts/commit/d4677aec42685f76709adfe54ce338f929a6ab95))
+* **api:** update via SDK Studio ([#38](https://github.com/openlayer-ai/openlayer-ts/issues/38)) ([0aca490](https://github.com/openlayer-ai/openlayer-ts/commit/0aca4901862aa8dba0baa7c19efca802b46ccc6c))
+* **api:** update via SDK Studio ([#40](https://github.com/openlayer-ai/openlayer-ts/issues/40)) ([7aee058](https://github.com/openlayer-ai/openlayer-ts/commit/7aee058a11a665c40052265f90d81985cb012668))
+
+
+### Chores
+
+* **ci:** limit release doctor target branches ([#35](https://github.com/openlayer-ai/openlayer-ts/issues/35)) ([7c856f8](https://github.com/openlayer-ai/openlayer-ts/commit/7c856f834d10fa4d86498d2d29f9df728ce3d1c7))
+* **docs:** use client instead of package name in Node examples ([#34](https://github.com/openlayer-ai/openlayer-ts/issues/34)) ([887d2e2](https://github.com/openlayer-ai/openlayer-ts/commit/887d2e264fd099de54922d97fb4d7be244baa0bc))
+* **internal:** codegen related update ([#36](https://github.com/openlayer-ai/openlayer-ts/issues/36)) ([f5fed5c](https://github.com/openlayer-ai/openlayer-ts/commit/f5fed5ce250d99337481d5fb1310734e8fa22700))
+* **tests:** update prism version ([#39](https://github.com/openlayer-ai/openlayer-ts/issues/39)) ([34694e3](https://github.com/openlayer-ai/openlayer-ts/commit/34694e33939e786cb5a3c086ce5a8e023472a023))
+
 ## 0.4.0 (2024-07-17)
 
 Full Changelog: [v0.3.0...v0.4.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.3.0...v0.4.0)
