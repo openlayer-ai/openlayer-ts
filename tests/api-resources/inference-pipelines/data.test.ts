@@ -26,7 +26,7 @@ describe('resource data', () => {
   test('stream: required and optional params', async () => {
     const response = await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       config: {
-        numOfTokenColumnName: 'tokens',
+        outputColumnName: 'output',
         contextColumnName: 'context',
         costColumnName: 'cost',
         groundTruthColumnName: 'ground_truth',
@@ -34,8 +34,8 @@ describe('resource data', () => {
         inputVariableNames: ['user_query'],
         latencyColumnName: 'latency',
         metadata: {},
-        outputColumnName: 'output',
-        prompt: [{ role: 'user', content: '{{ user_query }}' }],
+        numOfTokenColumnName: 'tokens',
+        prompt: [{ content: '{{ user_query }}', role: 'user' }],
         questionColumnName: 'question',
         timestampColumnName: 'timestamp',
       },
