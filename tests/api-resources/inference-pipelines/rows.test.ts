@@ -28,11 +28,11 @@ describe('resource rows', () => {
       inferenceId: 'inferenceId',
       row: {},
       config: {
+        groundTruthColumnName: 'ground_truth',
+        humanFeedbackColumnName: 'human_feedback',
         inferenceIdColumnName: 'id',
         latencyColumnName: 'latency',
         timestampColumnName: 'timestamp',
-        groundTruthColumnName: 'ground_truth',
-        humanFeedbackColumnName: 'human_feedback',
       },
     });
   });
