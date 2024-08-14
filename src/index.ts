@@ -165,6 +165,7 @@ export class Openlayer extends Core.APIClient {
   }
 
   static Openlayer = this;
+  static DEFAULT_TIMEOUT = 60000; // 1 minute
 
   static OpenlayerError = Errors.OpenlayerError;
   static APIError = Errors.APIError;
