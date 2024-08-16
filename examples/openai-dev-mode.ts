@@ -2,12 +2,13 @@
  * This shows how to use the OpenAI monitor with Openlayer to create a CLI handler
  * for processing datasets. The script can be called with the following command:
  * node dist/run.js --dataset-path {{ path }} --dataset-name {{ name }}
+ * Intended to be referenced from an openlayer.json config.
  */
 
 import { ChatCompletion } from 'openai/resources';
-import { OpenAIMonitor } from 'openlayer';
-import { CLIHandler } from 'openlayer/cli';
-import { RunReturn } from 'openlayer/run';
+import Openlayer from 'openlayer';
+import CLIHandler, { RunReturn } from 'openlayer/lib/core/cli';
+import OpenAIMonitor from 'openlayer/lib/core/openai-monitor';
 
 export class MyModel {
   private monitor: OpenAIMonitor;
@@ -16,15 +17,20 @@ export class MyModel {
 
   private openlayerApiKey: string;
 
+  private openlayerInferencePipelineId: string;
+
   constructor() {
     this.openaiApiKey = process.env.OPENAI_API_KEY || '';
     this.openlayerApiKey = process.env.OPENLAYER_API_KEY || '';
-    const openlayerProjectName = process.env.OPENLAYER_PROJECT_NAME || '';
+    // (Optional) if set will enable monitoring requests
+    this.openlayerInferencePipelineId = process.env.OPENLAYER_INFERENCE_PIPELINE_ID || '';
+
+    const openlayerClient = new Openlayer({ apiKey: this.openlayerApiKey });
 
     this.monitor = new OpenAIMonitor({
       openAiApiKey: this.openaiApiKey,
-      openlayerApiKey: this.openlayerApiKey,
-      openlayerProjectName,
+      openlayerClient,
+      openlayerInferencePipelineId: this.openlayerInferencePipelineId,
     });
   }
 
