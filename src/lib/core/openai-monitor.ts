@@ -147,7 +147,7 @@ class OpenAIMonitor {
       content:
         role === 'user' ? `{{ message_${i} }}`
         : content === null || typeof content === 'undefined' ? ''
-        : content,
+        : String(content),
       role,
     }));
 
