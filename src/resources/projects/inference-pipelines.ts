@@ -118,34 +118,10 @@ export namespace InferencePipelineCreateResponse {
 }
 
 export interface InferencePipelineListResponse {
-  _meta: InferencePipelineListResponse._Meta;
-
   items: Array<InferencePipelineListResponse.Item>;
 }
 
 export namespace InferencePipelineListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The inference pipeline id.

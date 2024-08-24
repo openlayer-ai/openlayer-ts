@@ -164,34 +164,10 @@ export namespace ProjectCreateResponse {
 }
 
 export interface ProjectListResponse {
-  _meta: ProjectListResponse._Meta;
-
   items: Array<ProjectListResponse.Item>;
 }
 
 export namespace ProjectListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The project id.
