@@ -28,34 +28,10 @@ export class TestResults extends APIResource {
 }
 
 export interface TestResultListResponse {
-  _meta: TestResultListResponse._Meta;
-
   items: Array<TestResultListResponse.Item>;
 }
 
 export namespace TestResultListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * Project version (commit) id.

@@ -28,34 +28,10 @@ export class Commits extends APIResource {
 }
 
 export interface CommitListResponse {
-  _meta: CommitListResponse._Meta;
-
   items: Array<CommitListResponse.Item>;
 }
 
 export namespace CommitListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The project version (commit) id.
