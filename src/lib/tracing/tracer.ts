@@ -69,8 +69,6 @@ function createStep(
       const traceData = getCurrentTrace();
       // Post process trace and get the input variable names
       const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
-      console.log('Processed trace data:', JSON.stringify(processedTraceData, null, 2));
-      console.log('Input variable names:', inputVariableNames);
 
       if (publish && process.env['OPENLAYER_INFERENCE_PIPELINE_ID']) {
         client!.inferencePipelines.data.stream(process.env['OPENLAYER_INFERENCE_PIPELINE_ID'], {
@@ -87,7 +85,6 @@ function createStep(
           rows: [processedTraceData],
         });
       }
-      console.log('Trace data ready for upload:', JSON.stringify(traceData, null, 2));
 
       // Reset the entire trace state
       setCurrentTrace(null);
@@ -134,15 +131,47 @@ function trace(fn: Function, stepType: StepType = StepType.USER_CALL, stepName?:
   };
 }
 
-// Example usage of specialized function to add a chat completion step
-export function addChatCompletionStepToTrace(
-  name: string,
-  inputs: any,
-  output: any,
-  metadata?: Record<string, any>,
-) {
+export function addChatCompletionStepToTrace({
+  name,
+  inputs,
+  output,
+  latency,
+  tokens = null,
+  promptTokens = null,
+  completionTokens = null,
+  model = null,
+  modelParameters = null,
+  rawOutput = null,
+  metadata = {},
+  provider = 'OpenAI',
+}: {
+  name: string;
+  inputs: any;
+  output: any;
+  latency: number;
+  tokens?: number | null;
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  model?: string | null;
+  modelParameters?: Record<string, any> | null;
+  rawOutput?: string | null;
+  metadata?: Record<string, any>;
+  provider?: string;
+}) {
   const [step, endStep] = createStep(name, StepType.CHAT_COMPLETION, inputs, output, metadata);
-  step.log({ inputs, output });
+
+  if (step instanceof ChatCompletionStep) {
+    step.provider = provider;
+    step.promptTokens = promptTokens;
+    step.completionTokens = completionTokens;
+    step.tokens = tokens;
+    step.model = model;
+    step.modelParameters = modelParameters;
+    step.rawOutput = rawOutput;
+    step.latency = latency;
+  }
+
+  step.log({ inputs, output, metadata });
   endStep();
 }
 
