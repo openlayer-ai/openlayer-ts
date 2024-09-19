@@ -1,3 +1,6 @@
+/**
+ * @deprecated The module is deprecated. Please use the OpenAI tracer module instead. Refer to https://www.openlayer.com/docs/monitoring/publishing-data#openai for details.
+ */
 import OpenAI from 'openai';
 import { RequestOptions } from 'openai/core';
 import {
@@ -99,6 +102,9 @@ const OpenAIPricing: { [key: string]: Pricing } = {
   },
 };
 
+/**
+ * @deprecated The OpenAIMonitor is deprecated. Please use the OpenAI tracer module instead. Refer to https://www.openlayer.com/docs/monitoring/publishing-data#openai for details.
+ */
 class OpenAIMonitor {
   private openlayerClient: Openlayer;
 
