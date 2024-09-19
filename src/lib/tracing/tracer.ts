@@ -10,7 +10,7 @@ let currentTrace: Trace | null = null;
 const publish = process.env['OPENLAYER_DISABLE_PUBLISH'] != 'true';
 let client: Openlayer | null = null;
 if (publish) {
-  console.log('Publishing is enabled');
+  console.debug('Publishing is enabled');
   client = new Openlayer();
 }
 
@@ -45,13 +45,13 @@ function createStep(
   const isRootStep = parentStep === null;
 
   if (isRootStep) {
-    console.log('Starting a new trace...');
-    console.log(`Adding step ${name} as the root step`);
+    console.debug('Starting a new trace...');
+    console.debug(`Adding step ${name} as the root step`);
     const currentTrace = new Trace();
     setCurrentTrace(currentTrace);
     currentTrace.addStep(newStep);
   } else {
-    console.log(`Adding step ${name} as a nested step to ${parentStep!.name}`);
+    console.debug(`Adding step ${name} as a nested step to ${parentStep!.name}`);
     currentTrace = getCurrentTrace()!;
     parentStep!.addNestedStep(newStep);
   }
@@ -65,7 +65,7 @@ function createStep(
     stepStack.pop(); // Remove the current step from the stack
 
     if (isRootStep) {
-      console.log('Ending the trace...');
+      console.debug('Ending the trace...');
       const traceData = getCurrentTrace();
       // Post process trace and get the input variable names
       const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
@@ -90,7 +90,7 @@ function createStep(
       setCurrentTrace(null);
       stepStack.length = 0; // Clear the step stack
     } else {
-      console.log(`Ending step ${name}`);
+      console.debug(`Ending step ${name}`);
     }
   };
 
