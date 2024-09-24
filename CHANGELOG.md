@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 (2024-09-24)
+
+Full Changelog: [v0.5.0...v0.6.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.5.0...v0.6.0)
+
+### Features
+
+* feat: introduce the OpenlayerHandler, which implements the LangChain callback handler interface ([865978e](https://github.com/openlayer-ai/openlayer-ts/commit/865978e4f0d64c3106574ec3cf3ad13198d23e9e))
+
 ## 0.5.0 (2024-08-14)
 
 Full Changelog: [v0.4.0...v0.5.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.4.0...v0.5.0)
