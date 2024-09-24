@@ -24,6 +24,7 @@
     "fix": "eslint --fix --ext ts,js ."
   },
   "dependencies": {
+    "@langchain/core": "^0.3.3",
     "@types/node": "^18.11.18",
     "@types/node-fetch": "^2.6.4",
     "abort-controller": "^3.0.0",
