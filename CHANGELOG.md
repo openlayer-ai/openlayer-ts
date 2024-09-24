@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 (2024-09-24)
+
+Full Changelog: [v0.6.0...v0.7.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.6.0...v0.7.0)
+
+### Features
+
+* fix: add @langchain/core to dependencies ([1deded1](https://github.com/openlayer-ai/openlayer-ts/commit/1deded1f64c1ef5b0ab702a94fd1fb2809007bad))
+
 ## 0.6.0 (2024-09-24)
 
 Full Changelog: [v0.5.0...v0.6.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.5.0...v0.6.0)
