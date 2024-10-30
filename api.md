@@ -34,6 +34,14 @@ Methods:
 
 # Commits
 
+Types:
+
+- <code><a href="./src/resources/commits/commits.ts">CommitCreateResponse</a></code>
+
+Methods:
+
+- <code title="post /projects/{projectId}/versions">client.commits.<a href="./src/resources/commits/commits.ts">create</a>(projectId, { ...params }) -> CommitCreateResponse</code>
+
 ## TestResults
 
 Types:
