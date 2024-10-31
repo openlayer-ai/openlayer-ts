@@ -198,8 +198,6 @@ export namespace Openlayer {
   export import ProjectListParams = API.ProjectListParams;
 
   export import Commits = API.Commits;
-  export import CommitCreateResponse = API.CommitCreateResponse;
-  export import CommitCreateParams = API.CommitCreateParams;
 
   export import InferencePipelines = API.InferencePipelines;
   export import InferencePipelineRetrieveResponse = API.InferencePipelineRetrieveResponse;
