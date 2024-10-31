@@ -2,7 +2,6 @@
 
 import { APIResource } from '../../resource';
 import * as Core from '../../core';
-import * as DataAPI from './data';
 
 export class Data extends APIResource {
   /**
@@ -279,7 +278,6 @@ export namespace DataStreamParams {
   }
 }
 
-export namespace Data {
-  export import DataStreamResponse = DataAPI.DataStreamResponse;
-  export import DataStreamParams = DataAPI.DataStreamParams;
+export declare namespace Data {
+  export { type DataStreamResponse as DataStreamResponse, type DataStreamParams as DataStreamParams };
 }

@@ -3,9 +3,22 @@
 import { APIResource } from '../../resource';
 import { isRequestOptions } from '../../core';
 import * as Core from '../../core';
-import * as ProjectsAPI from './projects';
 import * as CommitsAPI from './commits';
+import {
+  CommitCreateParams,
+  CommitCreateResponse,
+  CommitListParams,
+  CommitListResponse,
+  Commits,
+} from './commits';
 import * as InferencePipelinesAPI from './inference-pipelines';
+import {
+  InferencePipelineCreateParams,
+  InferencePipelineCreateResponse,
+  InferencePipelineListParams,
+  InferencePipelineListResponse,
+  InferencePipelines,
+} from './inference-pipelines';
 
 export class Projects extends APIResource {
   commits: CommitsAPI.Commits = new CommitsAPI.Commits(this._client);
@@ -333,19 +346,30 @@ export interface ProjectListParams {
   taskType?: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
 }
 
-export namespace Projects {
-  export import ProjectCreateResponse = ProjectsAPI.ProjectCreateResponse;
-  export import ProjectListResponse = ProjectsAPI.ProjectListResponse;
-  export import ProjectCreateParams = ProjectsAPI.ProjectCreateParams;
-  export import ProjectListParams = ProjectsAPI.ProjectListParams;
-  export import Commits = CommitsAPI.Commits;
-  export import CommitCreateResponse = CommitsAPI.CommitCreateResponse;
-  export import CommitListResponse = CommitsAPI.CommitListResponse;
-  export import CommitCreateParams = CommitsAPI.CommitCreateParams;
-  export import CommitListParams = CommitsAPI.CommitListParams;
-  export import InferencePipelines = InferencePipelinesAPI.InferencePipelines;
-  export import InferencePipelineCreateResponse = InferencePipelinesAPI.InferencePipelineCreateResponse;
-  export import InferencePipelineListResponse = InferencePipelinesAPI.InferencePipelineListResponse;
-  export import InferencePipelineCreateParams = InferencePipelinesAPI.InferencePipelineCreateParams;
-  export import InferencePipelineListParams = InferencePipelinesAPI.InferencePipelineListParams;
+Projects.Commits = Commits;
+Projects.InferencePipelines = InferencePipelines;
+
+export declare namespace Projects {
+  export {
+    type ProjectCreateResponse as ProjectCreateResponse,
+    type ProjectListResponse as ProjectListResponse,
+    type ProjectCreateParams as ProjectCreateParams,
+    type ProjectListParams as ProjectListParams,
+  };
+
+  export {
+    Commits as Commits,
+    type CommitCreateResponse as CommitCreateResponse,
+    type CommitListResponse as CommitListResponse,
+    type CommitCreateParams as CommitCreateParams,
+    type CommitListParams as CommitListParams,
+  };
+
+  export {
+    InferencePipelines as InferencePipelines,
+    type InferencePipelineCreateResponse as InferencePipelineCreateResponse,
+    type InferencePipelineListResponse as InferencePipelineListResponse,
+    type InferencePipelineCreateParams as InferencePipelineCreateParams,
+    type InferencePipelineListParams as InferencePipelineListParams,
+  };
 }

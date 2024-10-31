@@ -2,7 +2,6 @@
 
 import { APIResource } from '../../resource';
 import * as Core from '../../core';
-import * as PresignedURLAPI from './presigned-url';
 
 export class PresignedURL extends APIResource {
   /**
@@ -41,7 +40,9 @@ export interface PresignedURLCreateParams {
   objectName: string;
 }
 
-export namespace PresignedURL {
-  export import PresignedURLCreateResponse = PresignedURLAPI.PresignedURLCreateResponse;
-  export import PresignedURLCreateParams = PresignedURLAPI.PresignedURLCreateParams;
+export declare namespace PresignedURL {
+  export {
+    type PresignedURLCreateResponse as PresignedURLCreateResponse,
+    type PresignedURLCreateParams as PresignedURLCreateParams,
+  };
 }

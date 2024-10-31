@@ -3,7 +3,6 @@
 import { APIResource } from '../../resource';
 import { isRequestOptions } from '../../core';
 import * as Core from '../../core';
-import * as TestResultsAPI from './test-results';
 
 export class TestResults extends APIResource {
   /**
@@ -273,7 +272,9 @@ export interface TestResultListParams {
   type?: 'integrity' | 'consistency' | 'performance' | 'fairness' | 'robustness';
 }
 
-export namespace TestResults {
-  export import TestResultListResponse = TestResultsAPI.TestResultListResponse;
-  export import TestResultListParams = TestResultsAPI.TestResultListParams;
+export declare namespace TestResults {
+  export {
+    type TestResultListResponse as TestResultListResponse,
+    type TestResultListParams as TestResultListParams,
+  };
 }
