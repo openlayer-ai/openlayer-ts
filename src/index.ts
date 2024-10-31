@@ -1,10 +1,25 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import * as Errors from './error';
-import * as Uploads from './uploads';
 import { type Agent } from './_shims/index';
 import * as Core from './core';
+import * as Errors from './error';
+import * as Uploads from './uploads';
 import * as API from './resources/index';
+import { Commits } from './resources/commits/commits';
+import {
+  InferencePipelineRetrieveResponse,
+  InferencePipelineUpdateParams,
+  InferencePipelineUpdateResponse,
+  InferencePipelines,
+} from './resources/inference-pipelines/inference-pipelines';
+import {
+  ProjectCreateParams,
+  ProjectCreateResponse,
+  ProjectListParams,
+  ProjectListResponse,
+  Projects,
+} from './resources/projects/projects';
+import { Storage } from './resources/storage/storage';
 
 export interface ClientOptions {
   /**
@@ -170,42 +185,49 @@ export class Openlayer extends Core.APIClient {
   static fileFromPath = Uploads.fileFromPath;
 }
 
-export const {
-  OpenlayerError,
-  APIError,
-  APIConnectionError,
-  APIConnectionTimeoutError,
-  APIUserAbortError,
-  NotFoundError,
-  ConflictError,
-  RateLimitError,
-  BadRequestError,
-  AuthenticationError,
-  InternalServerError,
-  PermissionDeniedError,
-  UnprocessableEntityError,
-} = Errors;
+export const OpenlayerError = Errors.OpenlayerError;
+export const APIError = Errors.APIError;
+export const APIConnectionError = Errors.APIConnectionError;
+export const APIConnectionTimeoutError = Errors.APIConnectionTimeoutError;
+export const APIUserAbortError = Errors.APIUserAbortError;
+export const NotFoundError = Errors.NotFoundError;
+export const ConflictError = Errors.ConflictError;
+export const RateLimitError = Errors.RateLimitError;
+export const BadRequestError = Errors.BadRequestError;
+export const AuthenticationError = Errors.AuthenticationError;
+export const InternalServerError = Errors.InternalServerError;
+export const PermissionDeniedError = Errors.PermissionDeniedError;
+export const UnprocessableEntityError = Errors.UnprocessableEntityError;
 
 export import toFile = Uploads.toFile;
 export import fileFromPath = Uploads.fileFromPath;
 
-export namespace Openlayer {
-  export import RequestOptions = Core.RequestOptions;
+Openlayer.Projects = Projects;
+Openlayer.Commits = Commits;
+Openlayer.InferencePipelines = InferencePipelines;
+Openlayer.Storage = Storage;
 
-  export import Projects = API.Projects;
-  export import ProjectCreateResponse = API.ProjectCreateResponse;
-  export import ProjectListResponse = API.ProjectListResponse;
-  export import ProjectCreateParams = API.ProjectCreateParams;
-  export import ProjectListParams = API.ProjectListParams;
+export declare namespace Openlayer {
+  export type RequestOptions = Core.RequestOptions;
 
-  export import Commits = API.Commits;
+  export {
+    Projects as Projects,
+    type ProjectCreateResponse as ProjectCreateResponse,
+    type ProjectListResponse as ProjectListResponse,
+    type ProjectCreateParams as ProjectCreateParams,
+    type ProjectListParams as ProjectListParams,
+  };
 
-  export import InferencePipelines = API.InferencePipelines;
-  export import InferencePipelineRetrieveResponse = API.InferencePipelineRetrieveResponse;
-  export import InferencePipelineUpdateResponse = API.InferencePipelineUpdateResponse;
-  export import InferencePipelineUpdateParams = API.InferencePipelineUpdateParams;
+  export { Commits as Commits };
 
-  export import Storage = API.Storage;
+  export {
+    InferencePipelines as InferencePipelines,
+    type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
+    type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+  };
+
+  export { Storage as Storage };
 }
 
 export default Openlayer;

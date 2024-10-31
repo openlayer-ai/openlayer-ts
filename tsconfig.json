@@ -11,7 +11,7 @@
     "paths": {
       "openlayer/_shims/auto/*": ["src/_shims/auto/*-node"],
       "openlayer/*": ["src/*"],
-      "openlayer": ["src/index.ts"],
+      "openlayer": ["src/index.ts"]
     },
     "noEmit": true,
 
