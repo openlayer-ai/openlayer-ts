@@ -9,6 +9,29 @@ const openlayer = new Openlayer({
 });
 
 describe('resource commits', () => {
+  test('create: only required params', async () => {
+    const responsePromise = client.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      commit: { message: 'Updated the prompt.' },
+      storageUri: 's3://...',
+    });
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('create: required and optional params', async () => {
+    const response = await client.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      commit: { message: 'Updated the prompt.' },
+      storageUri: 's3://...',
+      archived: false,
+      deploymentStatus: 'Deployed',
+    });
+  });
+
   test('list', async () => {
     const responsePromise = openlayer.projects.commits.list('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
