@@ -315,7 +315,9 @@ export namespace Projects {
   export import ProjectCreateParams = ProjectsAPI.ProjectCreateParams;
   export import ProjectListParams = ProjectsAPI.ProjectListParams;
   export import Commits = CommitsAPI.Commits;
+  export import CommitCreateResponse = CommitsAPI.CommitCreateResponse;
   export import CommitListResponse = CommitsAPI.CommitListResponse;
+  export import CommitCreateParams = CommitsAPI.CommitCreateParams;
   export import CommitListParams = CommitsAPI.CommitListParams;
   export import InferencePipelines = InferencePipelinesAPI.InferencePipelines;
   export import InferencePipelineCreateResponse = InferencePipelinesAPI.InferencePipelineCreateResponse;
