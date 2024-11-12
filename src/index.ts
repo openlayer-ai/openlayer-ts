@@ -185,30 +185,10 @@ export class Openlayer extends Core.APIClient {
   static fileFromPath = Uploads.fileFromPath;
 }
 
-export {
-  OpenlayerError,
-  APIError,
-  APIConnectionError,
-  APIConnectionTimeoutError,
-  APIUserAbortError,
-  NotFoundError,
-  ConflictError,
-  RateLimitError,
-  BadRequestError,
-  AuthenticationError,
-  InternalServerError,
-  PermissionDeniedError,
-  UnprocessableEntityError,
-} from './error';
-
-export import toFile = Uploads.toFile;
-export import fileFromPath = Uploads.fileFromPath;
-
 Openlayer.Projects = Projects;
 Openlayer.Commits = Commits;
 Openlayer.InferencePipelines = InferencePipelines;
 Openlayer.Storage = Storage;
-
 export declare namespace Openlayer {
   export type RequestOptions = Core.RequestOptions;
 
@@ -231,5 +211,22 @@ export declare namespace Openlayer {
 
   export { Storage as Storage };
 }
+
+export { toFile, fileFromPath } from 'openlayer/uploads';
+export {
+  OpenlayerError,
+  APIError,
+  APIConnectionError,
+  APIConnectionTimeoutError,
+  APIUserAbortError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  BadRequestError,
+  AuthenticationError,
+  InternalServerError,
+  PermissionDeniedError,
+  UnprocessableEntityError,
+} from 'openlayer/error';
 
 export default Openlayer;
