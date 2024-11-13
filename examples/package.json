@@ -11,8 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "@langchain/openai": "^0.1.2",
-    "langchain": "^0.1.34",
+    "langchain": "^0.3.5",
     "openai": "^4.38.3",
-    "openlayer": "^0.0.1-alpha.1"
+    "openlayer": "^0.4.0"
   }
 }
