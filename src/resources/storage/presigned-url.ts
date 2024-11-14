@@ -29,7 +29,7 @@ export interface PresignedURLCreateResponse {
   url: string;
 
   /**
-   * Fields to include in the body of the upload. Only needed by s3.
+   * Fields to include in the body of the upload. Only needed by s3
    */
   fields?: unknown;
 }
