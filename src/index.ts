@@ -212,7 +212,7 @@ export declare namespace Openlayer {
   export { Storage as Storage };
 }
 
-export { toFile, fileFromPath } from 'openlayer/uploads';
+export { toFile, fileFromPath } from './uploads';
 export {
   OpenlayerError,
   APIError,
@@ -227,6 +227,6 @@ export {
   InternalServerError,
   PermissionDeniedError,
   UnprocessableEntityError,
-} from 'openlayer/error';
+} from './error';
 
 export default Openlayer;
