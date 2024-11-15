@@ -10,7 +10,7 @@ const client = new Openlayer({
 
 describe('resource commits', () => {
   test('create: only required params', async () => {
-    const responsePromise = openlayer.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    const responsePromise = client.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       commit: { message: 'Updated the prompt.' },
       storageUri: 's3://...',
     });
@@ -24,7 +24,7 @@ describe('resource commits', () => {
   });
 
   test('create: required and optional params', async () => {
-    const response = await openlayer.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    const response = await client.projects.commits.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       commit: { message: 'Updated the prompt.' },
       storageUri: 's3://...',
       archived: false,
