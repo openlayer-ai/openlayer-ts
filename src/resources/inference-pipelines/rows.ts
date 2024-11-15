@@ -2,7 +2,6 @@
 
 import { APIResource } from '../../resource';
 import * as Core from '../../core';
-import * as RowsAPI from './rows';
 
 export class Rows extends APIResource {
   /**
@@ -75,7 +74,6 @@ export namespace RowUpdateParams {
   }
 }
 
-export namespace Rows {
-  export import RowUpdateResponse = RowsAPI.RowUpdateResponse;
-  export import RowUpdateParams = RowsAPI.RowUpdateParams;
+export declare namespace Rows {
+  export { type RowUpdateResponse as RowUpdateResponse, type RowUpdateParams as RowUpdateParams };
 }

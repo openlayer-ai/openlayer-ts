@@ -3,14 +3,14 @@
 import Openlayer from 'openlayer';
 import { Response } from 'node-fetch';
 
-const openlayer = new Openlayer({
+const client = new Openlayer({
   apiKey: 'My API Key',
   baseURL: process.env['TEST_API_BASE_URL'] ?? 'http://127.0.0.1:4010',
 });
 
 describe('resource inferencePipelines', () => {
   test('retrieve', async () => {
-    const responsePromise = openlayer.inferencePipelines.retrieve('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const responsePromise = client.inferencePipelines.retrieve('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -23,14 +23,14 @@ describe('resource inferencePipelines', () => {
   test('retrieve: request options instead of params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      openlayer.inferencePipelines.retrieve('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      client.inferencePipelines.retrieve('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
         path: '/_stainless_unknown_path',
       }),
     ).rejects.toThrow(Openlayer.NotFoundError);
   });
 
   test('update', async () => {
-    const responsePromise = openlayer.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const responsePromise = client.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -43,7 +43,7 @@ describe('resource inferencePipelines', () => {
   test('update: request options instead of params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      openlayer.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      client.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
         path: '/_stainless_unknown_path',
       }),
     ).rejects.toThrow(Openlayer.NotFoundError);
@@ -52,7 +52,7 @@ describe('resource inferencePipelines', () => {
   test('update: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      openlayer.inferencePipelines.update(
+      client.inferencePipelines.update(
         '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
         {
           description: 'This pipeline is used for production.',
@@ -65,7 +65,7 @@ describe('resource inferencePipelines', () => {
   });
 
   test('delete', async () => {
-    const responsePromise = openlayer.inferencePipelines.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const responsePromise = client.inferencePipelines.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -78,7 +78,7 @@ describe('resource inferencePipelines', () => {
   test('delete: request options instead of params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      openlayer.inferencePipelines.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      client.inferencePipelines.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
         path: '/_stainless_unknown_path',
       }),
     ).rejects.toThrow(Openlayer.NotFoundError);

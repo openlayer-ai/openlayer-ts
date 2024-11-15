@@ -14,10 +14,12 @@ Methods:
 
 Types:
 
+- <code><a href="./src/resources/projects/commits.ts">CommitCreateResponse</a></code>
 - <code><a href="./src/resources/projects/commits.ts">CommitListResponse</a></code>
 
 Methods:
 
+- <code title="post /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">create</a>(projectId, { ...params }) -> CommitCreateResponse</code>
 - <code title="get /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">list</a>(projectId, { ...params }) -> CommitListResponse</code>
 
 ## InferencePipelines

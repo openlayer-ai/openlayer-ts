@@ -2,16 +2,16 @@
 
 export { Commits } from './commits/commits';
 export {
-  InferencePipelineRetrieveResponse,
-  InferencePipelineUpdateResponse,
-  InferencePipelineUpdateParams,
   InferencePipelines,
+  type InferencePipelineRetrieveResponse,
+  type InferencePipelineUpdateResponse,
+  type InferencePipelineUpdateParams,
 } from './inference-pipelines/inference-pipelines';
 export {
-  ProjectCreateResponse,
-  ProjectListResponse,
-  ProjectCreateParams,
-  ProjectListParams,
   Projects,
+  type ProjectCreateResponse,
+  type ProjectListResponse,
+  type ProjectCreateParams,
+  type ProjectListParams,
 } from './projects/projects';
 export { Storage } from './storage/storage';

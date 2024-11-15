@@ -2,13 +2,18 @@
 
 import { APIResource } from '../../resource';
 import * as PresignedURLAPI from './presigned-url';
+import { PresignedURL, PresignedURLCreateParams, PresignedURLCreateResponse } from './presigned-url';
 
 export class Storage extends APIResource {
   presignedURL: PresignedURLAPI.PresignedURL = new PresignedURLAPI.PresignedURL(this._client);
 }
 
-export namespace Storage {
-  export import PresignedURL = PresignedURLAPI.PresignedURL;
-  export import PresignedURLCreateResponse = PresignedURLAPI.PresignedURLCreateResponse;
-  export import PresignedURLCreateParams = PresignedURLAPI.PresignedURLCreateParams;
+Storage.PresignedURL = PresignedURL;
+
+export declare namespace Storage {
+  export {
+    PresignedURL as PresignedURL,
+    type PresignedURLCreateResponse as PresignedURLCreateResponse,
+    type PresignedURLCreateParams as PresignedURLCreateParams,
+  };
 }

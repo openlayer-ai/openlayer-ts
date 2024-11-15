@@ -27,29 +27,26 @@ const client = new Openlayer({
 });
 
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data.stream(
-    '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-    {
-      config: {
-        inputVariableNames: ['user_query'],
-        outputColumnName: 'output',
-        numOfTokenColumnName: 'tokens',
-        costColumnName: 'cost',
-        timestampColumnName: 'timestamp',
-      },
-      rows: [
-        {
-          user_query: "what's the meaning of life?",
-          output: '42',
-          tokens: 7,
-          cost: 0.02,
-          timestamp: 1620000000,
-        },
-      ],
+  const response = await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
     },
-  );
+    rows: [
+      {
+        user_query: 'what is the meaning of life?',
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1610000000,
+      },
+    ],
+  });
 
-  console.log(dataStreamResponse.success);
+  console.log(response.success);
 }
 
 main();
@@ -78,16 +75,16 @@ async function main() {
     },
     rows: [
       {
-        user_query: "what's the meaning of life?",
+        user_query: 'what is the meaning of life?',
         output: '42',
         tokens: 7,
         cost: 0.02,
-        timestamp: 1620000000,
+        timestamp: 1610000000,
       },
     ],
   };
-  const dataStreamResponse: Openlayer.InferencePipelines.DataStreamResponse =
-    await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
+  const response: Openlayer.InferencePipelines.DataStreamResponse =
+    await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
 }
 
 main();
@@ -104,7 +101,7 @@ a subclass of `APIError` will be thrown:
 <!-- prettier-ignore -->
 ```ts
 async function main() {
-  const dataStreamResponse = await openlayer.inferencePipelines.data
+  const response = await client.inferencePipelines.data
     .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       config: {
         inputVariableNames: ['user_query'],
@@ -115,11 +112,11 @@ async function main() {
       },
       rows: [
         {
-          user_query: "what's the meaning of life?",
+          user_query: 'what is the meaning of life?',
           output: '42',
           tokens: 7,
           cost: 0.02,
-          timestamp: 1620000000,
+          timestamp: 1610000000,
         },
       ],
     })
@@ -166,7 +163,7 @@ const client = new Openlayer({
 });
 
 // Or, configure per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what is the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1610000000 }] }, {
   maxRetries: 5,
 });
 ```
@@ -183,7 +180,7 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what\'s the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1620000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what is the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1610000000 }] }, {
   timeout: 5 * 1000,
 });
 ```
@@ -204,7 +201,7 @@ You can also use the `.withResponse()` method to get the raw `Response` along wi
 ```ts
 const client = new Openlayer();
 
-const response = await openlayer.inferencePipelines.data
+const response = await client.inferencePipelines.data
   .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
@@ -215,11 +212,11 @@ const response = await openlayer.inferencePipelines.data
     },
     rows: [
       {
-        user_query: "what's the meaning of life?",
+        user_query: 'what is the meaning of life?',
         output: '42',
         tokens: 7,
         cost: 0.02,
-        timestamp: 1620000000,
+        timestamp: 1610000000,
       },
     ],
   })
@@ -227,7 +224,7 @@ const response = await openlayer.inferencePipelines.data
 console.log(response.headers.get('X-My-Header'));
 console.log(response.statusText); // access the underlying Response object
 
-const { data: dataStreamResponse, response: raw } = await openlayer.inferencePipelines.data
+const { data: response, response: raw } = await client.inferencePipelines.data
   .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
@@ -238,17 +235,17 @@ const { data: dataStreamResponse, response: raw } = await openlayer.inferencePip
     },
     rows: [
       {
-        user_query: "what's the meaning of life?",
+        user_query: 'what is the meaning of life?',
         output: '42',
         tokens: 7,
         cost: 0.02,
-        timestamp: 1620000000,
+        timestamp: 1610000000,
       },
     ],
   })
   .withResponse();
 console.log(raw.headers.get('X-My-Header'));
-console.log(dataStreamResponse.success);
+console.log(response.success);
 ```
 
 ### Making custom/undocumented requests
@@ -352,7 +349,7 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await openlayer.inferencePipelines.data.stream(
+await client.inferencePipelines.data.stream(
   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
   {
     config: {
@@ -364,11 +361,11 @@ await openlayer.inferencePipelines.data.stream(
     },
     rows: [
       {
-        user_query: "what's the meaning of life?",
+        user_query: 'what is the meaning of life?',
         output: '42',
         tokens: 7,
         cost: 0.02,
-        timestamp: 1620000000,
+        timestamp: 1610000000,
       },
     ],
   },
@@ -396,6 +393,19 @@ TypeScript >= 4.5 is supported.
 
 The following runtimes are supported:
 
+- Web browsers (Up-to-date Chrome, Firefox, Safari, Edge, and more)
+- Node.js 18 LTS or later ([non-EOL](https://endoflife.date/nodejs)) versions.
+- Deno v1.28.0 or higher, using `import Openlayer from "npm:openlayer"`.
+- Bun 1.0 or later.
+- Cloudflare Workers.
+- Vercel Edge Runtime.
+- Jest 28 or greater with the `"node"` environment (`"jsdom"` is not supported at this time).
+- Nitro v2.6 or greater.
+
 Note that React Native is not supported at this time.
 
 If you are interested in other runtime environments, please open or upvote an issue on GitHub.
+
+## Contributing
+
+See [the contributing documentation](./CONTRIBUTING.md).

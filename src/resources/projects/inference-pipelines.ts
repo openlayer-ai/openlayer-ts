@@ -3,7 +3,6 @@
 import { APIResource } from '../../resource';
 import { isRequestOptions } from '../../core';
 import * as Core from '../../core';
-import * as InferencePipelinesAPI from './inference-pipelines';
 
 export class InferencePipelines extends APIResource {
   /**
@@ -119,34 +118,10 @@ export namespace InferencePipelineCreateResponse {
 }
 
 export interface InferencePipelineListResponse {
-  _meta: InferencePipelineListResponse._Meta;
-
   items: Array<InferencePipelineListResponse.Item>;
 }
 
 export namespace InferencePipelineListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The inference pipeline id.
@@ -257,9 +232,11 @@ export interface InferencePipelineListParams {
   perPage?: number;
 }
 
-export namespace InferencePipelines {
-  export import InferencePipelineCreateResponse = InferencePipelinesAPI.InferencePipelineCreateResponse;
-  export import InferencePipelineListResponse = InferencePipelinesAPI.InferencePipelineListResponse;
-  export import InferencePipelineCreateParams = InferencePipelinesAPI.InferencePipelineCreateParams;
-  export import InferencePipelineListParams = InferencePipelinesAPI.InferencePipelineListParams;
+export declare namespace InferencePipelines {
+  export {
+    type InferencePipelineCreateResponse as InferencePipelineCreateResponse,
+    type InferencePipelineListResponse as InferencePipelineListResponse,
+    type InferencePipelineCreateParams as InferencePipelineCreateParams,
+    type InferencePipelineListParams as InferencePipelineListParams,
+  };
 }

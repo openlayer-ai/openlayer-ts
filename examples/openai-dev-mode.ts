@@ -20,10 +20,10 @@ export class MyModel {
   private openlayerInferencePipelineId: string;
 
   constructor() {
-    this.openaiApiKey = process.env.OPENAI_API_KEY || '';
-    this.openlayerApiKey = process.env.OPENLAYER_API_KEY || '';
+    this.openaiApiKey = process.env['OPENAI_API_KEY'] || '';
+    this.openlayerApiKey = process.env['OPENLAYER_API_KEY'] || '';
     // (Optional) if set will enable monitoring requests
-    this.openlayerInferencePipelineId = process.env.OPENLAYER_INFERENCE_PIPELINE_ID || '';
+    this.openlayerInferencePipelineId = process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] || '';
 
     const openlayerClient = new Openlayer({ apiKey: this.openlayerApiKey });
 
@@ -49,7 +49,7 @@ export class MyModel {
       },
       undefined,
     );
-    const result = (response as ChatCompletion).choices[0].message.content;
+    const result = (response as ChatCompletion).choices[0]?.message.content;
     return { otherFields: { model }, output: result };
   }
 }

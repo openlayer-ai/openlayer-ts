@@ -3,10 +3,12 @@
 import { APIResource } from '../../resource';
 import { isRequestOptions } from '../../core';
 import * as Core from '../../core';
-import * as InferencePipelinesAPI from './inference-pipelines';
 import * as DataAPI from './data';
+import { Data, DataStreamParams, DataStreamResponse } from './data';
 import * as RowsAPI from './rows';
+import { RowUpdateParams, RowUpdateResponse, Rows } from './rows';
 import * as TestResultsAPI from './test-results';
+import { TestResultListParams, TestResultListResponse, TestResults } from './test-results';
 
 export class InferencePipelines extends APIResource {
   data: DataAPI.Data = new DataAPI.Data(this._client);
@@ -235,17 +237,32 @@ export interface InferencePipelineUpdateParams {
   referenceDatasetUri?: string | null;
 }
 
-export namespace InferencePipelines {
-  export import InferencePipelineRetrieveResponse = InferencePipelinesAPI.InferencePipelineRetrieveResponse;
-  export import InferencePipelineUpdateResponse = InferencePipelinesAPI.InferencePipelineUpdateResponse;
-  export import InferencePipelineUpdateParams = InferencePipelinesAPI.InferencePipelineUpdateParams;
-  export import Data = DataAPI.Data;
-  export import DataStreamResponse = DataAPI.DataStreamResponse;
-  export import DataStreamParams = DataAPI.DataStreamParams;
-  export import Rows = RowsAPI.Rows;
-  export import RowUpdateResponse = RowsAPI.RowUpdateResponse;
-  export import RowUpdateParams = RowsAPI.RowUpdateParams;
-  export import TestResults = TestResultsAPI.TestResults;
-  export import TestResultListResponse = TestResultsAPI.TestResultListResponse;
-  export import TestResultListParams = TestResultsAPI.TestResultListParams;
+InferencePipelines.Data = Data;
+InferencePipelines.Rows = Rows;
+InferencePipelines.TestResults = TestResults;
+
+export declare namespace InferencePipelines {
+  export {
+    type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
+    type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+  };
+
+  export {
+    Data as Data,
+    type DataStreamResponse as DataStreamResponse,
+    type DataStreamParams as DataStreamParams,
+  };
+
+  export {
+    Rows as Rows,
+    type RowUpdateResponse as RowUpdateResponse,
+    type RowUpdateParams as RowUpdateParams,
+  };
+
+  export {
+    TestResults as TestResults,
+    type TestResultListResponse as TestResultListResponse,
+    type TestResultListParams as TestResultListParams,
+  };
 }
