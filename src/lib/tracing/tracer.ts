@@ -184,7 +184,7 @@ function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames
   const processed_steps = traceObj.toJSON();
 
   const traceData = {
-    inferenceTimestamp: Date.now(),
+    inferenceTimestamp: Math.floor(Date.now() / 1000),
     inferenceId: rootStep!.id.toString(),
     output: rootStep!.output,
     groundTruth: rootStep!.groundTruth,
