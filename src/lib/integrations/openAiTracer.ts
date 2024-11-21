@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { Stream } from 'openai/src/streaming';
+import { Stream } from 'openai/streaming';
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
 export function traceOpenAI(openai: OpenAI): OpenAI {
