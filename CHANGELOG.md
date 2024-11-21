@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.8.0 (2024-11-21)
+
+Full Changelog: [v0.7.0...v0.8.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.7.0...v0.8.0)
+
+### Features
+
+* **api:** manual updates ([#57](https://github.com/openlayer-ai/openlayer-ts/issues/57)) ([d6932b7](https://github.com/openlayer-ai/openlayer-ts/commit/d6932b7e78b38b774ba26b45060523ec40e5fae8))
+* **api:** OpenAPI spec update via Stainless API ([#49](https://github.com/openlayer-ai/openlayer-ts/issues/49)) ([98ccfe0](https://github.com/openlayer-ai/openlayer-ts/commit/98ccfe09d2f797daf2d630ae179c82531fa2bc63))
+* **api:** update via SDK Studio ([#45](https://github.com/openlayer-ai/openlayer-ts/issues/45)) ([fc02cc7](https://github.com/openlayer-ai/openlayer-ts/commit/fc02cc7f1cd4bcb0db72f32d8042524b30bd4db8))
+* **api:** update via SDK Studio ([#47](https://github.com/openlayer-ai/openlayer-ts/issues/47)) ([5915bbb](https://github.com/openlayer-ai/openlayer-ts/commit/5915bbbc9011e02fc616e5fb849bb91e71dc1350))
+* **api:** update via SDK Studio ([#54](https://github.com/openlayer-ai/openlayer-ts/issues/54)) ([839a44f](https://github.com/openlayer-ai/openlayer-ts/commit/839a44ff54aac9ef1fe060e0c5995944edebea05))
+* **api:** update via SDK Studio ([#56](https://github.com/openlayer-ai/openlayer-ts/issues/56)) ([cc41f60](https://github.com/openlayer-ai/openlayer-ts/commit/cc41f60814764f8f2a344cb685c9ca0a2fe1a977))
+
+
+### Bug Fixes
+
+* **dependencies:** update braces in yarn.lock files ([114b9e5](https://github.com/openlayer-ai/openlayer-ts/commit/114b9e5a4e7bc65dab32e0ddae5e22848f4e9211))
+* **example:** upgrade packages and lock files ([7e9b3f1](https://github.com/openlayer-ai/openlayer-ts/commit/7e9b3f1379e870b1f04f6cbb52516bd54466ee9e))
+* remove openai/src import ([55dc02e](https://github.com/openlayer-ai/openlayer-ts/commit/55dc02e7ff17ec6945eca7dcff34396caca0ab64))
+* remove package-lock.json ([027a604](https://github.com/openlayer-ai/openlayer-ts/commit/027a60418a215c9b74732d13437fa5f0124d27b8))
+
+
+### Chores
+
+* bump ([94becdb](https://github.com/openlayer-ai/openlayer-ts/commit/94becdbac782934b42ed59570fa3f10f77a43e82))
+* **ci:** bump prism mock server version ([#43](https://github.com/openlayer-ai/openlayer-ts/issues/43)) ([3fc5656](https://github.com/openlayer-ai/openlayer-ts/commit/3fc5656d8794fb279dbe81b754c496591c405cc8))
+* custom code changes ([#58](https://github.com/openlayer-ai/openlayer-ts/issues/58)) ([0e955e4](https://github.com/openlayer-ai/openlayer-ts/commit/0e955e4752b7c64795dc7e27200efe1d1c5ec24e))
+* **deps:** bump braces from 3.0.2 to 3.0.3 ([587df74](https://github.com/openlayer-ai/openlayer-ts/commit/587df74a65f4a7ae0d2043250672d80522533a38))
+* **examples:** minor formatting changes ([#44](https://github.com/openlayer-ai/openlayer-ts/issues/44)) ([ba2c05a](https://github.com/openlayer-ai/openlayer-ts/commit/ba2c05a1efe47963ef2bee9d23280d21c5f737f6))
+* **internal:** codegen related update ([#41](https://github.com/openlayer-ai/openlayer-ts/issues/41)) ([af72fc9](https://github.com/openlayer-ai/openlayer-ts/commit/af72fc915944de479aa1ff30d2ebe5870e1cf01c))
+* **internal:** minor fixes ([5e744b7](https://github.com/openlayer-ai/openlayer-ts/commit/5e744b743c64bc028eb21fe7ed13fef61af8600f))
+* rebuild project due to codegen change ([#59](https://github.com/openlayer-ai/openlayer-ts/issues/59)) ([6d230c2](https://github.com/openlayer-ai/openlayer-ts/commit/6d230c21626c8cc251892d7b9ab7265a58a8c002))
+* rebuild project due to codegen change ([#60](https://github.com/openlayer-ai/openlayer-ts/issues/60)) ([d9eb428](https://github.com/openlayer-ai/openlayer-ts/commit/d9eb428f1e9fb65c384df66e086a0975505b38a7))
+* rebuild project due to codegen change ([#65](https://github.com/openlayer-ai/openlayer-ts/issues/65)) ([f11fe41](https://github.com/openlayer-ai/openlayer-ts/commit/f11fe414fd9b87e1c92905d2e0047f30030ace23))
+* rebuild project due to codegen change ([#67](https://github.com/openlayer-ai/openlayer-ts/issues/67)) ([4f14919](https://github.com/openlayer-ai/openlayer-ts/commit/4f14919a4300642b41b904e71939a9c4678d1904))
+* remove redundant word in comment ([#69](https://github.com/openlayer-ai/openlayer-ts/issues/69)) ([4157f4b](https://github.com/openlayer-ai/openlayer-ts/commit/4157f4b096a39f024cca2669c2ccf54177631c0f))
+* update yarn lockfile ([82a6b22](https://github.com/openlayer-ai/openlayer-ts/commit/82a6b222f7f1603f2faa04afc66133ea181915ae))
+
+
+### Documentation
+
+* remove suggestion to use `npm` call out ([#68](https://github.com/openlayer-ai/openlayer-ts/issues/68)) ([949ab79](https://github.com/openlayer-ai/openlayer-ts/commit/949ab7922bdea71ae302c68021ef26ad569f7b80))
+
 ## 0.7.0 (2024-09-24)
 
 Full Changelog: [v0.6.0...v0.7.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.6.0...v0.7.0)
