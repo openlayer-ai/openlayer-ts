@@ -213,7 +213,7 @@ class OpenAIMonitor {
   public createChatCompletion = async (
     body: ChatCompletionCreateParams,
     options?: RequestOptions,
-    additionalLogs?: Openlayer.RequestOptions<any> | undefined,
+    additionalLogs?: Openlayer.RequestOptions | undefined,
   ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> => {
     // Start a timer to measure latency
     const startTime = Date.now();
@@ -309,7 +309,7 @@ class OpenAIMonitor {
   public createCompletion = async (
     body: CompletionCreateParams,
     options?: RequestOptions,
-    additionalLogs?: Openlayer.RequestOptions<any> | undefined,
+    additionalLogs?: Openlayer.RequestOptions | undefined,
   ): Promise<Completion | Stream<Completion>> => {
     if (!body.prompt) {
       console.error('No prompt provided.');
@@ -407,7 +407,7 @@ class OpenAIMonitor {
    * @param {Openlayer.RequestOptions<any> | undefined} [additionalLogs] - Optional metadata logs to include with the request sent to Openlayer.
    * @returns {Promise<void>} A promise that resolves when the run data has been successfully published to Openlayer.
    */
-  public async monitorThreadRun(run: Run, additionalLogs?: Openlayer.RequestOptions<any> | undefined) {
+  public async monitorThreadRun(run: Run, additionalLogs?: Openlayer.RequestOptions | undefined) {
     if (run.status !== 'completed' || this.openlayerInferencePipelineId.length === 0) {
       return;
     }
