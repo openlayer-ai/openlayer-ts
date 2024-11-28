@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.0 (2024-11-28)
+
+Full Changelog: [v0.8.0...v0.9.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.8.0...v0.9.0)
+
+### Features
+
+* **internal:** make git install file structure match npm ([#74](https://github.com/openlayer-ai/openlayer-ts/issues/74)) ([654e649](https://github.com/openlayer-ai/openlayer-ts/commit/654e649c654eb97cf57ec8eb1f3a923f5547085c))
+
+
+### Chores
+
+* bump ([070fae4](https://github.com/openlayer-ai/openlayer-ts/commit/070fae440bdde8caeda25552c2f206821aab2b84))
+
 ## 0.8.0 (2024-11-21)
 
 Full Changelog: [v0.7.0...v0.8.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.7.0...v0.8.0)
