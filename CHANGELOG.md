@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1 (2024-12-05)
+
+Full Changelog: [v0.9.0...v0.9.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.0...v0.9.1)
+
+### Chores
+
+* bump ([d43716a](https://github.com/openlayer-ai/openlayer-ts/commit/d43716a3324548fb71f031e17b221ebca9df55c9))
+
 ## 0.9.0 (2024-11-28)
 
 Full Changelog: [v0.8.0...v0.9.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.8.0...v0.9.0)
