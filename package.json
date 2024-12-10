@@ -125,5 +125,8 @@
       "require": "./dist/*.js",
       "default": "./dist/*.mjs"
     }
+  },
+  "resolutions": {
+    "cross-spawn": "7.0.5"
   }
 }
