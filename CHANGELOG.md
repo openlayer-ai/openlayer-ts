@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.2 (2024-12-10)
+
+Full Changelog: [v0.9.1...v0.9.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.1...v0.9.2)
+
+### Chores
+
+* **internal:** bump cross-spawn to v7.0.6 ([#81](https://github.com/openlayer-ai/openlayer-ts/issues/81)) ([982fd51](https://github.com/openlayer-ai/openlayer-ts/commit/982fd51f6dcf50a5ee59b45cf59ccf5ed477802e))
+* **internal:** remove unnecessary getRequestClient function ([#79](https://github.com/openlayer-ai/openlayer-ts/issues/79)) ([dd6b4b9](https://github.com/openlayer-ai/openlayer-ts/commit/dd6b4b9c2534f1e01ff76917648b5946a5b8b0ab))
+
 ## 0.9.1 (2024-12-05)
 
 Full Changelog: [v0.9.0...v0.9.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.0...v0.9.1)
