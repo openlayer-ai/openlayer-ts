@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.3 (2024-12-11)
+
+Full Changelog: [v0.9.2...v0.9.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.2...v0.9.3)
+
+### Chores
+
+* **types:** nicer error class types + jsdocs ([#84](https://github.com/openlayer-ai/openlayer-ts/issues/84)) ([f0b48a0](https://github.com/openlayer-ai/openlayer-ts/commit/f0b48a016657d7b8b1b2b0d70a5dba89b7673ed2))
+
 ## 0.9.2 (2024-12-10)
 
 Full Changelog: [v0.9.1...v0.9.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.1...v0.9.2)
