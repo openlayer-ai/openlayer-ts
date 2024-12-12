@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.4 (2024-12-12)
+
+Full Changelog: [v0.9.3...v0.9.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.3...v0.9.4)
+
+### Chores
+
+* **internal:** update isAbsoluteURL ([#87](https://github.com/openlayer-ai/openlayer-ts/issues/87)) ([57c400a](https://github.com/openlayer-ai/openlayer-ts/commit/57c400a349286c545265ceb3c3b4961634895d5c))
+
 ## 0.9.3 (2024-12-11)
 
 Full Changelog: [v0.9.2...v0.9.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.2...v0.9.3)
