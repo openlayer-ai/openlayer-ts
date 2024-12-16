@@ -20,9 +20,22 @@ export class InferencePipelines extends APIResource {
    */
   retrieve(
     inferencePipelineId: string,
+    query?: InferencePipelineRetrieveParams,
+    options?: Core.RequestOptions,
+  ): Core.APIPromise<InferencePipelineRetrieveResponse>;
+  retrieve(
+    inferencePipelineId: string,
+    options?: Core.RequestOptions,
+  ): Core.APIPromise<InferencePipelineRetrieveResponse>;
+  retrieve(
+    inferencePipelineId: string,
+    query: InferencePipelineRetrieveParams | Core.RequestOptions = {},
     options?: Core.RequestOptions,
   ): Core.APIPromise<InferencePipelineRetrieveResponse> {
-    return this._client.get(`/inference-pipelines/${inferencePipelineId}`, options);
+    if (isRequestOptions(query)) {
+      return this.retrieve(inferencePipelineId, {}, query);
+    }
+    return this._client.get(`/inference-pipelines/${inferencePipelineId}`, { query, ...options });
   }
 
   /**
@@ -131,11 +144,184 @@ export interface InferencePipelineRetrieveResponse {
    * The total number of tests.
    */
   totalGoalCount: number;
+
+  project?: InferencePipelineRetrieveResponse.Project | null;
+
+  workspace?: InferencePipelineRetrieveResponse.Workspace | null;
+
+  /**
+   * The workspace id.
+   */
+  workspaceId?: string;
 }
 
 export namespace InferencePipelineRetrieveResponse {
   export interface Links {
     app: string;
+  }
+
+  export interface Project {
+    /**
+     * The project id.
+     */
+    id: string;
+
+    /**
+     * The project creator id.
+     */
+    creatorId: string | null;
+
+    /**
+     * The project creation date.
+     */
+    dateCreated: string;
+
+    /**
+     * The project last updated date.
+     */
+    dateUpdated: string;
+
+    /**
+     * The number of tests in the development mode of the project.
+     */
+    developmentGoalCount: number;
+
+    /**
+     * The total number of tests in the project.
+     */
+    goalCount: number;
+
+    /**
+     * The number of inference pipelines in the project.
+     */
+    inferencePipelineCount: number;
+
+    /**
+     * Links to the project.
+     */
+    links: Project.Links;
+
+    /**
+     * The number of tests in the monitoring mode of the project.
+     */
+    monitoringGoalCount: number;
+
+    /**
+     * The project name.
+     */
+    name: string;
+
+    /**
+     * The source of the project.
+     */
+    source: 'web' | 'api' | 'null' | null;
+
+    /**
+     * The task type of the project.
+     */
+    taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
+
+    /**
+     * The number of versions (commits) in the project.
+     */
+    versionCount: number;
+
+    /**
+     * The workspace id.
+     */
+    workspaceId: string | null;
+
+    /**
+     * The project description.
+     */
+    description?: string | null;
+
+    gitRepo?: Project.GitRepo | null;
+  }
+
+  export namespace Project {
+    /**
+     * Links to the project.
+     */
+    export interface Links {
+      app: string;
+    }
+
+    export interface GitRepo {
+      id: string;
+
+      dateConnected: string;
+
+      dateUpdated: string;
+
+      gitAccountId: string;
+
+      gitId: number;
+
+      name: string;
+
+      private: boolean;
+
+      projectId: string;
+
+      slug: string;
+
+      url: string;
+
+      branch?: string;
+
+      rootDir?: string;
+    }
+  }
+
+  export interface Workspace {
+    id: string;
+
+    creatorId: string | null;
+
+    dateCreated: string;
+
+    dateUpdated: string;
+
+    inviteCount: number;
+
+    memberCount: number;
+
+    name: string;
+
+    periodEndDate: string | null;
+
+    periodStartDate: string | null;
+
+    projectCount: number;
+
+    slug: string;
+
+    status:
+      | 'active'
+      | 'past_due'
+      | 'unpaid'
+      | 'canceled'
+      | 'incomplete'
+      | 'incomplete_expired'
+      | 'trialing'
+      | 'paused';
+
+    monthlyUsage?: Array<Workspace.MonthlyUsage>;
+
+    samlOnlyAccess?: boolean;
+
+    wildcardDomains?: Array<string>;
+  }
+
+  export namespace Workspace {
+    export interface MonthlyUsage {
+      executionTimeMs?: number | null;
+
+      monthYear?: string;
+
+      predictionCount?: number;
+    }
   }
 }
 
@@ -211,12 +397,192 @@ export interface InferencePipelineUpdateResponse {
    * The total number of tests.
    */
   totalGoalCount: number;
+
+  project?: InferencePipelineUpdateResponse.Project | null;
+
+  workspace?: InferencePipelineUpdateResponse.Workspace | null;
+
+  /**
+   * The workspace id.
+   */
+  workspaceId?: string;
 }
 
 export namespace InferencePipelineUpdateResponse {
   export interface Links {
     app: string;
   }
+
+  export interface Project {
+    /**
+     * The project id.
+     */
+    id: string;
+
+    /**
+     * The project creator id.
+     */
+    creatorId: string | null;
+
+    /**
+     * The project creation date.
+     */
+    dateCreated: string;
+
+    /**
+     * The project last updated date.
+     */
+    dateUpdated: string;
+
+    /**
+     * The number of tests in the development mode of the project.
+     */
+    developmentGoalCount: number;
+
+    /**
+     * The total number of tests in the project.
+     */
+    goalCount: number;
+
+    /**
+     * The number of inference pipelines in the project.
+     */
+    inferencePipelineCount: number;
+
+    /**
+     * Links to the project.
+     */
+    links: Project.Links;
+
+    /**
+     * The number of tests in the monitoring mode of the project.
+     */
+    monitoringGoalCount: number;
+
+    /**
+     * The project name.
+     */
+    name: string;
+
+    /**
+     * The source of the project.
+     */
+    source: 'web' | 'api' | 'null' | null;
+
+    /**
+     * The task type of the project.
+     */
+    taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
+
+    /**
+     * The number of versions (commits) in the project.
+     */
+    versionCount: number;
+
+    /**
+     * The workspace id.
+     */
+    workspaceId: string | null;
+
+    /**
+     * The project description.
+     */
+    description?: string | null;
+
+    gitRepo?: Project.GitRepo | null;
+  }
+
+  export namespace Project {
+    /**
+     * Links to the project.
+     */
+    export interface Links {
+      app: string;
+    }
+
+    export interface GitRepo {
+      id: string;
+
+      dateConnected: string;
+
+      dateUpdated: string;
+
+      gitAccountId: string;
+
+      gitId: number;
+
+      name: string;
+
+      private: boolean;
+
+      projectId: string;
+
+      slug: string;
+
+      url: string;
+
+      branch?: string;
+
+      rootDir?: string;
+    }
+  }
+
+  export interface Workspace {
+    id: string;
+
+    creatorId: string | null;
+
+    dateCreated: string;
+
+    dateUpdated: string;
+
+    inviteCount: number;
+
+    memberCount: number;
+
+    name: string;
+
+    periodEndDate: string | null;
+
+    periodStartDate: string | null;
+
+    projectCount: number;
+
+    slug: string;
+
+    status:
+      | 'active'
+      | 'past_due'
+      | 'unpaid'
+      | 'canceled'
+      | 'incomplete'
+      | 'incomplete_expired'
+      | 'trialing'
+      | 'paused';
+
+    monthlyUsage?: Array<Workspace.MonthlyUsage>;
+
+    samlOnlyAccess?: boolean;
+
+    wildcardDomains?: Array<string>;
+  }
+
+  export namespace Workspace {
+    export interface MonthlyUsage {
+      executionTimeMs?: number | null;
+
+      monthYear?: string;
+
+      predictionCount?: number;
+    }
+  }
+}
+
+export interface InferencePipelineRetrieveParams {
+  /**
+   * Expand specific nested objects.
+   */
+  expand?: Array<'project' | 'workspace'>;
 }
 
 export interface InferencePipelineUpdateParams {
@@ -245,6 +611,7 @@ export declare namespace InferencePipelines {
   export {
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
   };
 
