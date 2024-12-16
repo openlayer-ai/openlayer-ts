@@ -29,6 +29,17 @@ describe('resource inferencePipelines', () => {
     ).rejects.toThrow(Openlayer.NotFoundError);
   });
 
+  test('retrieve: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      client.inferencePipelines.retrieve(
+        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+        { expand: ['project'] },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Openlayer.NotFoundError);
+  });
+
   test('update', async () => {
     const responsePromise = client.inferencePipelines.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();

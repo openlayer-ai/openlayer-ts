@@ -1,12 +1,14 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 import { type Agent } from './_shims/index';
+import * as qs from './internal/qs';
 import * as Core from './core';
 import * as Errors from './error';
 import * as Uploads from './uploads';
 import * as API from './resources/index';
 import { Commits } from './resources/commits/commits';
 import {
+  InferencePipelineRetrieveParams,
   InferencePipelineRetrieveResponse,
   InferencePipelineUpdateParams,
   InferencePipelineUpdateResponse,
@@ -164,6 +166,10 @@ export class Openlayer extends Core.APIClient {
     return { Authorization: `Bearer ${this.apiKey}` };
   }
 
+  protected override stringifyQuery(query: Record<string, unknown>): string {
+    return qs.stringify(query, { arrayFormat: 'comma' });
+  }
+
   static Openlayer = this;
   static DEFAULT_TIMEOUT = 60000; // 1 minute
 
@@ -206,6 +212,7 @@ export declare namespace Openlayer {
     InferencePipelines as InferencePipelines,
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
   };
 
