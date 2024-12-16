@@ -5,6 +5,7 @@ export {
   InferencePipelines,
   type InferencePipelineRetrieveResponse,
   type InferencePipelineUpdateResponse,
+  type InferencePipelineRetrieveParams,
   type InferencePipelineUpdateParams,
 } from './inference-pipelines';
 export { Rows, type RowUpdateResponse, type RowUpdateParams } from './rows';

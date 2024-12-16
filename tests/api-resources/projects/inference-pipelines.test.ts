@@ -27,6 +27,14 @@ describe('resource inferencePipelines', () => {
     const response = await client.projects.inferencePipelines.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       description: 'This pipeline is used for production.',
       name: 'production',
+      project: { name: 'My Project', taskType: 'llm-base', description: 'My project description.' },
+      workspace: {
+        name: 'Openlayer',
+        slug: 'openlayer',
+        inviteCode: 'inviteCode',
+        samlOnlyAccess: true,
+        wildcardDomains: ['string'],
+      },
     });
   });
 
