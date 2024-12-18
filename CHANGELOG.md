@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0 (2024-12-18)
+
+Full Changelog: [v0.9.4...v0.10.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.4...v0.10.0)
+
+### Features
+
+* **api:** api update ([#90](https://github.com/openlayer-ai/openlayer-ts/issues/90)) ([b7a05da](https://github.com/openlayer-ai/openlayer-ts/commit/b7a05daa95090c6ee9a286260d8b2d5c2871ae4d))
+
+
+### Chores
+
+* **internal:** fix some typos ([#92](https://github.com/openlayer-ai/openlayer-ts/issues/92)) ([03de89d](https://github.com/openlayer-ai/openlayer-ts/commit/03de89dfbd6eeb436eb6025eb5c433b523fa9aab))
+
 ## 0.9.4 (2024-12-12)
 
 Full Changelog: [v0.9.3...v0.9.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.3...v0.9.4)
