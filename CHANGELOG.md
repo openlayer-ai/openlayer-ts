@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.1 (2024-12-20)
+
+Full Changelog: [v0.10.0...v0.10.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.0...v0.10.1)
+
+### Chores
+
+* **internal:** codegen related update ([#94](https://github.com/openlayer-ai/openlayer-ts/issues/94)) ([2b62732](https://github.com/openlayer-ai/openlayer-ts/commit/2b62732d4414f72715911e07d017b0297b1e896c))
+
 ## 0.10.0 (2024-12-18)
 
 Full Changelog: [v0.9.4...v0.10.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.9.4...v0.10.0)
