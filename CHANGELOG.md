@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.3 (2025-01-01)
+
+Full Changelog: [v0.10.2...v0.10.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.2...v0.10.3)
+
+### Chores
+
+* **internal:** version bump ([#101](https://github.com/openlayer-ai/openlayer-ts/issues/101)) ([5d4e0ad](https://github.com/openlayer-ai/openlayer-ts/commit/5d4e0ad5a119b8c81b62b8dd918082bcd00dabc8))
+
 ## 0.10.2 (2024-12-21)
 
 Full Changelog: [v0.10.1...v0.10.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.1...v0.10.2)
