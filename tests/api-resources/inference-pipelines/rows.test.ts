@@ -30,7 +30,6 @@ describe('resource rows', () => {
       config: {
         groundTruthColumnName: 'ground_truth',
         humanFeedbackColumnName: 'human_feedback',
-        inferenceIdColumnName: 'id',
         latencyColumnName: 'latency',
         timestampColumnName: 'timestamp',
       },
