@@ -28,7 +28,13 @@ describe('resource inferencePipelines', () => {
       description: 'This pipeline is used for production.',
       name: 'production',
       project: { name: 'My Project', taskType: 'llm-base', description: 'My project description.' },
-      workspace: { name: 'Openlayer', slug: 'openlayer', samlOnlyAccess: true, wildcardDomains: ['string'] },
+      workspace: {
+        name: 'Openlayer',
+        slug: 'openlayer',
+        inviteCode: 'inviteCode',
+        samlOnlyAccess: true,
+        wildcardDomains: ['string'],
+      },
     });
   });
 
