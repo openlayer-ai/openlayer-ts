@@ -36,6 +36,14 @@ Methods:
 
 # Commits
 
+Types:
+
+- <code><a href="./src/resources/commits/commits.ts">CommitRetrieveResponse</a></code>
+
+Methods:
+
+- <code title="get /versions/{projectVersionId}">client.commits.<a href="./src/resources/commits/commits.ts">retrieve</a>(projectVersionId) -> CommitRetrieveResponse</code>
+
 ## TestResults
 
 Types:
