@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0 (2025-03-13)
+
+Full Changelog: [v0.10.3...v0.11.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.3...v0.11.0)
+
+### Features
+
+* **api:** add endpoint to retrieve commit by id ([#103](https://github.com/openlayer-ai/openlayer-ts/issues/103)) ([5247899](https://github.com/openlayer-ai/openlayer-ts/commit/52478996d3008109c42e9b4f0e11c206717474ac))
+
 ## 0.10.3 (2025-01-01)
 
 Full Changelog: [v0.10.2...v0.10.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.2...v0.10.3)
