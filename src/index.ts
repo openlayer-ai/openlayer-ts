@@ -6,7 +6,7 @@ import * as Core from './core';
 import * as Errors from './error';
 import * as Uploads from './uploads';
 import * as API from './resources/index';
-import { Commits } from './resources/commits/commits';
+import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
 import {
   InferencePipelineRetrieveParams,
   InferencePipelineRetrieveResponse,
@@ -206,7 +206,7 @@ export declare namespace Openlayer {
     type ProjectListParams as ProjectListParams,
   };
 
-  export { Commits as Commits };
+  export { Commits as Commits, type CommitRetrieveResponse as CommitRetrieveResponse };
 
   export {
     InferencePipelines as InferencePipelines,
