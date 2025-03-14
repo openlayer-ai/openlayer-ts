@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.12.0 (2025-03-14)
+
+Full Changelog: [v0.11.0...v0.12.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.11.0...v0.12.0)
+
+### Features
+
+* **client:** accept RFC6838 JSON content types ([#108](https://github.com/openlayer-ai/openlayer-ts/issues/108)) ([f7acf0d](https://github.com/openlayer-ai/openlayer-ts/commit/f7acf0d19bf08c2ea2286461b99511535ba49b3a))
+
+
+### Bug Fixes
+
+* **exports:** ensure resource imports don't require /index ([#110](https://github.com/openlayer-ai/openlayer-ts/issues/110)) ([2c80460](https://github.com/openlayer-ai/openlayer-ts/commit/2c804607bc5135c0b5170c6d98e4439b429a6e43))
+
+
+### Chores
+
+* **internal:** codegen related update ([#106](https://github.com/openlayer-ai/openlayer-ts/issues/106)) ([7089dd9](https://github.com/openlayer-ai/openlayer-ts/commit/7089dd97d1a74d6e2d67e360b7b2db2799aaf98f))
+* **internal:** remove extra empty newlines ([#109](https://github.com/openlayer-ai/openlayer-ts/issues/109)) ([bd6512c](https://github.com/openlayer-ai/openlayer-ts/commit/bd6512c00ee8d1cf2c623ad1de26f56a6c158629))
+
 ## 0.11.0 (2025-03-13)
 
 Full Changelog: [v0.10.3...v0.11.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.10.3...v0.11.0)
