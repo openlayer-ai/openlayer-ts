@@ -1,6 +1,6 @@
 {
   "name": "openlayer",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "The official TypeScript library for the Openlayer API",
   "author": "Openlayer <support@openlayer.com>",
   "types": "dist/index.d.ts",
