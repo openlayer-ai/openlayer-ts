@@ -240,26 +240,59 @@ export namespace InferencePipelineCreateResponse {
   }
 
   export interface Workspace {
+    /**
+     * The workspace id.
+     */
     id: string;
 
+    /**
+     * The workspace creator id.
+     */
     creatorId: string | null;
 
+    /**
+     * The workspace creation date.
+     */
     dateCreated: string;
 
+    /**
+     * The workspace last updated date.
+     */
     dateUpdated: string;
 
+    /**
+     * The number of invites in the workspace.
+     */
     inviteCount: number;
 
+    /**
+     * The number of members in the workspace.
+     */
     memberCount: number;
 
+    /**
+     * The workspace name.
+     */
     name: string;
 
+    /**
+     * The end date of the current billing period.
+     */
     periodEndDate: string | null;
 
+    /**
+     * The start date of the current billing period.
+     */
     periodStartDate: string | null;
 
+    /**
+     * The number of projects in the workspace.
+     */
     projectCount: number;
 
+    /**
+     * The workspace slug.
+     */
     slug: string;
 
     status:
@@ -274,6 +307,9 @@ export namespace InferencePipelineCreateResponse {
 
     monthlyUsage?: Array<Workspace.MonthlyUsage>;
 
+    /**
+     * Whether the workspace only allows SAML authentication.
+     */
     samlOnlyAccess?: boolean;
 
     wildcardDomains?: Array<string>;
@@ -498,26 +534,59 @@ export namespace InferencePipelineListResponse {
     }
 
     export interface Workspace {
+      /**
+       * The workspace id.
+       */
       id: string;
 
+      /**
+       * The workspace creator id.
+       */
       creatorId: string | null;
 
+      /**
+       * The workspace creation date.
+       */
       dateCreated: string;
 
+      /**
+       * The workspace last updated date.
+       */
       dateUpdated: string;
 
+      /**
+       * The number of invites in the workspace.
+       */
       inviteCount: number;
 
+      /**
+       * The number of members in the workspace.
+       */
       memberCount: number;
 
+      /**
+       * The workspace name.
+       */
       name: string;
 
+      /**
+       * The end date of the current billing period.
+       */
       periodEndDate: string | null;
 
+      /**
+       * The start date of the current billing period.
+       */
       periodStartDate: string | null;
 
+      /**
+       * The number of projects in the workspace.
+       */
       projectCount: number;
 
+      /**
+       * The workspace slug.
+       */
       slug: string;
 
       status:
@@ -532,6 +601,9 @@ export namespace InferencePipelineListResponse {
 
       monthlyUsage?: Array<Workspace.MonthlyUsage>;
 
+      /**
+       * Whether the workspace only allows SAML authentication.
+       */
       samlOnlyAccess?: boolean;
 
       wildcardDomains?: Array<string>;
@@ -584,12 +656,24 @@ export namespace InferencePipelineCreateParams {
   }
 
   export interface Workspace {
+    /**
+     * The workspace name.
+     */
     name: string;
 
+    /**
+     * The workspace slug.
+     */
     slug: string;
 
+    /**
+     * The workspace invite code.
+     */
     inviteCode?: string;
 
+    /**
+     * Whether the workspace only allows SAML authentication.
+     */
     samlOnlyAccess?: boolean;
 
     wildcardDomains?: Array<string>;
