@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.13.0 (2025-03-22)
+
+Full Changelog: [v0.12.0...v0.13.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.12.0...v0.13.0)
+
+### Features
+
+* **api:** api update ([3345b62](https://github.com/openlayer-ai/openlayer-ts/commit/3345b629c1904bfb2c2f9e05c86312c6c7b88b48))
+* **client:** send `X-Stainless-Timeout` header ([333edef](https://github.com/openlayer-ai/openlayer-ts/commit/333edef002f95acecdb29d3e6a698343c3361937))
+
+
+### Bug Fixes
+
+* avoid type error in certain environments ([#115](https://github.com/openlayer-ai/openlayer-ts/issues/115)) ([701091f](https://github.com/openlayer-ai/openlayer-ts/commit/701091ff829ca7b7f6ee3bf66af961b660eb3371))
+* **client:** fix export map for index exports ([ac3dffc](https://github.com/openlayer-ai/openlayer-ts/commit/ac3dffce4624d350d5cf73e3020067cb2f71ab59))
+
+
+### Chores
+
+* **exports:** cleaner resource index imports ([#113](https://github.com/openlayer-ai/openlayer-ts/issues/113)) ([9ac3180](https://github.com/openlayer-ai/openlayer-ts/commit/9ac318013fd2128e7f0a98db699534569c8e18a3))
+* **exports:** stop using path fallbacks ([#114](https://github.com/openlayer-ai/openlayer-ts/issues/114)) ([fdcd6e2](https://github.com/openlayer-ai/openlayer-ts/commit/fdcd6e2effcd89201604c545e0c3b8f0f0800032))
+* **internal:** codegen related update ([1016df6](https://github.com/openlayer-ai/openlayer-ts/commit/1016df6f549fd3312c26f6ecfd15b3aac58c5d65))
+* **internal:** codegen related update ([ca17307](https://github.com/openlayer-ai/openlayer-ts/commit/ca173073bc522424d9d6a35b5a2af14ccd7b8c88))
+* **internal:** codegen related update ([fd5d0a9](https://github.com/openlayer-ai/openlayer-ts/commit/fd5d0a9808b2abf8d1b88d3becf2350d9b25887e))
+* **internal:** fix devcontainers setup ([6a459de](https://github.com/openlayer-ai/openlayer-ts/commit/6a459de24ebec36ba38b751b6ab7143b3b9e16fd))
+* **internal:** fix workflows ([59a7cb4](https://github.com/openlayer-ai/openlayer-ts/commit/59a7cb4439a344c0ed6b4adb9e6b113dbed0f940))
+* **internal:** version bump ([3a31790](https://github.com/openlayer-ai/openlayer-ts/commit/3a317902d8bf523f3f54398cdb077a11a18d9995))
+
+
+### Documentation
+
+* update URLs from stainlessapi.com to stainless.com ([e56ef04](https://github.com/openlayer-ai/openlayer-ts/commit/e56ef04346aa002b8481a8018ad540c678a9a21e))
+
 ## 0.12.0 (2025-03-14)
 
 Full Changelog: [v0.11.0...v0.12.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.11.0...v0.12.0)
