@@ -203,7 +203,10 @@ export namespace TestResultListResponse {
          */
         insightName?: string;
 
-        insightParameters?: Array<unknown>;
+        /**
+         * The insight parameters. Required only for some test subtypes.
+         */
+        insightParameters?: Array<Threshold.InsightParameter> | null;
 
         /**
          * The measurement to be evaluated.
@@ -213,12 +216,28 @@ export namespace TestResultListResponse {
         /**
          * The operator to be used for the evaluation.
          */
-        operator?: string;
+        operator?: 'is' | '>' | '>=' | '<' | '<=' | '!=';
+
+        /**
+         * Whether to use automatic anomaly detection or manual thresholds
+         */
+        thresholdMode?: 'automatic' | 'manual';
 
         /**
          * The value to be compared.
          */
         value?: number | boolean | string | Array<string>;
+      }
+
+      export namespace Threshold {
+        export interface InsightParameter {
+          /**
+           * The name of the insight filter.
+           */
+          name: string;
+
+          value: unknown;
+        }
       }
     }
   }
