@@ -21,3 +21,4 @@ export {
   type ProjectCreateParams,
   type ProjectListParams,
 } from './projects';
+export { Tests, type TestCreateResponse, type TestCreateParams } from './tests';
