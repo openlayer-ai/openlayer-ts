@@ -1,0 +1,286 @@
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+import { APIResource } from '../../resource';
+import * as Core from '../../core';
+
+export class Tests extends APIResource {
+  /**
+   * Create a test.
+   */
+  create(
+    projectId: string,
+    body: TestCreateParams,
+    options?: Core.RequestOptions,
+  ): Core.APIPromise<TestCreateResponse> {
+    return this._client.post(`/projects/${projectId}/tests`, { body, ...options });
+  }
+}
+
+export interface TestCreateResponse {
+  /**
+   * The test id.
+   */
+  id: string;
+
+  /**
+   * The number of comments on the test.
+   */
+  commentCount: number;
+
+  /**
+   * The test creator id.
+   */
+  creatorId: string | null;
+
+  /**
+   * The date the test was archived.
+   */
+  dateArchived: string | null;
+
+  /**
+   * The creation date.
+   */
+  dateCreated: string;
+
+  /**
+   * The last updated date.
+   */
+  dateUpdated: string;
+
+  /**
+   * The test description.
+   */
+  description: unknown | null;
+
+  /**
+   * The test name.
+   */
+  name: string;
+
+  /**
+   * The test number.
+   */
+  number: number;
+
+  /**
+   * The project version (commit) id where the test was created.
+   */
+  originProjectVersionId: string | null;
+
+  /**
+   * The test subtype.
+   */
+  subtype: string;
+
+  /**
+   * Whether the test is suggested or user-created.
+   */
+  suggested: boolean;
+
+  thresholds: Array<TestCreateResponse.Threshold>;
+
+  /**
+   * The test type.
+   */
+  type: string;
+
+  /**
+   * Whether the test is archived.
+   */
+  archived?: boolean;
+
+  /**
+   * The delay window in seconds. Only applies to tests that use production data.
+   */
+  delayWindow?: number | null;
+
+  /**
+   * The evaluation window in seconds. Only applies to tests that use production
+   * data.
+   */
+  evaluationWindow?: number | null;
+
+  /**
+   * Whether the test uses an ML model.
+   */
+  usesMlModel?: boolean;
+
+  /**
+   * Whether the test uses production data (monitoring mode only).
+   */
+  usesProductionData?: boolean;
+
+  /**
+   * Whether the test uses a reference dataset (monitoring mode only).
+   */
+  usesReferenceDataset?: boolean;
+
+  /**
+   * Whether the test uses a training dataset.
+   */
+  usesTrainingDataset?: boolean;
+
+  /**
+   * Whether the test uses a validation dataset.
+   */
+  usesValidationDataset?: boolean;
+}
+
+export namespace TestCreateResponse {
+  export interface Threshold {
+    /**
+     * The insight name to be evaluated.
+     */
+    insightName?: string;
+
+    /**
+     * The insight parameters. Required only for some test subtypes.
+     */
+    insightParameters?: Array<Threshold.InsightParameter> | null;
+
+    /**
+     * The measurement to be evaluated.
+     */
+    measurement?: string;
+
+    /**
+     * The operator to be used for the evaluation.
+     */
+    operator?: 'is' | '>' | '>=' | '<' | '<=' | '!=';
+
+    /**
+     * Whether to use automatic anomaly detection or manual thresholds
+     */
+    thresholdMode?: 'automatic' | 'manual';
+
+    /**
+     * The value to be compared.
+     */
+    value?: number | boolean | string | Array<string>;
+  }
+
+  export namespace Threshold {
+    export interface InsightParameter {
+      /**
+       * The name of the insight filter.
+       */
+      name: string;
+
+      value: unknown;
+    }
+  }
+}
+
+export interface TestCreateParams {
+  /**
+   * The test description.
+   */
+  description: unknown | null;
+
+  /**
+   * The test name.
+   */
+  name: string;
+
+  /**
+   * The test subtype.
+   */
+  subtype: string;
+
+  thresholds: Array<TestCreateParams.Threshold>;
+
+  /**
+   * The test type.
+   */
+  type: string;
+
+  /**
+   * Whether the test is archived.
+   */
+  archived?: boolean;
+
+  /**
+   * The delay window in seconds. Only applies to tests that use production data.
+   */
+  delayWindow?: number | null;
+
+  /**
+   * The evaluation window in seconds. Only applies to tests that use production
+   * data.
+   */
+  evaluationWindow?: number | null;
+
+  /**
+   * Whether the test uses an ML model.
+   */
+  usesMlModel?: boolean;
+
+  /**
+   * Whether the test uses production data (monitoring mode only).
+   */
+  usesProductionData?: boolean;
+
+  /**
+   * Whether the test uses a reference dataset (monitoring mode only).
+   */
+  usesReferenceDataset?: boolean;
+
+  /**
+   * Whether the test uses a training dataset.
+   */
+  usesTrainingDataset?: boolean;
+
+  /**
+   * Whether the test uses a validation dataset.
+   */
+  usesValidationDataset?: boolean;
+}
+
+export namespace TestCreateParams {
+  export interface Threshold {
+    /**
+     * The insight name to be evaluated.
+     */
+    insightName?: string;
+
+    /**
+     * The insight parameters. Required only for some test subtypes.
+     */
+    insightParameters?: Array<Threshold.InsightParameter> | null;
+
+    /**
+     * The measurement to be evaluated.
+     */
+    measurement?: string;
+
+    /**
+     * The operator to be used for the evaluation.
+     */
+    operator?: 'is' | '>' | '>=' | '<' | '<=' | '!=';
+
+    /**
+     * Whether to use automatic anomaly detection or manual thresholds
+     */
+    thresholdMode?: 'automatic' | 'manual';
+
+    /**
+     * The value to be compared.
+     */
+    value?: number | boolean | string | Array<string>;
+  }
+
+  export namespace Threshold {
+    export interface InsightParameter {
+      /**
+       * The name of the insight filter.
+       */
+      name: string;
+
+      value: unknown;
+    }
+  }
+}
+
+export declare namespace Tests {
+  export { type TestCreateResponse as TestCreateResponse, type TestCreateParams as TestCreateParams };
+}
