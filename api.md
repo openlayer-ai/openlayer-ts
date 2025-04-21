@@ -34,6 +34,16 @@ Methods:
 - <code title="post /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">create</a>(projectId, { ...params }) -> InferencePipelineCreateResponse</code>
 - <code title="get /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">list</a>(projectId, { ...params }) -> InferencePipelineListResponse</code>
 
+## Tests
+
+Types:
+
+- <code><a href="./src/resources/projects/tests.ts">TestCreateResponse</a></code>
+
+Methods:
+
+- <code title="post /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">create</a>(projectId, { ...params }) -> TestCreateResponse</code>
+
 # Commits
 
 Types:

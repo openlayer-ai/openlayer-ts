@@ -19,12 +19,15 @@ import {
   InferencePipelineListResponse,
   InferencePipelines,
 } from './inference-pipelines';
+import * as TestsAPI from './tests';
+import { TestCreateParams, TestCreateResponse, Tests } from './tests';
 
 export class Projects extends APIResource {
   commits: CommitsAPI.Commits = new CommitsAPI.Commits(this._client);
   inferencePipelines: InferencePipelinesAPI.InferencePipelines = new InferencePipelinesAPI.InferencePipelines(
     this._client,
   );
+  tests: TestsAPI.Tests = new TestsAPI.Tests(this._client);
 
   /**
    * Create a project in your workspace.
@@ -324,6 +327,7 @@ export interface ProjectListParams {
 
 Projects.Commits = Commits;
 Projects.InferencePipelines = InferencePipelines;
+Projects.Tests = Tests;
 
 export declare namespace Projects {
   export {
@@ -347,5 +351,11 @@ export declare namespace Projects {
     type InferencePipelineListResponse as InferencePipelineListResponse,
     type InferencePipelineCreateParams as InferencePipelineCreateParams,
     type InferencePipelineListParams as InferencePipelineListParams,
+  };
+
+  export {
+    Tests as Tests,
+    type TestCreateResponse as TestCreateResponse,
+    type TestCreateParams as TestCreateParams,
   };
 }
