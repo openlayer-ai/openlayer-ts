@@ -10,6 +10,7 @@ on:
 
 jobs:
   lint:
+    timeout-minutes: 10
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -27,6 +28,7 @@ jobs:
         run: ./scripts/lint
 
   build:
+    timeout-minutes: 5
     name: build
     runs-on: ubuntu-latest
     permissions:
