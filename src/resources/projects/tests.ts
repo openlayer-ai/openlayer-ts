@@ -234,10 +234,34 @@ export namespace TestCreateResponse {
 }
 
 export interface TestListResponse {
+  _meta: TestListResponse._Meta;
+
   items: Array<TestListResponse.Item>;
 }
 
 export namespace TestListResponse {
+  export interface _Meta {
+    /**
+     * The current page.
+     */
+    page: number;
+
+    /**
+     * The number of items per page.
+     */
+    perPage: number;
+
+    /**
+     * The total number of items.
+     */
+    totalItems: number;
+
+    /**
+     * The total number of pages.
+     */
+    totalPages: number;
+  }
+
   export interface Item {
     /**
      * The test id.
