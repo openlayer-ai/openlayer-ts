@@ -140,7 +140,48 @@ export namespace TestResultListResponse {
       /**
        * The test subtype.
        */
-      subtype: string;
+      subtype:
+        | 'anomalousColumnCount'
+        | 'characterLength'
+        | 'classImbalanceRatio'
+        | 'expectColumnAToBeInColumnB'
+        | 'columnAverage'
+        | 'columnDrift'
+        | 'columnStatistic'
+        | 'columnValuesMatch'
+        | 'conflictingLabelRowCount'
+        | 'containsPii'
+        | 'containsValidUrl'
+        | 'correlatedFeatureCount'
+        | 'customMetricThreshold'
+        | 'duplicateRowCount'
+        | 'emptyFeature'
+        | 'emptyFeatureCount'
+        | 'driftedFeatureCount'
+        | 'featureMissingValues'
+        | 'featureValueValidation'
+        | 'greatExpectations'
+        | 'groupByColumnStatsCheck'
+        | 'illFormedRowCount'
+        | 'isCode'
+        | 'isJson'
+        | 'llmRubricThresholdV2'
+        | 'labelDrift'
+        | 'metricThreshold'
+        | 'newCategoryCount'
+        | 'newLabelCount'
+        | 'nullRowCount'
+        | 'rowCount'
+        | 'ppScoreValueValidation'
+        | 'quasiConstantFeature'
+        | 'quasiConstantFeatureCount'
+        | 'sqlQuery'
+        | 'dtypeValidation'
+        | 'sentenceLength'
+        | 'sizeRatio'
+        | 'specialCharactersRatio'
+        | 'stringValidation'
+        | 'trainValLeakageRowCount';
 
       /**
        * Whether the test is suggested or user-created.
@@ -152,7 +193,7 @@ export namespace TestResultListResponse {
       /**
        * The test type.
        */
-      type: string;
+      type: 'integrity' | 'consistency' | 'performance';
 
       /**
        * Whether the test is archived.
