@@ -21,4 +21,10 @@ export {
   type ProjectCreateParams,
   type ProjectListParams,
 } from './projects';
-export { Tests, type TestCreateResponse, type TestCreateParams } from './tests';
+export {
+  Tests,
+  type TestCreateResponse,
+  type TestListResponse,
+  type TestCreateParams,
+  type TestListParams,
+} from './tests';
