@@ -53,6 +53,43 @@ describe('resource tests', () => {
     });
   });
 
+  test('update: only required params', async () => {
+    const responsePromise = client.projects.tests.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      payloads: [{ id: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e' }],
+    });
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('update: required and optional params', async () => {
+    const response = await client.projects.tests.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      payloads: [
+        {
+          id: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+          archived: false,
+          description: 'This test checks for duplicate rows in the dataset.',
+          name: 'No duplicate rows',
+          suggested: false,
+          thresholds: [
+            {
+              insightName: 'duplicateRowCount',
+              insightParameters: [{ name: 'column_name', value: 'Age' }],
+              measurement: 'duplicateRowCount',
+              operator: '<=',
+              thresholdMode: 'automatic',
+              value: 0,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   test('list', async () => {
     const responsePromise = client.projects.tests.list('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();

@@ -24,7 +24,9 @@ export {
 export {
   Tests,
   type TestCreateResponse,
+  type TestUpdateResponse,
   type TestListResponse,
   type TestCreateParams,
+  type TestUpdateParams,
   type TestListParams,
 } from './tests';

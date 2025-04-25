@@ -39,11 +39,13 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/projects/tests.ts">TestCreateResponse</a></code>
+- <code><a href="./src/resources/projects/tests.ts">TestUpdateResponse</a></code>
 - <code><a href="./src/resources/projects/tests.ts">TestListResponse</a></code>
 
 Methods:
 
 - <code title="post /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">create</a>(projectId, { ...params }) -> TestCreateResponse</code>
+- <code title="put /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">update</a>(projectId, { ...params }) -> TestUpdateResponse</code>
 - <code title="get /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">list</a>(projectId, { ...params }) -> TestListResponse</code>
 
 # Commits
