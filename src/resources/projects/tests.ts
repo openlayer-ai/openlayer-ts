@@ -193,10 +193,46 @@ export namespace TestCreateResponse {
     /**
      * The insight name to be evaluated.
      */
-    insightName?: string;
+    insightName?:
+      | 'characterLength'
+      | 'classImbalance'
+      | 'expectColumnAToBeInColumnB'
+      | 'columnAverage'
+      | 'columnDrift'
+      | 'columnValuesMatch'
+      | 'confidenceDistribution'
+      | 'conflictingLabelRowCount'
+      | 'containsPii'
+      | 'containsValidUrl'
+      | 'correlatedFeatures'
+      | 'customMetric'
+      | 'duplicateRowCount'
+      | 'emptyFeatures'
+      | 'featureDrift'
+      | 'featureProfile'
+      | 'greatExpectations'
+      | 'groupByColumnStatsCheck'
+      | 'illFormedRowCount'
+      | 'isCode'
+      | 'isJson'
+      | 'llmRubricV2'
+      | 'labelDrift'
+      | 'metrics'
+      | 'newCategories'
+      | 'newLabels'
+      | 'nullRowCount'
+      | 'ppScore'
+      | 'quasiConstantFeatures'
+      | 'sentenceLength'
+      | 'sizeRatio'
+      | 'specialCharacters'
+      | 'stringValidation'
+      | 'trainValLeakageRowCount';
 
     /**
-     * The insight parameters. Required only for some test subtypes.
+     * The insight parameters. Required only for some test subtypes. For example, for
+     * tests that require a column name, the insight parameters will be [{'name':
+     * 'column_name', 'value': 'Age'}]
      */
     insightParameters?: Array<Threshold.InsightParameter> | null;
 
@@ -234,34 +270,10 @@ export namespace TestCreateResponse {
 }
 
 export interface TestListResponse {
-  _meta: TestListResponse._Meta;
-
   items: Array<TestListResponse.Item>;
 }
 
 export namespace TestListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The test id.
@@ -418,10 +430,46 @@ export namespace TestListResponse {
       /**
        * The insight name to be evaluated.
        */
-      insightName?: string;
+      insightName?:
+        | 'characterLength'
+        | 'classImbalance'
+        | 'expectColumnAToBeInColumnB'
+        | 'columnAverage'
+        | 'columnDrift'
+        | 'columnValuesMatch'
+        | 'confidenceDistribution'
+        | 'conflictingLabelRowCount'
+        | 'containsPii'
+        | 'containsValidUrl'
+        | 'correlatedFeatures'
+        | 'customMetric'
+        | 'duplicateRowCount'
+        | 'emptyFeatures'
+        | 'featureDrift'
+        | 'featureProfile'
+        | 'greatExpectations'
+        | 'groupByColumnStatsCheck'
+        | 'illFormedRowCount'
+        | 'isCode'
+        | 'isJson'
+        | 'llmRubricV2'
+        | 'labelDrift'
+        | 'metrics'
+        | 'newCategories'
+        | 'newLabels'
+        | 'nullRowCount'
+        | 'ppScore'
+        | 'quasiConstantFeatures'
+        | 'sentenceLength'
+        | 'sizeRatio'
+        | 'specialCharacters'
+        | 'stringValidation'
+        | 'trainValLeakageRowCount';
 
       /**
-       * The insight parameters. Required only for some test subtypes.
+       * The insight parameters. Required only for some test subtypes. For example, for
+       * tests that require a column name, the insight parameters will be [{'name':
+       * 'column_name', 'value': 'Age'}]
        */
       insightParameters?: Array<Threshold.InsightParameter> | null;
 
@@ -570,10 +618,46 @@ export namespace TestCreateParams {
     /**
      * The insight name to be evaluated.
      */
-    insightName?: string;
+    insightName?:
+      | 'characterLength'
+      | 'classImbalance'
+      | 'expectColumnAToBeInColumnB'
+      | 'columnAverage'
+      | 'columnDrift'
+      | 'columnValuesMatch'
+      | 'confidenceDistribution'
+      | 'conflictingLabelRowCount'
+      | 'containsPii'
+      | 'containsValidUrl'
+      | 'correlatedFeatures'
+      | 'customMetric'
+      | 'duplicateRowCount'
+      | 'emptyFeatures'
+      | 'featureDrift'
+      | 'featureProfile'
+      | 'greatExpectations'
+      | 'groupByColumnStatsCheck'
+      | 'illFormedRowCount'
+      | 'isCode'
+      | 'isJson'
+      | 'llmRubricV2'
+      | 'labelDrift'
+      | 'metrics'
+      | 'newCategories'
+      | 'newLabels'
+      | 'nullRowCount'
+      | 'ppScore'
+      | 'quasiConstantFeatures'
+      | 'sentenceLength'
+      | 'sizeRatio'
+      | 'specialCharacters'
+      | 'stringValidation'
+      | 'trainValLeakageRowCount';
 
     /**
-     * The insight parameters. Required only for some test subtypes.
+     * The insight parameters. Required only for some test subtypes. For example, for
+     * tests that require a column name, the insight parameters will be [{'name':
+     * 'column_name', 'value': 'Age'}]
      */
     insightParameters?: Array<Threshold.InsightParameter> | null;
 
