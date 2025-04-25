@@ -17,6 +17,17 @@ export class Tests extends APIResource {
   }
 
   /**
+   * Update tests.
+   */
+  update(
+    projectId: string,
+    body: TestUpdateParams,
+    options?: Core.RequestOptions,
+  ): Core.APIPromise<TestUpdateResponse> {
+    return this._client.put(`/projects/${projectId}/tests`, { body, ...options });
+  }
+
+  /**
    * List tests under a project.
    */
   list(
@@ -193,10 +204,46 @@ export namespace TestCreateResponse {
     /**
      * The insight name to be evaluated.
      */
-    insightName?: string;
+    insightName?:
+      | 'characterLength'
+      | 'classImbalance'
+      | 'expectColumnAToBeInColumnB'
+      | 'columnAverage'
+      | 'columnDrift'
+      | 'columnValuesMatch'
+      | 'confidenceDistribution'
+      | 'conflictingLabelRowCount'
+      | 'containsPii'
+      | 'containsValidUrl'
+      | 'correlatedFeatures'
+      | 'customMetric'
+      | 'duplicateRowCount'
+      | 'emptyFeatures'
+      | 'featureDrift'
+      | 'featureProfile'
+      | 'greatExpectations'
+      | 'groupByColumnStatsCheck'
+      | 'illFormedRowCount'
+      | 'isCode'
+      | 'isJson'
+      | 'llmRubricV2'
+      | 'labelDrift'
+      | 'metrics'
+      | 'newCategories'
+      | 'newLabels'
+      | 'nullRowCount'
+      | 'ppScore'
+      | 'quasiConstantFeatures'
+      | 'sentenceLength'
+      | 'sizeRatio'
+      | 'specialCharacters'
+      | 'stringValidation'
+      | 'trainValLeakageRowCount';
 
     /**
-     * The insight parameters. Required only for some test subtypes.
+     * The insight parameters. Required only for some test subtypes. For example, for
+     * tests that require a column name, the insight parameters will be [{'name':
+     * 'column_name', 'value': 'Age'}]
      */
     insightParameters?: Array<Threshold.InsightParameter> | null;
 
@@ -233,35 +280,17 @@ export namespace TestCreateResponse {
   }
 }
 
-export interface TestListResponse {
-  _meta: TestListResponse._Meta;
+export interface TestUpdateResponse {
+  taskResultId?: string;
 
+  taskResultUrl?: string;
+}
+
+export interface TestListResponse {
   items: Array<TestListResponse.Item>;
 }
 
 export namespace TestListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The test id.
@@ -418,10 +447,46 @@ export namespace TestListResponse {
       /**
        * The insight name to be evaluated.
        */
-      insightName?: string;
+      insightName?:
+        | 'characterLength'
+        | 'classImbalance'
+        | 'expectColumnAToBeInColumnB'
+        | 'columnAverage'
+        | 'columnDrift'
+        | 'columnValuesMatch'
+        | 'confidenceDistribution'
+        | 'conflictingLabelRowCount'
+        | 'containsPii'
+        | 'containsValidUrl'
+        | 'correlatedFeatures'
+        | 'customMetric'
+        | 'duplicateRowCount'
+        | 'emptyFeatures'
+        | 'featureDrift'
+        | 'featureProfile'
+        | 'greatExpectations'
+        | 'groupByColumnStatsCheck'
+        | 'illFormedRowCount'
+        | 'isCode'
+        | 'isJson'
+        | 'llmRubricV2'
+        | 'labelDrift'
+        | 'metrics'
+        | 'newCategories'
+        | 'newLabels'
+        | 'nullRowCount'
+        | 'ppScore'
+        | 'quasiConstantFeatures'
+        | 'sentenceLength'
+        | 'sizeRatio'
+        | 'specialCharacters'
+        | 'stringValidation'
+        | 'trainValLeakageRowCount';
 
       /**
-       * The insight parameters. Required only for some test subtypes.
+       * The insight parameters. Required only for some test subtypes. For example, for
+       * tests that require a column name, the insight parameters will be [{'name':
+       * 'column_name', 'value': 'Age'}]
        */
       insightParameters?: Array<Threshold.InsightParameter> | null;
 
@@ -570,10 +635,46 @@ export namespace TestCreateParams {
     /**
      * The insight name to be evaluated.
      */
-    insightName?: string;
+    insightName?:
+      | 'characterLength'
+      | 'classImbalance'
+      | 'expectColumnAToBeInColumnB'
+      | 'columnAverage'
+      | 'columnDrift'
+      | 'columnValuesMatch'
+      | 'confidenceDistribution'
+      | 'conflictingLabelRowCount'
+      | 'containsPii'
+      | 'containsValidUrl'
+      | 'correlatedFeatures'
+      | 'customMetric'
+      | 'duplicateRowCount'
+      | 'emptyFeatures'
+      | 'featureDrift'
+      | 'featureProfile'
+      | 'greatExpectations'
+      | 'groupByColumnStatsCheck'
+      | 'illFormedRowCount'
+      | 'isCode'
+      | 'isJson'
+      | 'llmRubricV2'
+      | 'labelDrift'
+      | 'metrics'
+      | 'newCategories'
+      | 'newLabels'
+      | 'nullRowCount'
+      | 'ppScore'
+      | 'quasiConstantFeatures'
+      | 'sentenceLength'
+      | 'sizeRatio'
+      | 'specialCharacters'
+      | 'stringValidation'
+      | 'trainValLeakageRowCount';
 
     /**
-     * The insight parameters. Required only for some test subtypes.
+     * The insight parameters. Required only for some test subtypes. For example, for
+     * tests that require a column name, the insight parameters will be [{'name':
+     * 'column_name', 'value': 'Age'}]
      */
     insightParameters?: Array<Threshold.InsightParameter> | null;
 
@@ -606,6 +707,116 @@ export namespace TestCreateParams {
       name: string;
 
       value: unknown;
+    }
+  }
+}
+
+export interface TestUpdateParams {
+  payloads: Array<TestUpdateParams.Payload>;
+}
+
+export namespace TestUpdateParams {
+  export interface Payload {
+    id: string;
+
+    /**
+     * Whether the test is archived.
+     */
+    archived?: boolean;
+
+    /**
+     * The test description.
+     */
+    description?: unknown | null;
+
+    /**
+     * The test name.
+     */
+    name?: string;
+
+    suggested?: false;
+
+    thresholds?: Array<Payload.Threshold>;
+  }
+
+  export namespace Payload {
+    export interface Threshold {
+      /**
+       * The insight name to be evaluated.
+       */
+      insightName?:
+        | 'characterLength'
+        | 'classImbalance'
+        | 'expectColumnAToBeInColumnB'
+        | 'columnAverage'
+        | 'columnDrift'
+        | 'columnValuesMatch'
+        | 'confidenceDistribution'
+        | 'conflictingLabelRowCount'
+        | 'containsPii'
+        | 'containsValidUrl'
+        | 'correlatedFeatures'
+        | 'customMetric'
+        | 'duplicateRowCount'
+        | 'emptyFeatures'
+        | 'featureDrift'
+        | 'featureProfile'
+        | 'greatExpectations'
+        | 'groupByColumnStatsCheck'
+        | 'illFormedRowCount'
+        | 'isCode'
+        | 'isJson'
+        | 'llmRubricV2'
+        | 'labelDrift'
+        | 'metrics'
+        | 'newCategories'
+        | 'newLabels'
+        | 'nullRowCount'
+        | 'ppScore'
+        | 'quasiConstantFeatures'
+        | 'sentenceLength'
+        | 'sizeRatio'
+        | 'specialCharacters'
+        | 'stringValidation'
+        | 'trainValLeakageRowCount';
+
+      /**
+       * The insight parameters. Required only for some test subtypes. For example, for
+       * tests that require a column name, the insight parameters will be [{'name':
+       * 'column_name', 'value': 'Age'}]
+       */
+      insightParameters?: Array<Threshold.InsightParameter> | null;
+
+      /**
+       * The measurement to be evaluated.
+       */
+      measurement?: string;
+
+      /**
+       * The operator to be used for the evaluation.
+       */
+      operator?: 'is' | '>' | '>=' | '<' | '<=' | '!=';
+
+      /**
+       * Whether to use automatic anomaly detection or manual thresholds
+       */
+      thresholdMode?: 'automatic' | 'manual';
+
+      /**
+       * The value to be compared.
+       */
+      value?: number | boolean | string | Array<string>;
+    }
+
+    export namespace Threshold {
+      export interface InsightParameter {
+        /**
+         * The name of the insight filter.
+         */
+        name: string;
+
+        value: unknown;
+      }
     }
   }
 }
@@ -651,8 +862,10 @@ export interface TestListParams {
 export declare namespace Tests {
   export {
     type TestCreateResponse as TestCreateResponse,
+    type TestUpdateResponse as TestUpdateResponse,
     type TestListResponse as TestListResponse,
     type TestCreateParams as TestCreateParams,
+    type TestUpdateParams as TestUpdateParams,
     type TestListParams as TestListParams,
   };
 }
