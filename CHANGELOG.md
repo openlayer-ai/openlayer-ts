@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.13.0 (2025-05-01)
+
+Full Changelog: [v0.12.0...v0.13.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.12.0...v0.13.0)
+
+### Features
+
+* **api:** add test creation endpoint ([b7cc1b1](https://github.com/openlayer-ai/openlayer-ts/commit/b7cc1b1ee12af1275addac7057d735fb02a43af1))
+* **api:** api update ([372b228](https://github.com/openlayer-ai/openlayer-ts/commit/372b228b95947b7ccb8d6acc9a35eb7a20a31ef6))
+* **api:** api update ([8e2a339](https://github.com/openlayer-ai/openlayer-ts/commit/8e2a33931654d6802087b6435a4beb2c6ed6d7e1))
+* **api:** api update ([2e0a6e1](https://github.com/openlayer-ai/openlayer-ts/commit/2e0a6e1b6a5b3296a3ec905dfa11b5a8501e4583))
+* **api:** api update ([821a692](https://github.com/openlayer-ai/openlayer-ts/commit/821a6926192dad0532029ea9c2b22a4d24f5e1c6))
+* **api:** api update ([28f4085](https://github.com/openlayer-ai/openlayer-ts/commit/28f40851950cfa354930fc8dfab69b4a39f3d13e))
+* **api:** api update ([3345b62](https://github.com/openlayer-ai/openlayer-ts/commit/3345b629c1904bfb2c2f9e05c86312c6c7b88b48))
+* **api:** expose test retrieval endpoint ([da2b9fb](https://github.com/openlayer-ai/openlayer-ts/commit/da2b9fb62bd0eeaebe1325abaee6e4854d2f987f))
+* **api:** expose test retrieval endpoint ([f3fd3fc](https://github.com/openlayer-ai/openlayer-ts/commit/f3fd3fc296af8982eeb965c3427b89abdb7a4a6f))
+* **api:** expose test update endpoint ([785d3b4](https://github.com/openlayer-ai/openlayer-ts/commit/785d3b4ba67f487b49c190d546ae4a7dc7eb333b))
+* **client:** send `X-Stainless-Timeout` header ([333edef](https://github.com/openlayer-ai/openlayer-ts/commit/333edef002f95acecdb29d3e6a698343c3361937))
+
+
+### Bug Fixes
+
+* **api:** improve type resolution when importing as a package ([#119](https://github.com/openlayer-ai/openlayer-ts/issues/119)) ([669c259](https://github.com/openlayer-ai/openlayer-ts/commit/669c259b9fa3ba40ace9901ba24fa80dbc205105))
+* avoid type error in certain environments ([#115](https://github.com/openlayer-ai/openlayer-ts/issues/115)) ([701091f](https://github.com/openlayer-ai/openlayer-ts/commit/701091ff829ca7b7f6ee3bf66af961b660eb3371))
+* **client:** fix export map for index exports ([ac3dffc](https://github.com/openlayer-ai/openlayer-ts/commit/ac3dffce4624d350d5cf73e3020067cb2f71ab59))
+* **client:** send `X-Stainless-Timeout` in seconds ([#117](https://github.com/openlayer-ai/openlayer-ts/issues/117)) ([b8469f3](https://github.com/openlayer-ai/openlayer-ts/commit/b8469f3c2fc46916d994fb20b6ff4550a1c2bed3))
+* **internal:** work around https://github.com/vercel/next.js/issues/76881 ([#116](https://github.com/openlayer-ai/openlayer-ts/issues/116)) ([2349019](https://github.com/openlayer-ai/openlayer-ts/commit/2349019081867529df94ff1143716ce865a30007))
+* **mcp:** remove unused tools.ts ([#120](https://github.com/openlayer-ai/openlayer-ts/issues/120)) ([9d9ab9b](https://github.com/openlayer-ai/openlayer-ts/commit/9d9ab9bd791a42fc4269ad0fcd1dbb57f8616e67))
+
+
+### Chores
+
+* **ci:** add timeout thresholds for CI jobs ([64632ad](https://github.com/openlayer-ai/openlayer-ts/commit/64632ad55c30e27a0ca063c28b410d6b83b245b4))
+* **ci:** only use depot for staging repos ([9c8f4b9](https://github.com/openlayer-ai/openlayer-ts/commit/9c8f4b9181f636898c5ff8365596b47c591575f1))
+* **client:** minor internal fixes ([344120f](https://github.com/openlayer-ai/openlayer-ts/commit/344120f8eb82ea1e374aafadf6c7e90edec2cbce))
+* **exports:** cleaner resource index imports ([#113](https://github.com/openlayer-ai/openlayer-ts/issues/113)) ([9ac3180](https://github.com/openlayer-ai/openlayer-ts/commit/9ac318013fd2128e7f0a98db699534569c8e18a3))
+* **exports:** stop using path fallbacks ([#114](https://github.com/openlayer-ai/openlayer-ts/issues/114)) ([fdcd6e2](https://github.com/openlayer-ai/openlayer-ts/commit/fdcd6e2effcd89201604c545e0c3b8f0f0800032))
+* **internal:** add aliases for Record and Array ([#118](https://github.com/openlayer-ai/openlayer-ts/issues/118)) ([da4702c](https://github.com/openlayer-ai/openlayer-ts/commit/da4702cab36298cc7278a3f0a797742c5e23a002))
+* **internal:** codegen related update ([1128c8f](https://github.com/openlayer-ai/openlayer-ts/commit/1128c8f19942ebfecc014626f859dfdadc5725d1))
+* **internal:** codegen related update ([1016df6](https://github.com/openlayer-ai/openlayer-ts/commit/1016df6f549fd3312c26f6ecfd15b3aac58c5d65))
+* **internal:** codegen related update ([ca17307](https://github.com/openlayer-ai/openlayer-ts/commit/ca173073bc522424d9d6a35b5a2af14ccd7b8c88))
+* **internal:** codegen related update ([fd5d0a9](https://github.com/openlayer-ai/openlayer-ts/commit/fd5d0a9808b2abf8d1b88d3becf2350d9b25887e))
+* **internal:** fix devcontainers setup ([6a459de](https://github.com/openlayer-ai/openlayer-ts/commit/6a459de24ebec36ba38b751b6ab7143b3b9e16fd))
+* **internal:** fix workflows ([59a7cb4](https://github.com/openlayer-ai/openlayer-ts/commit/59a7cb4439a344c0ed6b4adb9e6b113dbed0f940))
+* **internal:** reduce CI branch coverage ([71998ef](https://github.com/openlayer-ai/openlayer-ts/commit/71998ef9132f29569e40aa1310cf2b3611096865))
+* **internal:** upload builds and expand CI branch coverage ([5d8ec66](https://github.com/openlayer-ai/openlayer-ts/commit/5d8ec66ad5ca7ba34da7b56b5f2aa1e9638107cd))
+* **internal:** version bump ([3a31790](https://github.com/openlayer-ai/openlayer-ts/commit/3a317902d8bf523f3f54398cdb077a11a18d9995))
+* **tests:** improve enum examples ([#121](https://github.com/openlayer-ai/openlayer-ts/issues/121)) ([f3a00ab](https://github.com/openlayer-ai/openlayer-ts/commit/f3a00ab15a42239fc71459feb324bd835f5d79e9))
+
+
+### Documentation
+
+* **readme:** fix typo ([3461fd6](https://github.com/openlayer-ai/openlayer-ts/commit/3461fd6e7a989064ef94b9e1d0c8d26374116aa4))
+* update URLs from stainlessapi.com to stainless.com ([e56ef04](https://github.com/openlayer-ai/openlayer-ts/commit/e56ef04346aa002b8481a8018ad540c678a9a21e))
+
 ## 0.12.0 (2025-03-14)
 
 Full Changelog: [v0.11.0...v0.12.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.11.0...v0.12.0)
