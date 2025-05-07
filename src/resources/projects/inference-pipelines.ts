@@ -7,6 +7,18 @@ import * as Core from '../../core';
 export class InferencePipelines extends APIResource {
   /**
    * Create an inference pipeline in a project.
+   *
+   * @example
+   * ```ts
+   * const inferencePipeline =
+   *   await client.projects.inferencePipelines.create(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *     {
+   *       description: 'This pipeline is used for production.',
+   *       name: 'production',
+   *     },
+   *   );
+   * ```
    */
   create(
     projectId: string,
@@ -18,6 +30,14 @@ export class InferencePipelines extends APIResource {
 
   /**
    * List the inference pipelines in a project.
+   *
+   * @example
+   * ```ts
+   * const inferencePipelines =
+   *   await client.projects.inferencePipelines.list(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
    */
   list(
     projectId: string,

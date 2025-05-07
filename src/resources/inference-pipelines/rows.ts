@@ -6,6 +6,14 @@ import * as Core from '../../core';
 export class Rows extends APIResource {
   /**
    * Update an inference data point in an inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const row = await client.inferencePipelines.rows.update(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   { inferenceId: 'inferenceId', row: {} },
+   * );
+   * ```
    */
   update(
     inferencePipelineId: string,
