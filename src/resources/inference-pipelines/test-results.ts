@@ -7,6 +7,14 @@ import * as Core from '../../core';
 export class TestResults extends APIResource {
   /**
    * List the latest test results for an inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const testResults =
+   *   await client.inferencePipelines.testResults.list(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
    */
   list(
     inferencePipelineId: string,

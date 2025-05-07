@@ -17,6 +17,14 @@ export class InferencePipelines extends APIResource {
 
   /**
    * Retrieve inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const inferencePipeline =
+   *   await client.inferencePipelines.retrieve(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
    */
   retrieve(
     inferencePipelineId: string,
@@ -40,6 +48,14 @@ export class InferencePipelines extends APIResource {
 
   /**
    * Update inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const inferencePipeline =
+   *   await client.inferencePipelines.update(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
    */
   update(
     inferencePipelineId: string,
@@ -63,6 +79,13 @@ export class InferencePipelines extends APIResource {
 
   /**
    * Delete inference pipeline.
+   *
+   * @example
+   * ```ts
+   * await client.inferencePipelines.delete(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
    */
   delete(inferencePipelineId: string, options?: Core.RequestOptions): Core.APIPromise<void> {
     return this._client.delete(`/inference-pipelines/${inferencePipelineId}`, {
