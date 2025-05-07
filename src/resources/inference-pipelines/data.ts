@@ -6,6 +6,26 @@ import * as Core from '../../core';
 export class Data extends APIResource {
   /**
    * Publish an inference data point to an inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const response =
+   *   await client.inferencePipelines.data.stream(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *     {
+   *       config: { outputColumnName: 'output' },
+   *       rows: [
+   *         {
+   *           user_query: 'bar',
+   *           output: 'bar',
+   *           tokens: 'bar',
+   *           cost: 'bar',
+   *           timestamp: 'bar',
+   *         },
+   *       ],
+   *     },
+   *   );
+   * ```
    */
   stream(
     inferencePipelineId: string,

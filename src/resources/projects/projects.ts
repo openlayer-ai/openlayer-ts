@@ -39,6 +39,14 @@ export class Projects extends APIResource {
 
   /**
    * Create a project in your workspace.
+   *
+   * @example
+   * ```ts
+   * const project = await client.projects.create({
+   *   name: 'My Project',
+   *   taskType: 'llm-base',
+   * });
+   * ```
    */
   create(body: ProjectCreateParams, options?: Core.RequestOptions): Core.APIPromise<ProjectCreateResponse> {
     return this._client.post('/projects', { body, ...options });
@@ -46,6 +54,11 @@ export class Projects extends APIResource {
 
   /**
    * List your workspace's projects.
+   *
+   * @example
+   * ```ts
+   * const projects = await client.projects.list();
+   * ```
    */
   list(query?: ProjectListParams, options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
   list(options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;

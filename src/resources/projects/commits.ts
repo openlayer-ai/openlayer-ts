@@ -7,6 +7,17 @@ import * as Core from '../../core';
 export class Commits extends APIResource {
   /**
    * Create a new commit (project version) in a project.
+   *
+   * @example
+   * ```ts
+   * const commit = await client.projects.commits.create(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   {
+   *     commit: { message: 'Updated the prompt.' },
+   *     storageUri: 's3://...',
+   *   },
+   * );
+   * ```
    */
   create(
     projectId: string,
@@ -18,6 +29,13 @@ export class Commits extends APIResource {
 
   /**
    * List the commits (project versions) in a project.
+   *
+   * @example
+   * ```ts
+   * const commits = await client.projects.commits.list(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
    */
   list(
     projectId: string,

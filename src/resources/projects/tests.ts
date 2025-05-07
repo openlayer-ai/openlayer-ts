@@ -7,6 +7,21 @@ import * as Core from '../../core';
 export class Tests extends APIResource {
   /**
    * Create a test.
+   *
+   * @example
+   * ```ts
+   * const test = await client.projects.tests.create(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   {
+   *     description:
+   *       'This test checks for duplicate rows in the dataset.',
+   *     name: 'No duplicate rows',
+   *     subtype: 'duplicateRowCount',
+   *     thresholds: [{}],
+   *     type: 'integrity',
+   *   },
+   * );
+   * ```
    */
   create(
     projectId: string,
@@ -18,6 +33,18 @@ export class Tests extends APIResource {
 
   /**
    * Update tests.
+   *
+   * @example
+   * ```ts
+   * const test = await client.projects.tests.update(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   {
+   *     payloads: [
+   *       { id: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e' },
+   *     ],
+   *   },
+   * );
+   * ```
    */
   update(
     projectId: string,
@@ -29,6 +56,13 @@ export class Tests extends APIResource {
 
   /**
    * List tests under a project.
+   *
+   * @example
+   * ```ts
+   * const tests = await client.projects.tests.list(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
    */
   list(
     projectId: string,
