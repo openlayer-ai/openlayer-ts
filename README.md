@@ -26,30 +26,26 @@ const client = new Openlayer({
   apiKey: process.env['OPENLAYER_API_KEY'], // This is the default and can be omitted
 });
 
-async function main() {
-  const response = await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-    config: {
-      inputVariableNames: ['user_query'],
-      outputColumnName: 'output',
-      numOfTokenColumnName: 'tokens',
-      costColumnName: 'cost',
-      timestampColumnName: 'timestamp',
+const response = await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+  config: {
+    inputVariableNames: ['user_query'],
+    outputColumnName: 'output',
+    numOfTokenColumnName: 'tokens',
+    costColumnName: 'cost',
+    timestampColumnName: 'timestamp',
+  },
+  rows: [
+    {
+      user_query: 'what is the meaning of life?',
+      output: '42',
+      tokens: 7,
+      cost: 0.02,
+      timestamp: 1610000000,
     },
-    rows: [
-      {
-        user_query: 'what is the meaning of life?',
-        output: '42',
-        tokens: 7,
-        cost: 0.02,
-        timestamp: 1610000000,
-      },
-    ],
-  });
+  ],
+});
 
-  console.log(response.success);
-}
-
-main();
+console.log(response.success);
 ```
 
 ### Request & Response types
@@ -64,8 +60,42 @@ const client = new Openlayer({
   apiKey: process.env['OPENLAYER_API_KEY'], // This is the default and can be omitted
 });
 
-async function main() {
-  const params: Openlayer.InferencePipelines.DataStreamParams = {
+const params: Openlayer.InferencePipelines.DataStreamParams = {
+  config: {
+    inputVariableNames: ['user_query'],
+    outputColumnName: 'output',
+    numOfTokenColumnName: 'tokens',
+    costColumnName: 'cost',
+    timestampColumnName: 'timestamp',
+  },
+  rows: [
+    {
+      user_query: 'what is the meaning of life?',
+      output: '42',
+      tokens: 7,
+      cost: 0.02,
+      timestamp: 1610000000,
+    },
+  ],
+};
+const response: Openlayer.InferencePipelines.DataStreamResponse = await client.inferencePipelines.data.stream(
+  '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+  params,
+);
+```
+
+Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
+
+## Handling errors
+
+When the library is unable to connect to the API,
+or if the API returns a non-success status code (i.e., 4xx or 5xx response),
+a subclass of `APIError` will be thrown:
+
+<!-- prettier-ignore -->
+```ts
+const response = await client.inferencePipelines.data
+  .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
     config: {
       inputVariableNames: ['user_query'],
       outputColumnName: 'output',
@@ -82,56 +112,16 @@ async function main() {
         timestamp: 1610000000,
       },
     ],
-  };
-  const response: Openlayer.InferencePipelines.DataStreamResponse =
-    await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
-}
-
-main();
-```
-
-Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
-
-## Handling errors
-
-When the library is unable to connect to the API,
-or if the API returns a non-success status code (i.e., 4xx or 5xx response),
-a subclass of `APIError` will be thrown:
-
-<!-- prettier-ignore -->
-```ts
-async function main() {
-  const response = await client.inferencePipelines.data
-    .stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-      config: {
-        inputVariableNames: ['user_query'],
-        outputColumnName: 'output',
-        numOfTokenColumnName: 'tokens',
-        costColumnName: 'cost',
-        timestampColumnName: 'timestamp',
-      },
-      rows: [
-        {
-          user_query: 'what is the meaning of life?',
-          output: '42',
-          tokens: 7,
-          cost: 0.02,
-          timestamp: 1610000000,
-        },
-      ],
-    })
-    .catch(async (err) => {
-      if (err instanceof Openlayer.APIError) {
-        console.log(err.status); // 400
-        console.log(err.name); // BadRequestError
-        console.log(err.headers); // {server: 'nginx', ...}
-      } else {
-        throw err;
-      }
-    });
-}
-
-main();
+  })
+  .catch(async (err) => {
+    if (err instanceof Openlayer.APIError) {
+      console.log(err.status); // 400
+      console.log(err.name); // BadRequestError
+      console.log(err.headers); // {server: 'nginx', ...}
+    } else {
+      throw err;
+    }
+  });
 ```
 
 Error codes are as follows:
