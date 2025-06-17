@@ -119,6 +119,7 @@ export class Openlayer extends Core.APIClient {
 
     super({
       baseURL: options.baseURL!,
+      baseURLOverridden: baseURL ? baseURL !== 'https://api.openlayer.com/v1' : false,
       timeout: options.timeout ?? 60000 /* 1 minute */,
       httpAgent: options.httpAgent,
       maxRetries: options.maxRetries,
@@ -134,6 +135,13 @@ export class Openlayer extends Core.APIClient {
   commits: API.Commits = new API.Commits(this);
   inferencePipelines: API.InferencePipelines = new API.InferencePipelines(this);
   storage: API.Storage = new API.Storage(this);
+
+  /**
+   * Check whether the base URL is set to its default.
+   */
+  #baseURLOverridden(): boolean {
+    return this.baseURL !== 'https://api.openlayer.com/v1';
+  }
 
   protected override defaultQuery(): Core.DefaultQuery | undefined {
     return this._options.defaultQuery;
