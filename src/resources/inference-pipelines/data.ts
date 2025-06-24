@@ -54,7 +54,7 @@ export interface DataStreamParams {
   /**
    * A list of inference data points with inputs and outputs
    */
-  rows: Array<Record<string, unknown>>;
+  rows: Array<{ [key: string]: unknown }>;
 }
 
 export namespace DataStreamParams {
