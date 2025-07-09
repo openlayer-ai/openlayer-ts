@@ -1,5 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
-import OpenlayerHandler from 'openlayer/src/lib/integrations/langchain-callback';
+import { OpenlayerHandler } from 'openlayer/lib/integrations/langchainCallback';
 
 // First, make sure you export your:
 // - OPENAI_API_KEY -- or the API key of the model you're using via LangChain
