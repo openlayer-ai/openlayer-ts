@@ -2,8 +2,8 @@ import 'dotenv/config';
 import { ChatOpenAI } from '@langchain/openai';
 import { StateGraph, END, START } from '@langchain/langgraph';
 import { Annotation } from '@langchain/langgraph';
-import { OpenlayerHandler } from '../src/lib/integrations/langchainCallback';
-import trace from '../src/lib/tracing/tracer';
+import { OpenlayerHandler } from 'openlayer/lib/integrations/langchainCallback';
+import trace from 'openlayer/lib/tracing/tracer';
 
 // First, make sure you export your:
 // - OPENAI_API_KEY -- or the API key of the model you're using via LangChain
