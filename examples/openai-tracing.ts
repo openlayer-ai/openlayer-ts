@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import traceOpenAI from 'openlayer/src/lib/integrations/openai-tracer';
+import { traceOpenAI } from 'openlayer/lib/integrations/openAiTracer';
 
 // First, make sure you export your:
 // - OPENAI_API_KEY
