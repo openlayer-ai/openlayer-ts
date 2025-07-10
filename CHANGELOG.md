@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.1 (2025-07-10)
+
+Full Changelog: [v0.13.0...v0.13.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.0...v0.13.1)
+
+### Chores
+
+* clean up whitespace in langgraph-openlayer.ts ([2f1590e](https://github.com/openlayer-ai/openlayer-ts/commit/2f1590e0b2ea37f5ab02731a715a0051c7a8da0a))
+* **internal:** version bump ([64a8e5c](https://github.com/openlayer-ai/openlayer-ts/commit/64a8e5ce86d01f0b620cb5c423eb710c428da726))
+
 ## 0.13.0 (2025-07-09)
 
 Full Changelog: [v0.12.0...v0.13.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.12.0...v0.13.0)
