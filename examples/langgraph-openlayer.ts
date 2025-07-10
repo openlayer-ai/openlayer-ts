@@ -34,7 +34,7 @@ const llm = new ChatOpenAI({
 // Node 1: Analyze the question
 async function analyzeQuestion(state: typeof ResearchState.State) {
   console.log('🔍 Step 1: Analyzing question...');
-  
+
   const prompt = `
 Analyze this question and create a research plan:
 "${state.question}"
@@ -49,7 +49,7 @@ Be concise but thorough.
 
   const response = await llm.invoke(prompt);
   console.log('✅ Question analyzed');
-  
+
   return {
     analysis: response.content as string,
     step_count: state.step_count + 1,
@@ -59,7 +59,7 @@ Be concise but thorough.
 // Node 2: Conduct research
 async function conductResearch(state: typeof ResearchState.State) {
   console.log('📚 Step 2: Conducting research...');
-  
+
   const prompt = `
 Based on this analysis:
 "${state.analysis}"
@@ -77,7 +77,7 @@ Be comprehensive but focused.
 
   const response = await llm.invoke(prompt);
   console.log('✅ Research completed');
-  
+
   return {
     research: response.content as string,
     step_count: state.step_count + 1,
@@ -87,7 +87,7 @@ Be comprehensive but focused.
 // Node 3: Generate final answer
 async function generateAnswer(state: typeof ResearchState.State) {
   console.log('📝 Step 3: Generating final answer...');
-  
+
   const prompt = `
 Using this research:
 "${state.research}"
@@ -105,7 +105,7 @@ Aim for 200-300 words.
 
   const response = await llm.invoke(prompt);
   console.log('✅ Final answer generated');
-  
+
   return {
     final_answer: response.content as string,
     step_count: state.step_count + 1,
@@ -129,9 +129,9 @@ function createResearchWorkflow() {
 // Traced version of the workflow execution
 const tracedWorkflowExecution = trace(async function executeWorkflow(question: string) {
   console.log('🎬 Starting traced workflow execution...\n');
-  
+
   const app = createResearchWorkflow();
-  
+
   const initialState = {
     question,
     analysis: '',
@@ -139,38 +139,39 @@ const tracedWorkflowExecution = trace(async function executeWorkflow(question: s
     final_answer: '',
     step_count: 0,
   };
-  
+
   console.log('❓ Question:', initialState.question);
   console.log('🔄 Starting workflow...\n');
-  
+
   const result = await app.invoke(initialState);
-  
+
   console.log('\n🎉 Workflow Completed!');
   console.log('📊 Summary:');
   console.log(`   • Steps completed: ${result.step_count}`);
   console.log(`   • Analysis length: ${result.analysis.length} chars`);
   console.log(`   • Research length: ${result.research.length} chars`);
   console.log(`   • Final answer length: ${result.final_answer.length} chars`);
-  
+
   console.log('\n📝 Final Answer:');
   console.log('-'.repeat(50));
   console.log(result.final_answer);
-  
+
   return result;
 });
 
 // Example 1: Single question with proper tracing
 async function runSingleExample() {
   try {
-    const result = await tracedWorkflowExecution('What are the key principles of effective remote team management?');
-    
+    const result = await tracedWorkflowExecution(
+      'What are the key principles of effective remote team management?',
+    );
+
     console.log('\n📈 Openlayer Tracing:');
     console.log('   • Workflow execution traced as a single unit');
     console.log('   • All LLM calls nested within the main workflow trace');
     console.log('   • Pipeline ID:', process.env['OPENLAYER_INFERENCE_PIPELINE_ID']);
-    
+
     return result;
-    
   } catch (error) {
     console.error('❌ Single example failed:', error);
     throw error;
@@ -180,12 +181,11 @@ async function runSingleExample() {
 export async function main() {
   console.log('🚀 LangGraph + Openlayer Integration Examples');
   console.log('='.repeat(50));
-  
+
   try {
     // Run single example
     console.log('\n📋 Example 1: Single Question with Tracing');
     await runSingleExample();
-    
   } catch (error) {
     console.error('❌ Main execution failed:', error);
     process.exit(1);
@@ -195,4 +195,4 @@ export async function main() {
 // Run the main function if this file is executed directly
 if (require.main === module) {
   main().catch(console.error);
-} 
+}
