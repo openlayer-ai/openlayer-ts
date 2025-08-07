@@ -27,6 +27,7 @@
     "fix": "./scripts/format"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.862.0",
     "@langchain/core": "^0.3.3",
     "@types/node": "^18.11.18",
     "@types/node-fetch": "^2.6.4",
