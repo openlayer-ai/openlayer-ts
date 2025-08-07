@@ -1,26 +1,42 @@
-import {
-  BedrockAgentRuntimeClient,
-  InvokeAgentCommand,
-  InvokeAgentCommandInput,
-  InvokeAgentCommandOutput,
-} from '@aws-sdk/client-bedrock-agent-runtime';
+// Make imports optional with try/catch
+let BedrockAgentRuntimeClient: any;
+let InvokeAgentCommand: any;
+let InvokeAgentCommandInput: any;
+let InvokeAgentCommandOutput: any;
+
+try {
+  const bedrockModule = require('@aws-sdk/client-bedrock-agent-runtime');
+  BedrockAgentRuntimeClient = bedrockModule.BedrockAgentRuntimeClient;
+  InvokeAgentCommand = bedrockModule.InvokeAgentCommand;
+  InvokeAgentCommandInput = bedrockModule.InvokeAgentCommandInput;
+  InvokeAgentCommandOutput = bedrockModule.InvokeAgentCommandOutput;
+} catch (error) {
+  // AWS SDK not available
+}
+
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
-export function traceBedrockAgent(client: BedrockAgentRuntimeClient): BedrockAgentRuntimeClient {
+export function traceBedrockAgent(client: any): any {
+  if (!BedrockAgentRuntimeClient || !InvokeAgentCommand) {
+    throw new Error(
+      'AWS SDK for Bedrock Agent Runtime is not installed. Please install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
+    );
+  }
+
   const originalSend = client.send.bind(client);
 
-  client.send = async function (this: BedrockAgentRuntimeClient, command: any, options?: any): Promise<any> {
+  client.send = async function (this: any, command: any, options?: any): Promise<any> {
     // Only trace InvokeAgentCommand
     if (!(command instanceof InvokeAgentCommand)) {
       return originalSend(command, options);
     }
 
     const startTime = performance.now();
-    const input = command.input as InvokeAgentCommandInput;
+    const input = command.input;
 
     try {
       // Call the original send method
-      const response = (await originalSend(command, options)) as InvokeAgentCommandOutput;
+      const response = await originalSend(command, options);
 
       if (!response.completion) {
         throw new Error('Completion is undefined');
@@ -46,7 +62,7 @@ export function traceBedrockAgent(client: BedrockAgentRuntimeClient): BedrockAge
 // Create a traced completion that collects data while yielding original events
 function createTracedCompletion(
   originalCompletion: AsyncIterable<any>,
-  input: InvokeAgentCommandInput,
+  input: any,
   startTime: number,
 ): AsyncIterable<any> {
   return {
@@ -64,7 +80,7 @@ function createTracedCompletion(
 
       try {
         for await (const chunkEvent of originalCompletion) {
-          // YIELD FIRST - ensure user gets data immediately
+          // Yield first - ensure user gets data immediately
           yield chunkEvent;
 
           // Then collect tracing data
@@ -173,7 +189,7 @@ function createTracedCompletion(
   };
 }
 
-function extractInputs(input: InvokeAgentCommandInput, traceData: any[]): Record<string, any> {
+function extractInputs(input: any, traceData: any[]): Record<string, any> {
   const inputs: Record<string, any> = {};
 
   // Build the prompt in OpenAI-compatible format
@@ -192,7 +208,7 @@ function extractInputs(input: InvokeAgentCommandInput, traceData: any[]): Record
     for (const message of input.sessionState.conversationHistory.messages) {
       const content =
         message.content ?
-          message.content.map((block) => ('text' in block ? block.text || '' : '')).join('')
+          message.content.map((block: any) => ('text' in block ? block.text || '' : '')).join('')
         : '';
 
       const role = message.role || 'user';
@@ -225,7 +241,7 @@ function extractInputs(input: InvokeAgentCommandInput, traceData: any[]): Record
   }
 
   if (input.sessionState?.files && input.sessionState.files.length > 0) {
-    inputs['files'] = input.sessionState.files.map((file) => ({
+    inputs['files'] = input.sessionState.files.map((file: any) => ({
       name: file.name,
       useCase: file.useCase,
       sourceType: file.source?.sourceType,
@@ -263,7 +279,7 @@ function extractReasoning(traceData: any[]): string[] | undefined {
   return reasoning.length > 0 ? reasoning : undefined;
 }
 
-function extractModelParameters(input: InvokeAgentCommandInput): Record<string, any> {
+function extractModelParameters(input: any): Record<string, any> {
   const params: Record<string, any> = {};
 
   if (input.enableTrace !== undefined) {
