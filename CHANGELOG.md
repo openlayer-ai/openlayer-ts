@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.13.2 (2025-08-07)
+
+Full Changelog: [v0.13.1...v0.13.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.1...v0.13.2)
+
+### Features
+
+* add Bedrock agent tracer ([82cecbf](https://github.com/openlayer-ai/openlayer-ts/commit/82cecbf9d6445b3d728c2ab60d2d8416da867b07))
+
+
+### Bug Fixes
+
+* conditional Bedrock import ([a745e01](https://github.com/openlayer-ai/openlayer-ts/commit/a745e013920c88a30472e8f2eda0dc66699c04b5))
+
+
+### Chores
+
+* **internal:** move publish config ([67a5488](https://github.com/openlayer-ai/openlayer-ts/commit/67a5488bff6880aff2fd14840fbfd24212aa74bd))
+* **internal:** remove redundant imports config ([52d519a](https://github.com/openlayer-ai/openlayer-ts/commit/52d519aca9b9cfe2bf254191a47932a4e62545d6))
+
 ## 0.13.1 (2025-07-10)
 
 Full Changelog: [v0.13.0...v0.13.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.0...v0.13.1)
