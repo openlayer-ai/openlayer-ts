@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.3 (2025-08-09)
+
+Full Changelog: [v0.13.2...v0.13.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.2...v0.13.3)
+
+### Chores
+
+* update @stainless-api/prism-cli to v5.15.0 ([456229f](https://github.com/openlayer-ai/openlayer-ts/commit/456229f1f6562b58322826fcd93b515f51eaebde))
+
 ## 0.13.2 (2025-08-07)
 
 Full Changelog: [v0.13.1...v0.13.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.1...v0.13.2)
