@@ -71,19 +71,46 @@ function createStep(
       const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
 
       if (publish && process.env['OPENLAYER_INFERENCE_PIPELINE_ID']) {
-        client!.inferencePipelines.data.stream(process.env['OPENLAYER_INFERENCE_PIPELINE_ID'], {
-          config: {
-            outputColumnName: 'output',
-            inputVariableNames: inputVariableNames,
-            groundTruthColumnName: 'groundTruth',
-            latencyColumnName: 'latency',
-            costColumnName: 'cost',
-            timestampColumnName: 'inferenceTimestamp',
-            inferenceIdColumnName: 'inferenceId',
-            numOfTokenColumnName: 'tokens',
-          },
-          rows: [processedTraceData],
-        });
+        console.debug('Uploading trace to Openlayer...');
+
+        client!.inferencePipelines.data
+          .stream(process.env['OPENLAYER_INFERENCE_PIPELINE_ID'], {
+            config: {
+              outputColumnName: 'output',
+              inputVariableNames: inputVariableNames,
+              groundTruthColumnName: 'groundTruth',
+              latencyColumnName: 'latency',
+              costColumnName: 'cost',
+              timestampColumnName: 'inferenceTimestamp',
+              inferenceIdColumnName: 'inferenceId',
+              numOfTokenColumnName: 'tokens',
+            },
+            rows: [processedTraceData],
+          })
+          .then(() => {
+            console.debug('Trace uploaded successfully to Openlayer');
+          })
+          .catch((error) => {
+            console.error('Failed to upload trace to Openlayer:', error);
+            console.error(
+              'Trace data that failed to upload:',
+              JSON.stringify(
+                {
+                  pipelineId: process.env['OPENLAYER_INFERENCE_PIPELINE_ID'],
+                  inputVariableNames,
+                  processedTraceData,
+                },
+                null,
+                2,
+              ),
+            );
+          });
+      } else {
+        if (!publish) {
+          console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true)');
+        } else if (!process.env['OPENLAYER_INFERENCE_PIPELINE_ID']) {
+          console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
+        }
       }
 
       // Reset the entire trace state
