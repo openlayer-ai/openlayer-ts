@@ -11,7 +11,10 @@ try {
   InvokeAgentCommandInput = bedrockModule.InvokeAgentCommandInput;
   InvokeAgentCommandOutput = bedrockModule.InvokeAgentCommandOutput;
 } catch (error) {
-  // AWS SDK not available
+  console.warn(
+    'AWS SDK for Bedrock Agent Runtime is not available. Install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
+  );
+  console.debug('Bedrock Agent tracing will not be available. Error:', error);
 }
 
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
