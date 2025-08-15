@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.3 (2025-08-15)
+
+Full Changelog: [v0.13.2...v0.13.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.2...v0.13.3)
+
+### Chores
+
+* add debug statements to trace upload ([103098b](https://github.com/openlayer-ai/openlayer-ts/commit/103098b25f8f89eb32d01d08b7b651b9ca306498))
+* **internal:** update comment in script ([5aff731](https://github.com/openlayer-ai/openlayer-ts/commit/5aff731c4fc3e027a67348d0a042088cd7144b50))
+* update @stainless-api/prism-cli to v5.15.0 ([b396a4c](https://github.com/openlayer-ai/openlayer-ts/commit/b396a4cb94a5ec0b303aff0944a243a8704e95ca))
+
 ## 0.13.2 (2025-08-07)
 
 Full Changelog: [v0.13.1...v0.13.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.1...v0.13.2)
