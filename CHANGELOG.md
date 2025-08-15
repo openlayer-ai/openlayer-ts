@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.4 (2025-08-15)
+
+Full Changelog: [v0.13.3...v0.13.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.3...v0.13.4)
+
+### Bug Fixes
+
+* log AWS error in Bedrock tracer ([40ca31b](https://github.com/openlayer-ai/openlayer-ts/commit/40ca31bae81c848df7444bf61c82c1bbf7e943ec))
+
 ## 0.13.3 (2025-08-15)
 
 Full Changelog: [v0.13.2...v0.13.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.2...v0.13.3)
