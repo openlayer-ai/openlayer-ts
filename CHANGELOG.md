@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.5 (2025-08-16)
+
+Full Changelog: [v0.13.4...v0.13.5](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.4...v0.13.5)
+
+### Chores
+
+* **deps:** update dependency node-fetch to v2.6.13 ([bdd6b9d](https://github.com/openlayer-ai/openlayer-ts/commit/bdd6b9d9aea917d51a79b1f6208095d54693f0e3))
+* **internal:** formatting change ([1799c58](https://github.com/openlayer-ai/openlayer-ts/commit/1799c583c87406b1334cfcc24b59652eafe2bde8))
+
 ## 0.13.4 (2025-08-15)
 
 Full Changelog: [v0.13.3...v0.13.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.3...v0.13.4)
