@@ -205,6 +205,7 @@ Openlayer.Projects = Projects;
 Openlayer.Commits = Commits;
 Openlayer.InferencePipelines = InferencePipelines;
 Openlayer.Storage = Storage;
+
 export declare namespace Openlayer {
   export type RequestOptions = Core.RequestOptions;
 
