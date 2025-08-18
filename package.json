@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent-runtime": "^3.862.0",
+    "@langchain/community": "^0.3.51",
     "@langchain/core": "^0.3.3",
+    "@langchain/langgraph": "^0.4.5",
     "@types/node": "^18.11.18",
     "@types/node-fetch": "^2.6.4",
     "abort-controller": "^3.0.0",

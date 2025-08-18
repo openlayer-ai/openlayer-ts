@@ -116,3 +116,48 @@ export class ChatCompletionStep extends Step {
     };
   }
 }
+
+export class ChainStep extends Step {
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.CHAIN;
+  }
+}
+
+export class AgentStep extends Step {
+  tool: string | null = null;
+  action: any = null;
+
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.AGENT;
+  }
+}
+
+export class ToolStep extends Step {
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.TOOL;
+  }
+}
+
+export class RetrieverStep extends Step {
+  documents: any[] = [];
+
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.RETRIEVER;
+  }
+}
+
+export class FunctionCallStep extends Step {
+  functionName: string | null = null;
+  arguments: Record<string, any> | null = null;
+  result: any = null;
+  executionTime: number | null = null;
+
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.FUNCTION_CALL;
+  }
+}
