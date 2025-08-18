@@ -254,16 +254,24 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         }
       }
 
-      // Extract just the content for cleaner dashboard display
+      // Extract clean output for dashboard display
       const extractedOutput = lastResponse ? (
         'message' in lastResponse && lastResponse['message'] instanceof BaseMessage
           ? lastResponse['message'].content  // Just the content, not the full message object
           : lastResponse.text || ''
       ) : '';
 
+      // Extract raw output (complete response object for debugging/analysis)
+      const rawOutput = lastResponse ? JSON.stringify({
+        generation: lastResponse,
+        llmOutput: output.llmOutput,
+        fullResponse: output
+      }, null, 2) : null;
+
       this.handleStepEnd({
         runId,
         output: extractedOutput,
+        rawOutput,
         ...(modelName && { modelName }),
         usageDetails,
         ...(runId in this.completionStartTimes && { completionStartTime: this.completionStartTimes[runId] }),
@@ -575,22 +583,40 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   ): Promise<void> {
     console.debug(`Generation start with ID: ${runId} and parentRunId ${parentRunId}`);
 
-    const runName = name ?? llm.id.at(-1)?.toString() ?? 'Langchain Generation';
+    const runName = name ?? llm.id?.at?.(-1)?.toString() ?? llm.id?.slice?.(-1)?.[0]?.toString() ?? 'Langchain Generation';
 
-    // Extract model parameters
+    // Extract comprehensive model parameters
     const modelParameters: Record<string, any> = {};
     const invocationParams = extraParams?.['invocation_params'];
 
-    for (const [key, value] of Object.entries({
+    // Standard parameters
+    const standardParams = {
       temperature: (invocationParams as any)?.['temperature'],
       max_tokens: (invocationParams as any)?.['max_tokens'],
       top_p: (invocationParams as any)?.['top_p'],
+      top_k: (invocationParams as any)?.['top_k'],
       frequency_penalty: (invocationParams as any)?.['frequency_penalty'],
       presence_penalty: (invocationParams as any)?.['presence_penalty'],
       request_timeout: (invocationParams as any)?.['request_timeout'],
-    })) {
+      stop: (invocationParams as any)?.['stop'],
+      seed: (invocationParams as any)?.['seed'],
+      response_format: (invocationParams as any)?.['response_format'],
+      tools: (invocationParams as any)?.['tools'],
+      tool_choice: (invocationParams as any)?.['tool_choice'],
+    };
+
+    for (const [key, value] of Object.entries(standardParams)) {
       if (value !== undefined && value !== null) {
         modelParameters[key] = value;
+      }
+    }
+
+    // Add any additional parameters that weren't in the standard list
+    if (invocationParams && typeof invocationParams === 'object') {
+      for (const [key, value] of Object.entries(invocationParams)) {
+        if (!(key in standardParams) && value !== undefined && value !== null) {
+          modelParameters[key] = value;
+        }
       }
     }
 
@@ -612,8 +638,37 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       extractedModelName = invocationParamsModelName ?? metadataModelName;
     }
 
-    // Extract provider
-    const provider = metadata?.['ls_provider'] as string;
+    // Extract provider with multiple fallbacks
+    let provider = metadata?.['ls_provider'] as string;
+    
+    // Fallback provider detection if not in metadata
+    if (!provider) {
+      // Try to detect from model name
+      if (extractedModelName) {
+        if (extractedModelName.includes('gpt') || extractedModelName.includes('openai')) {
+          provider = 'openai';
+        } else if (extractedModelName.includes('claude')) {
+          provider = 'anthropic';
+        } else if (extractedModelName.includes('gemini') || extractedModelName.includes('google')) {
+          provider = 'google';
+        } else if (extractedModelName.includes('llama') || extractedModelName.includes('meta')) {
+          provider = 'meta';
+        }
+      }
+      
+      // Try to detect from LLM class name
+      if (!provider && llm.id && Array.isArray(llm.id)) {
+        const className = llm.id[0]?.toLowerCase() || '';
+        if (className.includes('openai') || className.includes('chatgpt')) {
+          provider = 'openai';
+        } else if (className.includes('anthropic') || className.includes('claude')) {
+          provider = 'anthropic';
+        } else if (className.includes('google') || className.includes('gemini')) {
+          provider = 'google';
+        }
+      }
+    }
+    
     const mappedProvider = provider && LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] 
       ? LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] 
       : 'Unknown';
@@ -631,6 +686,29 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
     // For generations, we need to track the start time and other data to use in handleLLMEnd
     const startTime = performance.now();
+    
+    // Enhanced metadata collection
+    const enhancedMetadata = this.joinTagsAndMetaData(tags, metadata, {
+      // LangChain specific metadata
+      langchain_provider: provider,
+      langchain_model: extractedModelName,
+      langchain_run_id: runId,
+      langchain_parent_run_id: parentRunId,
+      
+      // Invocation details
+      invocation_params: invocationParams,
+      
+      // Timing
+      start_time: new Date().toISOString(),
+      
+      // LLM info
+      llm_class: llm.id ? (Array.isArray(llm.id) ? llm.id.join('.') : llm.id) : 'unknown',
+      
+      // Additional context
+      ...(Object.keys(modelParameters).length > 0 && { model_parameters: modelParameters }),
+      ...(extraParams && { extra_params: extraParams }),
+    });
+
     this.runMap.set(runId, {
       step: {
         name: stepName,
@@ -639,7 +717,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         provider: mappedProvider,
         model: extractedModelName,
         modelParameters,
-        metadata: this.joinTagsAndMetaData(tags, metadata),
+        metadata: enhancedMetadata,
         prompt: registeredPrompt,
       },
       endStep: () => {}, // Will be replaced in handleLLMEnd
@@ -649,12 +727,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   private handleStepEnd(params: {
     runId: string;
     output?: any;
+    rawOutput?: string | null;
     error?: string;
     modelName?: string | undefined;
     usageDetails?: Record<string, any>;
     completionStartTime?: Date | undefined;
   }): void {
-    const { runId, output, error, modelName, usageDetails, completionStartTime } = params;
+    const { runId, output, rawOutput, error, modelName, usageDetails, completionStartTime } = params;
 
     const runData = this.runMap.get(runId);
     if (!runData) {
@@ -673,6 +752,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         name: step.name || 'Unknown Generation',
         inputs: step.inputs || {},
         output: output || '',
+        rawOutput: rawOutput || null,
         latency,
         tokens: usageDetails?.['total'] || null,
         promptTokens: usageDetails?.['input'] || null,
@@ -827,8 +907,8 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
 
     if (
-      message.additional_kwargs.function_call ||
-      message.additional_kwargs.tool_calls
+      message.additional_kwargs?.function_call ||
+      message.additional_kwargs?.tool_calls
     ) {
       return { ...response, additional_kwargs: message.additional_kwargs };
     }
