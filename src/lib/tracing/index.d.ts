@@ -1,5 +1,5 @@
 export * as tracer from './tracer';
-export { 
+export {
   addChatCompletionStepToTrace,
   addChainStepToTrace,
   addAgentStepToTrace,
@@ -7,5 +7,5 @@ export {
   addRetrieverStepToTrace,
   addFunctionCallStepToTrace,
   startAgentStep,
-  addHandoffStepToTrace
+  addHandoffStepToTrace,
 } from './tracer';

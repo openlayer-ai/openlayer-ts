@@ -109,23 +109,23 @@ export const main = async () => {
   }
 
   console.log('🎉 All examples completed! Check your Openlayer dashboard for traces.');
-  
+
   // Example 5: Using Enhanced Tracing Utilities
   console.log('\n📝 Example 5: Enhanced Tracing Utilities');
-  
+
   // Create a traced tool for better function call visibility
   const getRandomFact = tracedTool(
     async ({ topic }: { topic: string }) => {
       return `Here's a fact about ${topic}: It's fascinating and worth learning more about!`;
     },
     {
-      name: "get_random_fact",
-      description: "Get a random fact about a topic",
+      name: 'get_random_fact',
+      description: 'Get a random fact about a topic',
       schema: z.object({ topic: z.string() }),
-      metadata: { provider: "fact_service" }
-    }
+      metadata: { provider: 'fact_service' },
+    },
   );
-  
+
   // Create a traced agent for clear agent boundaries
   const factAgent = tracedAgent(
     async (topic: string) => {
@@ -134,13 +134,13 @@ export const main = async () => {
       return { topic, fact, elaboration: response.content };
     },
     {
-      name: "Fact Agent",
-      agentType: "educational_assistant",
-      version: "1.0.0"
-    }
+      name: 'Fact Agent',
+      agentType: 'educational_assistant',
+      version: '1.0.0',
+    },
   );
-  
-  const result = await factAgent("artificial intelligence");
+
+  const result = await factAgent('artificial intelligence');
   console.log('Enhanced tracing result:', result);
 };
 

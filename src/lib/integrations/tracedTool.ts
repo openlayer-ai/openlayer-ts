@@ -1,17 +1,17 @@
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
-import { addFunctionCallStepToTrace } from "../tracing/tracer";
+import { tool } from '@langchain/core/tools';
+import { z } from 'zod';
+import { addFunctionCallStepToTrace } from '../tracing/tracer';
 
 /**
  * Enhanced tool wrapper that automatically creates function call traces.
- * 
+ *
  * This wrapper automatically creates StepType.FUNCTION_CALL steps for any tool invocation,
  * providing detailed tracing of function calls within agent workflows.
- * 
+ *
  * @example
  * ```typescript
  * import { tracedTool } from 'openlayer/lib/integrations/tracedTool';
- * 
+ *
  * const weatherTool = tracedTool(
  *   async ({ city }) => {
  *     const weather = await getWeatherAPI(city);
@@ -37,7 +37,7 @@ export function tracedTool<T extends Record<string, any>>(
     schema: z.ZodSchema<T>;
     metadata?: Record<string, any>;
     responseSchema?: z.ZodSchema<any>;
-  }
+  },
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (tool as any)(
@@ -53,42 +53,41 @@ export function tracedTool<T extends Record<string, any>>(
           toolType: 'traced_tool',
           executionContext: 'auto_traced',
           startTime: new Date().toISOString(),
-        }
+        },
       });
 
       try {
         const startTime = performance.now();
-        
+
         // Execute the original function
         const result = await func(typedInput);
-        
+
         const endTime = performance.now();
         const executionTime = endTime - startTime;
-        
+
         // Update function step with result and timing
-        functionStep.log({ 
+        functionStep.log({
           output: result,
-          metadata: { 
+          metadata: {
             ...functionStep.metadata,
             executionTimeMs: Math.round(executionTime),
             outputLength: typeof result === 'string' ? result.length : JSON.stringify(result).length,
             success: true,
             endTime: new Date().toISOString(),
-          }
+          },
         });
-        
+
         return result;
-        
       } catch (error) {
         // Log error in function step
-        functionStep.log({ 
-          metadata: { 
+        functionStep.log({
+          metadata: {
             ...functionStep.metadata,
             error: error instanceof Error ? error.message : String(error),
             errorType: error instanceof Error ? error.constructor.name : 'Unknown',
             success: false,
             endTime: new Date().toISOString(),
-          }
+          },
         });
         throw error;
       } finally {
@@ -100,20 +99,20 @@ export function tracedTool<T extends Record<string, any>>(
       description: config.description,
       schema: config.schema,
       ...(config.responseSchema && { responseSchema: config.responseSchema }),
-    }
+    },
   );
 }
 
 /**
  * Enhanced agent wrapper that automatically creates agent traces.
- * 
+ *
  * This wrapper automatically creates StepType.AGENT steps for agent functions,
  * providing clear agent boundaries in traces.
- * 
+ *
  * @example
  * ```typescript
  * import { tracedAgent } from 'openlayer/lib/integrations/tracedTool';
- * 
+ *
  * const researchAgent = tracedAgent(
  *   async (query) => {
  *     // Agent logic here
@@ -134,11 +133,11 @@ export function tracedAgent<T, R>(
     agentType: string;
     version?: string;
     metadata?: Record<string, any>;
-  }
+  },
 ) {
   return async (input: T): Promise<R> => {
-    const { startAgentStep } = await import("../tracing/tracer");
-    
+    const { startAgentStep } = await import('../tracing/tracer');
+
     // Create an agent step (prefix will be added automatically)
     const { step: agentStep, endStep: endAgentStep } = startAgentStep({
       name: config.name,
@@ -149,18 +148,18 @@ export function tracedAgent<T, R>(
         agentVersion: config.version || '1.0.0',
         executionContext: 'traced_agent',
         startTime: new Date().toISOString(),
-      }
+      },
     });
 
     try {
       const startTime = performance.now();
-      
+
       // Execute the agent function
       const result = await agentFunc(input);
-      
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
-      
+
       // Update agent step with result and timing
       agentStep.log({
         output: result,
@@ -169,11 +168,10 @@ export function tracedAgent<T, R>(
           executionTimeMs: Math.round(executionTime),
           success: true,
           endTime: new Date().toISOString(),
-        }
+        },
       });
-      
+
       return result;
-      
     } catch (error) {
       // Log error in agent step
       agentStep.log({
@@ -183,7 +181,7 @@ export function tracedAgent<T, R>(
           errorType: error instanceof Error ? error.constructor.name : 'Unknown',
           success: false,
           endTime: new Date().toISOString(),
-        }
+        },
       });
       throw error;
     } finally {

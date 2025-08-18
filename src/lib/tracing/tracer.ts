@@ -1,7 +1,16 @@
 // tracing/tracer.ts
 
 import { Trace } from './traces';
-import { Step, UserCallStep, ChatCompletionStep, ChainStep, AgentStep, ToolStep, RetrieverStep, FunctionCallStep } from './steps';
+import {
+  Step,
+  UserCallStep,
+  ChatCompletionStep,
+  ChainStep,
+  AgentStep,
+  ToolStep,
+  RetrieverStep,
+  FunctionCallStep,
+} from './steps';
 import { StepType } from './enums';
 import Openlayer from '../../index';
 
@@ -34,7 +43,7 @@ function createStep(
 ): [Step, () => void] {
   metadata = metadata || {};
   let newStep: Step;
-  
+
   switch (stepType) {
     case StepType.CHAT_COMPLETION:
       newStep = new ChatCompletionStep(name, inputs, output, metadata);
@@ -231,7 +240,13 @@ export function addToolStepToTrace(params: {
   output?: any;
   metadata?: Record<string, any>;
 }) {
-  const [step, endStep] = createStep(params.name, StepType.TOOL, params.inputs, params.output, params.metadata);
+  const [step, endStep] = createStep(
+    params.name,
+    StepType.TOOL,
+    params.inputs,
+    params.output,
+    params.metadata,
+  );
   return { step, endStep };
 }
 
@@ -242,7 +257,13 @@ export function addRetrieverStepToTrace(params: {
   metadata?: Record<string, any>;
   documents?: any[];
 }) {
-  const [step, endStep] = createStep(params.name, StepType.RETRIEVER, params.inputs, params.output, params.metadata);
+  const [step, endStep] = createStep(
+    params.name,
+    StepType.RETRIEVER,
+    params.inputs,
+    params.output,
+    params.metadata,
+  );
   if (step instanceof RetrieverStep) {
     step.documents = params.documents || [];
   }
@@ -258,7 +279,13 @@ export function addFunctionCallStepToTrace(params: {
 }) {
   // Add "Tool Call: " prefix for better dashboard visibility
   const stepName = `Tool Call: ${params.name}`;
-  const [step, endStep] = createStep(stepName, StepType.FUNCTION_CALL, params.arguments, params.output, params.metadata);
+  const [step, endStep] = createStep(
+    stepName,
+    StepType.FUNCTION_CALL,
+    params.arguments,
+    params.output,
+    params.metadata,
+  );
   if (step instanceof FunctionCallStep) {
     step.functionName = params.functionName;
     step.arguments = params.arguments;
@@ -281,11 +308,11 @@ export function startAgentStep(params: {
     agentType: params.agentType,
     startTime: new Date().toISOString(),
   });
-  
+
   if (step instanceof AgentStep) {
     step.action = params.inputs;
   }
-  
+
   return { step, endStep };
 }
 

@@ -17,12 +17,12 @@ import {
 } from '@langchain/core/messages';
 import type { Generation, LLMResult } from '@langchain/core/outputs';
 import type { ChainValues } from '@langchain/core/utils/types';
-import { 
-  addChatCompletionStepToTrace, 
-  addChainStepToTrace, 
-  addAgentStepToTrace, 
-  addToolStepToTrace, 
-  addRetrieverStepToTrace 
+import {
+  addChatCompletionStepToTrace,
+  addChainStepToTrace,
+  addAgentStepToTrace,
+  addToolStepToTrace,
+  addRetrieverStepToTrace,
 } from '../tracing/tracer';
 
 const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
@@ -75,25 +75,25 @@ type ConstructorParams = {
 
 /**
  * Comprehensive LangChain callback handler for Openlayer tracing.
- * 
+ *
  * Supports all LangChain components:
  * - LLMs and Chat Models (with streaming support)
  * - Chains
  * - Agents and Tools
  * - Retrievers
  * - Error handling and hierarchical tracking
- * 
+ *
  * @example
  * ```typescript
  * import { OpenlayerHandler } from 'openlayer/lib/integrations/langchainCallback';
- * 
+ *
  * const handler = new OpenlayerHandler({
  *   userId: 'user-123',
  *   sessionId: 'session-456',
  *   tags: ['production'],
  *   version: '1.0.0'
  * });
- * 
+ *
  * const model = new ChatOpenAI({
  *   callbacks: [handler]
  * });
@@ -158,16 +158,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`LLM start with ID: ${runId}`);
 
-      this.handleGenerationStart(
-        llm,
-        prompts,
-        runId,
-        parentRunId,
-        extraParams,
-        tags,
-        metadata,
-        name,
-      );
+      this.handleGenerationStart(llm, prompts, runId, parentRunId, extraParams, tags, metadata, name);
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
@@ -186,30 +177,15 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Chat model start with ID: ${runId}`);
 
-      const prompts = messages.flatMap((message) =>
-        message.map((m) => this.extractChatMessageContent(m)),
-      );
+      const prompts = messages.flatMap((message) => message.map((m) => this.extractChatMessageContent(m)));
 
-      this.handleGenerationStart(
-        llm,
-        prompts,
-        runId,
-        parentRunId,
-        extraParams,
-        tags,
-        metadata,
-        name,
-      );
+      this.handleGenerationStart(llm, prompts, runId, parentRunId, extraParams, tags, metadata, name);
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
   }
 
-  override async handleLLMEnd(
-    output: LLMResult,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleLLMEnd(output: LLMResult, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`LLM end with ID: ${runId}`);
 
@@ -217,16 +193,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         console.debug('No generations found in LLM output');
         return;
       }
-      
+
       const lastGeneration = output.generations[output.generations.length - 1];
       if (!lastGeneration || lastGeneration.length === 0) {
         console.debug('No responses found in last generation');
         return;
       }
-      
+
       const lastResponse = lastGeneration[lastGeneration.length - 1];
-      
-      const llmUsage = (lastResponse ? this.extractUsageMetadata(lastResponse) : undefined) || output.llmOutput?.['tokenUsage'];
+
+      const llmUsage =
+        (lastResponse ? this.extractUsageMetadata(lastResponse) : undefined) ||
+        output.llmOutput?.['tokenUsage'];
       const modelName = lastResponse ? this.extractModelNameFromMetadata(lastResponse) : undefined;
 
       const usageDetails: Record<string, any> = {
@@ -255,18 +233,26 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       }
 
       // Extract clean output for dashboard display
-      const extractedOutput = lastResponse ? (
-        'message' in lastResponse && lastResponse['message'] instanceof BaseMessage
-          ? lastResponse['message'].content  // Just the content, not the full message object
+      const extractedOutput =
+        lastResponse ?
+          'message' in lastResponse && lastResponse['message'] instanceof BaseMessage ?
+            lastResponse['message'].content // Just the content, not the full message object
           : lastResponse.text || ''
-      ) : '';
+        : '';
 
       // Extract raw output (complete response object for debugging/analysis)
-      const rawOutput = lastResponse ? JSON.stringify({
-        generation: lastResponse,
-        llmOutput: output.llmOutput,
-        fullResponse: output
-      }, null, 2) : null;
+      const rawOutput =
+        lastResponse ?
+          JSON.stringify(
+            {
+              generation: lastResponse,
+              llmOutput: output.llmOutput,
+              fullResponse: output,
+            },
+            null,
+            2,
+          )
+        : null;
 
       this.handleStepEnd({
         runId,
@@ -285,11 +271,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleLLMError(
-    err: any,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleLLMError(err: any, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`LLM error ${err} with ID: ${runId}`);
 
@@ -334,11 +316,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         inputs['input'].every((m) => m instanceof BaseMessage)
       ) {
         finalInput = inputs['input'].map((m) => this.extractChatMessageContent(m));
-      } else if (
-        typeof inputs === 'object' &&
-        'content' in inputs &&
-        typeof inputs['content'] === 'string'
-      ) {
+      } else if (typeof inputs === 'object' && 'content' in inputs && typeof inputs['content'] === 'string') {
         finalInput = inputs['content'];
       }
 
@@ -354,20 +332,12 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleChainEnd(
-    outputs: ChainValues,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleChainEnd(outputs: ChainValues, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Chain end with ID: ${runId}`);
 
       let finalOutput: ChainValues | string = outputs;
-      if (
-        typeof outputs === 'object' &&
-        'output' in outputs &&
-        typeof outputs['output'] === 'string'
-      ) {
+      if (typeof outputs === 'object' && 'output' in outputs && typeof outputs['output'] === 'string') {
         finalOutput = outputs['output'];
       }
 
@@ -375,18 +345,14 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         runId,
         output: finalOutput,
       });
-      
+
       this.deregisterOpenlayerPrompt(runId);
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
   }
 
-  override async handleChainError(
-    err: any,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleChainError(err: any, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Chain error: ${err} with ID: ${runId}`);
 
@@ -405,14 +371,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   // Agent Handlers
   // ============================================================================
 
-  override async handleAgentAction(
-    action: AgentAction,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleAgentAction(action: AgentAction, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Agent action ${action.tool} with ID: ${runId}`);
-      
+
       const { step, endStep } = addAgentStepToTrace({
         name: action.tool,
         inputs: action,
@@ -426,11 +388,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleAgentEnd(
-    action: AgentFinish,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleAgentEnd(action: AgentFinish, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Agent finish with ID: ${runId}`);
 
@@ -471,11 +429,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleToolEnd(
-    output: string,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleToolEnd(output: string, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Tool end with ID: ${runId}`);
 
@@ -488,11 +442,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleToolError(
-    err: any,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleToolError(err: any, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Tool error ${err} with ID: ${runId}`);
 
@@ -550,14 +500,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
   }
 
-  override async handleRetrieverError(
-    err: any,
-    runId: string,
-    parentRunId?: string,
-  ): Promise<void> {
+  override async handleRetrieverError(err: any, runId: string, parentRunId?: string): Promise<void> {
     try {
       console.debug(`Retriever error: ${err} with ID: ${runId}`);
-      
+
       this.handleStepEnd({
         runId,
         error: err.toString(),
@@ -583,7 +529,8 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   ): Promise<void> {
     console.debug(`Generation start with ID: ${runId} and parentRunId ${parentRunId}`);
 
-    const runName = name ?? llm.id?.at?.(-1)?.toString() ?? llm.id?.slice?.(-1)?.[0]?.toString() ?? 'Langchain Generation';
+    const runName =
+      name ?? llm.id?.at?.(-1)?.toString() ?? llm.id?.slice?.(-1)?.[0]?.toString() ?? 'Langchain Generation';
 
     // Extract comprehensive model parameters
     const modelParameters: Record<string, any> = {};
@@ -631,16 +578,15 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     let extractedModelName: string | undefined;
     if (extraParams) {
       const invocationParamsModelName = (extraParams['invocation_params'] as InvocationParams)?.model;
-      const metadataModelName = metadata && 'ls_model_name' in metadata 
-        ? (metadata['ls_model_name'] as string) 
-        : undefined;
+      const metadataModelName =
+        metadata && 'ls_model_name' in metadata ? (metadata['ls_model_name'] as string) : undefined;
 
       extractedModelName = invocationParamsModelName ?? metadataModelName;
     }
 
     // Extract provider with multiple fallbacks
     let provider = metadata?.['ls_provider'] as string;
-    
+
     // Fallback provider detection if not in metadata
     if (!provider) {
       // Try to detect from model name
@@ -655,7 +601,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
           provider = 'meta';
         }
       }
-      
+
       // Try to detect from LLM class name
       if (!provider && llm.id && Array.isArray(llm.id)) {
         const className = llm.id[0]?.toLowerCase() || '';
@@ -668,9 +614,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         }
       }
     }
-    
-    const mappedProvider = provider && LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] 
-      ? LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] 
+
+    const mappedProvider =
+      provider && LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] ?
+        LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider]
       : 'Unknown';
 
     // Get registered prompt if available
@@ -680,13 +627,14 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     }
 
     // Create step but don't end it yet - we'll update it in handleLLMEnd
-    const stepName = mappedProvider && PROVIDER_TO_STEP_NAME[mappedProvider] 
-      ? PROVIDER_TO_STEP_NAME[mappedProvider] 
+    const stepName =
+      mappedProvider && PROVIDER_TO_STEP_NAME[mappedProvider] ?
+        PROVIDER_TO_STEP_NAME[mappedProvider]
       : runName;
 
     // For generations, we need to track the start time and other data to use in handleLLMEnd
     const startTime = performance.now();
-    
+
     // Enhanced metadata collection
     const enhancedMetadata = this.joinTagsAndMetaData(tags, metadata, {
       // LangChain specific metadata
@@ -694,16 +642,21 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       langchain_model: extractedModelName,
       langchain_run_id: runId,
       langchain_parent_run_id: parentRunId,
-      
+
       // Invocation details
       invocation_params: invocationParams,
-      
+
       // Timing
       start_time: new Date().toISOString(),
-      
+
       // LLM info
-      llm_class: llm.id ? (Array.isArray(llm.id) ? llm.id.join('.') : llm.id) : 'unknown',
-      
+      llm_class:
+        llm.id ?
+          Array.isArray(llm.id) ?
+            llm.id.join('.')
+          : llm.id
+        : 'unknown',
+
       // Additional context
       ...(Object.keys(modelParameters).length > 0 && { model_parameters: modelParameters }),
       ...(extraParams && { extra_params: extraParams }),
@@ -741,7 +694,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       return;
     }
 
-        const { step } = runData;
+    const { step } = runData;
 
     // Handle LLM/Generation steps specially
     if (step.provider) {
@@ -765,7 +718,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     } else {
       // For other step types, update and end the existing step
       if (step.log) {
-        step.log({ 
+        step.log({
           output: output,
           metadata: error ? { ...step.metadata, error } : step.metadata,
         });
@@ -778,15 +731,9 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     this.runMap.delete(runId);
   }
 
-  private registerOpenlayerPrompt(
-    parentRunId?: string,
-    metadata?: Record<string, unknown>,
-  ): void {
+  private registerOpenlayerPrompt(parentRunId?: string, metadata?: Record<string, unknown>): void {
     if (metadata && 'openlayerPrompt' in metadata && parentRunId) {
-      this.promptToParentRunMap.set(
-        parentRunId,
-        metadata['openlayerPrompt'] as OpenlayerPrompt,
-      );
+      this.promptToParentRunMap.set(parentRunId, metadata['openlayerPrompt'] as OpenlayerPrompt);
     }
   }
 
@@ -829,25 +776,20 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       return;
     }
 
-    const openlayerKeys = [
-      'openlayerPrompt',
-      'openlayerUserId',
-      'openlayerSessionId',
-    ];
+    const openlayerKeys = ['openlayerPrompt', 'openlayerUserId', 'openlayerSessionId'];
 
-    return Object.fromEntries(
-      Object.entries(metadata).filter(([key, _]) => !openlayerKeys.includes(key)),
-    );
+    return Object.fromEntries(Object.entries(metadata).filter(([key, _]) => !openlayerKeys.includes(key)));
   }
 
   private extractUsageMetadata(generation: Generation): UsageMetadata | undefined {
     try {
       const usageMetadata =
-        'message' in generation &&
-        (generation['message'] instanceof AIMessage ||
-          generation['message'] instanceof AIMessageChunk)
-          ? generation['message'].usage_metadata
-          : undefined;
+        (
+          'message' in generation &&
+          (generation['message'] instanceof AIMessage || generation['message'] instanceof AIMessageChunk)
+        ) ?
+          generation['message'].usage_metadata
+        : undefined;
 
       return usageMetadata;
     } catch (err) {
@@ -858,19 +800,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
   private extractModelNameFromMetadata(generation: any): string | undefined {
     try {
-      return 'message' in generation &&
-        (generation['message'] instanceof AIMessage ||
-          generation['message'] instanceof AIMessageChunk)
-        ? generation['message'].response_metadata?.['model_name']
+      return (
+          'message' in generation &&
+            (generation['message'] instanceof AIMessage || generation['message'] instanceof AIMessageChunk)
+        ) ?
+          generation['message'].response_metadata?.['model_name']
         : undefined;
     } catch {
       return undefined;
     }
   }
 
-  private extractChatMessageContent(
-    message: BaseMessage,
-  ): LlmMessage | AnonymousLlmMessage | MessageContent {
+  private extractChatMessageContent(message: BaseMessage): LlmMessage | AnonymousLlmMessage | MessageContent {
     let response: any = undefined;
 
     if (message instanceof HumanMessage) {
@@ -906,13 +847,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       };
     }
 
-    if (
-      message.additional_kwargs?.function_call ||
-      message.additional_kwargs?.tool_calls
-    ) {
+    if (message.additional_kwargs?.function_call || message.additional_kwargs?.tool_calls) {
       return { ...response, additional_kwargs: message.additional_kwargs };
     }
-    
+
     return response;
   }
 }
