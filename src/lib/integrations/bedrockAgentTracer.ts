@@ -29,10 +29,28 @@ export function traceBedrockAgent(client: any): any {
   const originalSend = client.send.bind(client);
 
   client.send = async function (this: any, command: any, options?: any): Promise<any> {
-    // Only trace InvokeAgentCommand
-    if (!(command instanceof InvokeAgentCommand)) {
+    // Debug logging to see what we're receiving
+    const hasInput = command?.input;
+    const hasAgentId = typeof command?.input?.agentId === 'string';
+    const hasInputText = typeof command?.input?.inputText === 'string';
+
+    console.debug('Bedrock command analysis:', {
+      command: command,
+      hasInput: hasInput,
+      hasAgentId: hasAgentId,
+      hasInputText: hasInputText,
+      constructorName: command?.constructor?.name,
+      input: command?.input,
+    });
+
+    // Check if this looks like an InvokeAgentCommand by checking for expected properties
+    const isInvokeAgentCommand = hasInput && hasAgentId && hasInputText;
+
+    if (!isInvokeAgentCommand) {
+      console.debug('Command is not an InvokeAgentCommand, passing through uninstrumented');
       return originalSend(command, options);
     }
+    console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
     const startTime = performance.now();
     const input = command.input;
