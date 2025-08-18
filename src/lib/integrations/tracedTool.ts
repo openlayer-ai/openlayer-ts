@@ -45,7 +45,7 @@ export function tracedTool<T extends Record<string, any>>(
       const typedInput = input as T;
       // Create a traced function call step (prefix will be added automatically)
       const { step: functionStep, endStep: endFunctionStep } = addFunctionCallStepToTrace({
-        name: `${config.name}(${Object.entries(typedInput).map(([k, v]) => `${k}="${v}"`).join(', ')})`,
+        name: config.name,
         functionName: config.name,
         arguments: typedInput,
         metadata: {
