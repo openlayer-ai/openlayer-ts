@@ -427,7 +427,7 @@ class OpenAIMonitor {
       const { completion_tokens, prompt_tokens, total_tokens } =
         typeof usage === 'undefined' || typeof usage !== 'object' || usage === null ? {} : usage;
 
-      const cost = this.cost(model, prompt_tokens, completion_tokens);
+      const cost = this.cost(model, prompt_tokens ?? 0, completion_tokens ?? 0);
       const latency =
         completed_at === null || created_at === null || isNaN(completed_at) || isNaN(created_at) ?
           undefined
