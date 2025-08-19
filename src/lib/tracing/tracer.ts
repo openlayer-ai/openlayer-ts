@@ -1,9 +1,9 @@
 // tracing/tracer.ts
 
-import { Trace } from './traces';
-import { Step, UserCallStep, ChatCompletionStep } from './steps';
-import { StepType } from './enums';
 import Openlayer from '../../index';
+import { StepType } from './enums';
+import { ChatCompletionStep, Step, UserCallStep } from './steps';
+import { Trace } from './traces';
 
 let currentTrace: Trace | null = null;
 
@@ -39,7 +39,6 @@ function createStep(
   } else {
     newStep = new UserCallStep(name, inputs, output, metadata);
   }
-  newStep.startTime = performance.now();
 
   const parentStep = getCurrentStep();
   const isRootStep = parentStep === null;
@@ -59,9 +58,6 @@ function createStep(
   stepStack.push(newStep);
 
   const endStep = () => {
-    newStep.endTime = performance.now();
-    newStep.latency = newStep.endTime - newStep.startTime;
-
     stepStack.pop(); // Remove the current step from the stack
 
     if (isRootStep) {
@@ -187,16 +183,17 @@ export function addChatCompletionStepToTrace({
 }) {
   const [step, endStep] = createStep(name, StepType.CHAT_COMPLETION, inputs, output, metadata);
 
-  if (step instanceof ChatCompletionStep) {
-    step.provider = provider;
-    step.promptTokens = promptTokens;
-    step.completionTokens = completionTokens;
-    step.tokens = tokens;
-    step.model = model;
-    step.modelParameters = modelParameters;
-    step.rawOutput = rawOutput;
-    step.latency = latency;
+  if (step.stepType === StepType.CHAT_COMPLETION) {
+    (step as ChatCompletionStep).provider = provider;
+    (step as ChatCompletionStep).promptTokens = promptTokens;
+    (step as ChatCompletionStep).completionTokens = completionTokens;
+    (step as ChatCompletionStep).tokens = tokens;
+    (step as ChatCompletionStep).model = model;
+    (step as ChatCompletionStep).modelParameters = modelParameters;
+    (step as ChatCompletionStep).rawOutput = rawOutput;
   }
+
+  step.latency = latency;
 
   step.log({ inputs, output, metadata });
   endStep();
