@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.7 (2025-08-20)
+
+Full Changelog: [v0.13.6...v0.13.7](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.6...v0.13.7)
+
+### Bug Fixes
+
+* bedrock traces do not have correct latency in TypeScript client ([70c273f](https://github.com/openlayer-ai/openlayer-ts/commit/70c273f03e9bc3ba5ba6cee94cc3d9f55cb5cdaa))
+
 ## 0.13.6 (2025-08-19)
 
 Full Changelog: [v0.13.5...v0.13.6](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.5...v0.13.6)
