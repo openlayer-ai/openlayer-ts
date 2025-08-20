@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.9 (2025-08-20)
+
+Full Changelog: [v0.13.8...v0.13.9](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.8...v0.13.9)
+
+### Chores
+
+* add logs to start and end time ([a13a0bc](https://github.com/openlayer-ai/openlayer-ts/commit/a13a0bc17e9284d423b771e65a54584f1a1c8eb4))
+
 ## 0.13.8 (2025-08-20)
 
 Full Changelog: [v0.13.7...v0.13.8](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.7...v0.13.8)
