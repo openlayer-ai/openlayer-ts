@@ -69,6 +69,8 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
               completionTokens: completionTokens,
               promptTokens: 0,
               tokens: completionTokens,
+              startTime: startTime,
+              endTime: endTime,
             };
             addChatCompletionStepToTrace(traceData);
           }
@@ -101,6 +103,8 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
           rawOutput: JSON.stringify(response, null, 2),
           metadata: {},
           provider: 'OpenAI',
+          startTime: startTime,
+          endTime: endTime,
         };
         addChatCompletionStepToTrace(traceData);
         return response;

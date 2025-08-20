@@ -136,6 +136,8 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       modelParameters: this.modelParameters,
       metadata: this.metadata,
       provider: this.provider ?? '',
+      startTime: this.startTime,
+      endTime: this.endTime,
     });
   }
 }

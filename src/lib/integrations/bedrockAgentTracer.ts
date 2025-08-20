@@ -199,6 +199,8 @@ function createTracedCompletion(
           rawOutput: JSON.stringify(rawOutputChunks, null, 2),
           metadata: metadata,
           provider: 'Bedrock',
+          startTime: startTime,
+          endTime: endTime,
         };
 
         addChatCompletionStepToTrace(traceStepData);
