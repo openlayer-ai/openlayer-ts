@@ -39,15 +39,6 @@ export function traceBedrockAgent(
     const hasAgentId = typeof command?.input?.agentId === 'string';
     const hasInputText = typeof command?.input?.inputText === 'string';
 
-    console.debug('Bedrock command analysis:', {
-      command: command,
-      hasInput: hasInput,
-      hasAgentId: hasAgentId,
-      hasInputText: hasInputText,
-      constructorName: command?.constructor?.name,
-      input: command?.input,
-    });
-
     // Check if this looks like an InvokeAgentCommand by checking for expected properties
     const isInvokeAgentCommand = hasInput && hasAgentId && hasInputText;
 
@@ -55,7 +46,6 @@ export function traceBedrockAgent(
       console.debug('Command is not an InvokeAgentCommand, passing through uninstrumented');
       return originalSend(command, options);
     }
-    console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
     const startTime = performanceNow();
     const input = command.input;
@@ -110,19 +100,16 @@ function createTracedCompletion(
       let traceData: any[] = [];
       let chunkCount = 0;
 
-      console.debug('Original completion:', JSON.stringify(originalCompletion, null, 2));
-
       try {
         for await (const chunkEvent of originalCompletion) {
           // Yield first - ensure user gets data immediately
           yield chunkEvent;
 
-          console.debug(JSON.stringify(chunkEvent, null, 2));
-
           // Then collect tracing data
           if (chunkCount === 0) {
             firstTokenTime = performanceNow();
           }
+
           chunkCount++;
 
           // Handle chunk events
@@ -131,9 +118,11 @@ function createTracedCompletion(
             rawOutputChunks.push(chunk);
 
             if (chunk.bytes) {
-              const decodedResponse = new TextDecoder('utf-8').decode(chunk.bytes);
+              // Convert the object-based bytes to a proper Uint8Array
+              const bytesObject = chunk.bytes;
+              const byteArray = new Uint8Array(Object.values(bytesObject));
+              const decodedResponse = new TextDecoder('utf-8').decode(byteArray);
               collectedOutput += decodedResponse;
-              completionTokens += 1;
             }
 
             if (chunk.attribution && chunk.attribution.citations) {
