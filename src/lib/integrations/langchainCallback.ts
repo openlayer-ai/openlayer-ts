@@ -2,6 +2,7 @@ import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { LLMResult } from '@langchain/core/dist/outputs';
 import type { Serialized } from '@langchain/core/load/serializable';
 import { AIMessage, BaseMessage, SystemMessage } from '@langchain/core/messages';
+import performanceNow from 'performance-now';
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
 const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
@@ -47,7 +48,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   ): Promise<void> {
     this.initializeRun(extraParams || {}, metadata || {});
     this.prompt = this.langchainMassagesToPrompt(messages);
-    this.startTime = performance.now();
+    this.startTime = performanceNow();
   }
 
   private initializeRun(extraParams: Record<string, any>, metadata: Record<string, unknown>): void {
@@ -89,11 +90,11 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   ) {
     this.initializeRun(extraParams || {}, metadata || {});
     this.prompt = prompts.map((p) => ({ role: 'user', content: p }));
-    this.startTime = performance.now();
+    this.startTime = performanceNow();
   }
 
   override async handleLLMEnd(output: LLMResult, runId: string, parentRunId?: string, tags?: string[]) {
-    this.endTime = performance.now();
+    this.endTime = performanceNow();
     this.latency = this.endTime - this.startTime!;
     this.extractTokenInformation(output);
     this.extractOutput(output);
