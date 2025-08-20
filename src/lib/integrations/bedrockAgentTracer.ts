@@ -21,7 +21,10 @@ try {
 
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
-export function traceBedrockAgent(client: any): any {
+export function traceBedrockAgent(
+  client: any,
+  openlayerInferencePipelineId?: string,
+): any {
   if (!BedrockAgentRuntimeClient || !InvokeAgentCommand) {
     throw new Error(
       'AWS SDK for Bedrock Agent Runtime is not installed. Please install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
@@ -55,7 +58,6 @@ export function traceBedrockAgent(client: any): any {
     console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
     const startTime = performanceNow();
-    console.debug('startTime', startTime);
     const input = command.input;
 
     try {
@@ -67,7 +69,12 @@ export function traceBedrockAgent(client: any): any {
       }
 
       // Create a traced async iterator that preserves the original
-      const tracedCompletion = createTracedCompletion(response.completion, input, startTime);
+      const tracedCompletion = createTracedCompletion(
+        response.completion,
+        input,
+        startTime,
+        openlayerInferencePipelineId,
+      );
 
       // Return the response with the traced completion
       return {
@@ -88,6 +95,7 @@ function createTracedCompletion(
   originalCompletion: AsyncIterable<any>,
   input: any,
   startTime: number,
+  openlayerInferencePipelineId?: string,
 ): AsyncIterable<any> {
   return {
     async *[Symbol.asyncIterator]() {
@@ -102,10 +110,14 @@ function createTracedCompletion(
       let traceData: any[] = [];
       let chunkCount = 0;
 
+      console.debug('Original completion:', JSON.stringify(originalCompletion, null, 2));
+
       try {
         for await (const chunkEvent of originalCompletion) {
           // Yield first - ensure user gets data immediately
           yield chunkEvent;
+
+          console.debug(JSON.stringify(chunkEvent, null, 2));
 
           // Then collect tracing data
           if (chunkCount === 0) {
@@ -131,7 +143,6 @@ function createTracedCompletion(
 
           // Handle trace events
           if (chunkEvent.trace) {
-            console.debug(JSON.stringify(chunkEvent.trace, null, 2));
             traceData.push(chunkEvent.trace);
 
             if (chunkEvent.trace.trace) {
@@ -159,7 +170,6 @@ function createTracedCompletion(
 
         // After the stream is complete, send trace data
         const endTime = performanceNow();
-        console.debug('endTime', endTime);
         totalTokens = promptTokens + completionTokens;
 
         // Send trace data to Openlayer
@@ -208,7 +218,7 @@ function createTracedCompletion(
           endTime: endTime,
         };
 
-        addChatCompletionStepToTrace(traceStepData);
+        addChatCompletionStepToTrace(traceStepData, openlayerInferencePipelineId);
       } catch (error) {
         console.error('Error in traced completion:', error);
         // Don't rethrow - we don't want tracing errors to break the user's stream
