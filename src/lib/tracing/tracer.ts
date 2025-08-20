@@ -13,6 +13,9 @@ import {
 } from './steps';
 import { StepType } from './enums';
 import Openlayer from '../../index';
+import { StepType } from './enums';
+import { ChatCompletionStep, Step, UserCallStep } from './steps';
+import { Trace } from './traces';
 
 let currentTrace: Trace | null = null;
 
@@ -40,6 +43,9 @@ function createStep(
   inputs?: any,
   output?: any,
   metadata: Record<string, any> | null = null,
+  startTime?: number | null,
+  endTime?: number | null,
+  openlayerInferencePipelineId?: string,
 ): [Step, () => void] {
   metadata = metadata || {};
   let newStep: Step;
@@ -68,7 +74,8 @@ function createStep(
       newStep = new UserCallStep(name, inputs, output, metadata);
       break;
   }
-  newStep.startTime = performance.now();
+
+  const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
 
   const parentStep = getCurrentStep();
   const isRootStep = parentStep === null;
@@ -88,9 +95,6 @@ function createStep(
   stepStack.push(newStep);
 
   const endStep = () => {
-    newStep.endTime = performance.now();
-    newStep.latency = newStep.endTime - newStep.startTime;
-
     stepStack.pop(); // Remove the current step from the stack
 
     if (isRootStep) {
@@ -99,20 +103,47 @@ function createStep(
       // Post process trace and get the input variable names
       const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
 
-      if (publish && process.env['OPENLAYER_INFERENCE_PIPELINE_ID']) {
-        client!.inferencePipelines.data.stream(process.env['OPENLAYER_INFERENCE_PIPELINE_ID'], {
-          config: {
-            outputColumnName: 'output',
-            inputVariableNames: inputVariableNames,
-            groundTruthColumnName: 'groundTruth',
-            latencyColumnName: 'latency',
-            costColumnName: 'cost',
-            timestampColumnName: 'inferenceTimestamp',
-            inferenceIdColumnName: 'inferenceId',
-            numOfTokenColumnName: 'tokens',
-          },
-          rows: [processedTraceData],
-        });
+      if (publish && inferencePipelineId) {
+        console.debug('Uploading trace to Openlayer...');
+
+        client!.inferencePipelines.data
+          .stream(inferencePipelineId, {
+            config: {
+              outputColumnName: 'output',
+              inputVariableNames: inputVariableNames,
+              groundTruthColumnName: 'groundTruth',
+              latencyColumnName: 'latency',
+              costColumnName: 'cost',
+              timestampColumnName: 'inferenceTimestamp',
+              inferenceIdColumnName: 'inferenceId',
+              numOfTokenColumnName: 'tokens',
+            },
+            rows: [processedTraceData],
+          })
+          .then(() => {
+            console.debug('Trace uploaded successfully to Openlayer');
+          })
+          .catch((error) => {
+            console.error('Failed to upload trace to Openlayer:', error);
+            console.error(
+              'Trace data that failed to upload:',
+              JSON.stringify(
+                {
+                  pipelineId: inferencePipelineId,
+                  inputVariableNames,
+                  processedTraceData,
+                },
+                null,
+                2,
+              ),
+            );
+          });
+      } else {
+        if (!publish) {
+          console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true)');
+        } else if (!inferencePipelineId) {
+          console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
+        }
       }
 
       // Reset the entire trace state
@@ -140,12 +171,17 @@ function getParamNames(func: Function): string[] {
 }
 
 // Higher-order function to trace synchronous or asynchronous functions
-function trace(fn: Function, stepType: StepType = StepType.USER_CALL, stepName?: string): Function {
+function trace(
+  fn: Function,
+  stepType: StepType = StepType.USER_CALL,
+  stepName?: string,
+  openlayerInferencePipelineId?: string,
+): Function {
   return async function (...args: any[]) {
     const name = stepName || fn.name;
     const paramNames = getParamNames(fn);
     const inputs = Object.fromEntries(paramNames.map((name, index) => [name, args[index]]));
-    const [step, endStep] = createStep(name, stepType, args);
+    const [step, endStep] = createStep(name, stepType, args, openlayerInferencePipelineId);
 
     try {
       const result = await fn(...args);
@@ -160,45 +196,62 @@ function trace(fn: Function, stepType: StepType = StepType.USER_CALL, stepName?:
   };
 }
 
-export function addChatCompletionStepToTrace({
-  name,
-  inputs,
-  output,
-  latency,
-  tokens = null,
-  promptTokens = null,
-  completionTokens = null,
-  model = null,
-  modelParameters = null,
-  rawOutput = null,
-  metadata = {},
-  provider = 'OpenAI',
-}: {
-  name: string;
-  inputs: any;
-  output: any;
-  latency: number;
-  tokens?: number | null;
-  promptTokens?: number | null;
-  completionTokens?: number | null;
-  model?: string | null;
-  modelParameters?: Record<string, any> | null;
-  rawOutput?: string | null;
-  metadata?: Record<string, any>;
-  provider?: string;
-}) {
-  const [step, endStep] = createStep(name, StepType.CHAT_COMPLETION, inputs, output, metadata);
+export function addChatCompletionStepToTrace(
+  {
+    name,
+    inputs,
+    output,
+    latency,
+    tokens = null,
+    promptTokens = null,
+    completionTokens = null,
+    model = null,
+    modelParameters = null,
+    rawOutput = null,
+    metadata = {},
+    provider = 'OpenAI',
+    startTime = null,
+    endTime = null,
+  }: {
+    name: string;
+    inputs: any;
+    output: any;
+    latency: number;
+    tokens?: number | null;
+    promptTokens?: number | null;
+    completionTokens?: number | null;
+    model?: string | null;
+    modelParameters?: Record<string, any> | null;
+    rawOutput?: string | null;
+    metadata?: Record<string, any>;
+    provider?: string;
+    startTime?: number | null;
+    endTime?: number | null;
+  },
+  openlayerInferencePipelineId?: string,
+) {
+  const [step, endStep] = createStep(
+    name,
+    StepType.CHAT_COMPLETION,
+    inputs,
+    output,
+    metadata,
+    startTime,
+    endTime,
+    openlayerInferencePipelineId,
+  );
 
-  if (step instanceof ChatCompletionStep) {
-    step.provider = provider;
-    step.promptTokens = promptTokens;
-    step.completionTokens = completionTokens;
-    step.tokens = tokens;
-    step.model = model;
-    step.modelParameters = modelParameters;
-    step.rawOutput = rawOutput;
-    step.latency = latency;
+  if (step.stepType === StepType.CHAT_COMPLETION) {
+    (step as ChatCompletionStep).provider = provider;
+    (step as ChatCompletionStep).promptTokens = promptTokens;
+    (step as ChatCompletionStep).completionTokens = completionTokens;
+    (step as ChatCompletionStep).tokens = tokens;
+    (step as ChatCompletionStep).model = model;
+    (step as ChatCompletionStep).modelParameters = modelParameters;
+    (step as ChatCompletionStep).rawOutput = rawOutput;
   }
+
+  step.latency = latency;
 
   step.log({ inputs, output, metadata });
   endStep();

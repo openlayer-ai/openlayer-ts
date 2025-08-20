@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { Stream } from 'openai/streaming';
+import performanceNow from 'performance-now';
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
 export function traceOpenAI(openai: OpenAI): OpenAI {
@@ -13,7 +14,7 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
     const stream = params?.stream ?? false;
 
     try {
-      const startTime = performance.now();
+      const startTime = performanceNow();
 
       // Call the original `create` function
       let response = await createFunction.apply(this, args);
@@ -32,7 +33,7 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
           > {
             for await (const rawChunk of response as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>) {
               if (chunks.length === 0) {
-                firstTokenTime = performance.now();
+                firstTokenTime = performanceNow();
               }
               chunks.push(rawChunk);
               const delta = rawChunk.choices[0]?.delta;
@@ -55,7 +56,7 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
               completionTokens += 1;
               yield rawChunk;
             }
-            const endTime = performance.now();
+            const endTime = performanceNow();
             const traceData = {
               name: 'OpenAI Chat Completion',
               inputs: { prompt: params.messages },
@@ -69,6 +70,8 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
               completionTokens: completionTokens,
               promptTokens: 0,
               tokens: completionTokens,
+              startTime: startTime,
+              endTime: endTime,
             };
             addChatCompletionStepToTrace(traceData);
           }
@@ -78,7 +81,7 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
         // Handle non-streaming responses
         response = response as OpenAI.Chat.Completions.ChatCompletion;
         const completion = response.choices[0];
-        const endTime = performance.now();
+        const endTime = performanceNow();
 
         let output: string = '';
         if (completion?.message?.content) {
@@ -101,6 +104,8 @@ export function traceOpenAI(openai: OpenAI): OpenAI {
           rawOutput: JSON.stringify(response, null, 2),
           metadata: {},
           provider: 'OpenAI',
+          startTime: startTime,
+          endTime: endTime,
         };
         addChatCompletionStepToTrace(traceData);
         return response;

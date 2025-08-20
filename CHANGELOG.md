@@ -1,5 +1,96 @@
 # Changelog
 
+## 0.13.13 (2025-08-20)
+
+Full Changelog: [v0.13.12...v0.13.13](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.12...v0.13.13)
+
+### Chores
+
+* remove redundant logs ([8882a70](https://github.com/openlayer-ai/openlayer-ts/commit/8882a70a5bb9e1cf88cb5b72b77dfe94ce4c97d3))
+
+## 0.13.12 (2025-08-20)
+
+Full Changelog: [v0.13.11...v0.13.12](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.11...v0.13.12)
+
+### Bug Fixes
+
+* support setting inference pipeline ID from runtime variables ([46fd370](https://github.com/openlayer-ai/openlayer-ts/commit/46fd3703e71dce5f35f9f58f5b582fb0942f7145))
+
+## 0.13.11 (2025-08-20)
+
+Full Changelog: [v0.13.10...v0.13.11](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.10...v0.13.11)
+
+### Chores
+
+* update logs ([2a4208e](https://github.com/openlayer-ai/openlayer-ts/commit/2a4208ed1ba92cb33574525f285ebd46e172579c))
+
+## 0.13.10 (2025-08-20)
+
+Full Changelog: [v0.13.9...v0.13.10](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.9...v0.13.10)
+
+### Bug Fixes
+
+* use node module for performance.now() ([b20581d](https://github.com/openlayer-ai/openlayer-ts/commit/b20581da0cb7e4e41262e70d163e0e798a13cba3))
+
+## 0.13.9 (2025-08-20)
+
+Full Changelog: [v0.13.8...v0.13.9](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.8...v0.13.9)
+
+### Chores
+
+* add logs to start and end time ([a13a0bc](https://github.com/openlayer-ai/openlayer-ts/commit/a13a0bc17e9284d423b771e65a54584f1a1c8eb4))
+
+## 0.13.8 (2025-08-20)
+
+Full Changelog: [v0.13.7...v0.13.8](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.7...v0.13.8)
+
+### Chores
+
+* add debug logs to bedrock tracer ([fbf4552](https://github.com/openlayer-ai/openlayer-ts/commit/fbf4552dfbb6b8f38e4282a832bc9756764b301c))
+
+## 0.13.7 (2025-08-20)
+
+Full Changelog: [v0.13.6...v0.13.7](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.6...v0.13.7)
+
+### Bug Fixes
+
+* bedrock traces do not have correct latency in TypeScript client ([70c273f](https://github.com/openlayer-ai/openlayer-ts/commit/70c273f03e9bc3ba5ba6cee94cc3d9f55cb5cdaa))
+
+## 0.13.6 (2025-08-19)
+
+Full Changelog: [v0.13.5...v0.13.6](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.5...v0.13.6)
+
+### Bug Fixes
+
+* bedrock traces do not have correct latency in TypeScript client ([4010669](https://github.com/openlayer-ai/openlayer-ts/commit/4010669f62a41b209ce464e0dd702c11a6dace71))
+
+## 0.13.5 (2025-08-16)
+
+Full Changelog: [v0.13.4...v0.13.5](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.4...v0.13.5)
+
+### Chores
+
+* **deps:** update dependency node-fetch to v2.6.13 ([bdd6b9d](https://github.com/openlayer-ai/openlayer-ts/commit/bdd6b9d9aea917d51a79b1f6208095d54693f0e3))
+* **internal:** formatting change ([1799c58](https://github.com/openlayer-ai/openlayer-ts/commit/1799c583c87406b1334cfcc24b59652eafe2bde8))
+
+## 0.13.4 (2025-08-15)
+
+Full Changelog: [v0.13.3...v0.13.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.3...v0.13.4)
+
+### Bug Fixes
+
+* log AWS error in Bedrock tracer ([40ca31b](https://github.com/openlayer-ai/openlayer-ts/commit/40ca31bae81c848df7444bf61c82c1bbf7e943ec))
+
+## 0.13.3 (2025-08-15)
+
+Full Changelog: [v0.13.2...v0.13.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.2...v0.13.3)
+
+### Chores
+
+* add debug statements to trace upload ([103098b](https://github.com/openlayer-ai/openlayer-ts/commit/103098b25f8f89eb32d01d08b7b651b9ca306498))
+* **internal:** update comment in script ([5aff731](https://github.com/openlayer-ai/openlayer-ts/commit/5aff731c4fc3e027a67348d0a042088cd7144b50))
+* update @stainless-api/prism-cli to v5.15.0 ([b396a4c](https://github.com/openlayer-ai/openlayer-ts/commit/b396a4cb94a5ec0b303aff0944a243a8704e95ca))
+
 ## 0.13.2 (2025-08-07)
 
 Full Changelog: [v0.13.1...v0.13.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.1...v0.13.2)

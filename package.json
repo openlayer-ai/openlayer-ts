@@ -1,6 +1,6 @@
 {
   "name": "openlayer",
-  "version": "0.13.2",
+  "version": "0.13.13",
   "description": "The official TypeScript library for the Openlayer API",
   "author": "Openlayer <support@openlayer.com>",
   "types": "dist/index.d.ts",
@@ -40,6 +40,8 @@
     "formdata-node": "^4.3.2",
     "node-fetch": "^2.7.0",
     "openai": "^4.49.0",
+    "openlayer": "https://registry.npmjs.org/openlayer/-/openlayer-0.13.12.tgz",
+    "performance-now": "^2.1.0",
     "uuid": "^9.0.1",
     "web-streams-polyfill": "^3.2.1"
   },

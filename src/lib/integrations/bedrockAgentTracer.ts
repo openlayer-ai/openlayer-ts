@@ -1,3 +1,5 @@
+import performanceNow from 'performance-now';
+
 // Make imports optional with try/catch
 let BedrockAgentRuntimeClient: any;
 let InvokeAgentCommand: any;
@@ -11,12 +13,18 @@ try {
   InvokeAgentCommandInput = bedrockModule.InvokeAgentCommandInput;
   InvokeAgentCommandOutput = bedrockModule.InvokeAgentCommandOutput;
 } catch (error) {
-  // AWS SDK not available
+  console.warn(
+    'AWS SDK for Bedrock Agent Runtime is not available. Install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
+  );
+  console.debug('Bedrock Agent tracing will not be available. Error:', error);
 }
 
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
-export function traceBedrockAgent(client: any): any {
+export function traceBedrockAgent(
+  client: any,
+  openlayerInferencePipelineId?: string,
+): any {
   if (!BedrockAgentRuntimeClient || !InvokeAgentCommand) {
     throw new Error(
       'AWS SDK for Bedrock Agent Runtime is not installed. Please install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
@@ -26,12 +34,20 @@ export function traceBedrockAgent(client: any): any {
   const originalSend = client.send.bind(client);
 
   client.send = async function (this: any, command: any, options?: any): Promise<any> {
-    // Only trace InvokeAgentCommand
-    if (!(command instanceof InvokeAgentCommand)) {
+    // Debug logging to see what we're receiving
+    const hasInput = command?.input;
+    const hasAgentId = typeof command?.input?.agentId === 'string';
+    const hasInputText = typeof command?.input?.inputText === 'string';
+
+    // Check if this looks like an InvokeAgentCommand by checking for expected properties
+    const isInvokeAgentCommand = hasInput && hasAgentId && hasInputText;
+
+    if (!isInvokeAgentCommand) {
+      console.debug('Command is not an InvokeAgentCommand, passing through uninstrumented');
       return originalSend(command, options);
     }
 
-    const startTime = performance.now();
+    const startTime = performanceNow();
     const input = command.input;
 
     try {
@@ -43,7 +59,12 @@ export function traceBedrockAgent(client: any): any {
       }
 
       // Create a traced async iterator that preserves the original
-      const tracedCompletion = createTracedCompletion(response.completion, input, startTime);
+      const tracedCompletion = createTracedCompletion(
+        response.completion,
+        input,
+        startTime,
+        openlayerInferencePipelineId,
+      );
 
       // Return the response with the traced completion
       return {
@@ -64,6 +85,7 @@ function createTracedCompletion(
   originalCompletion: AsyncIterable<any>,
   input: any,
   startTime: number,
+  openlayerInferencePipelineId?: string,
 ): AsyncIterable<any> {
   return {
     async *[Symbol.asyncIterator]() {
@@ -85,8 +107,9 @@ function createTracedCompletion(
 
           // Then collect tracing data
           if (chunkCount === 0) {
-            firstTokenTime = performance.now();
+            firstTokenTime = performanceNow();
           }
+
           chunkCount++;
 
           // Handle chunk events
@@ -95,9 +118,11 @@ function createTracedCompletion(
             rawOutputChunks.push(chunk);
 
             if (chunk.bytes) {
-              const decodedResponse = new TextDecoder('utf-8').decode(chunk.bytes);
+              // Convert the object-based bytes to a proper Uint8Array
+              const bytesObject = chunk.bytes;
+              const byteArray = new Uint8Array(Object.values(bytesObject));
+              const decodedResponse = new TextDecoder('utf-8').decode(byteArray);
               collectedOutput += decodedResponse;
-              completionTokens += 1;
             }
 
             if (chunk.attribution && chunk.attribution.citations) {
@@ -133,7 +158,7 @@ function createTracedCompletion(
         }
 
         // After the stream is complete, send trace data
-        const endTime = performance.now();
+        const endTime = performanceNow();
         totalTokens = promptTokens + completionTokens;
 
         // Send trace data to Openlayer
@@ -178,9 +203,11 @@ function createTracedCompletion(
           rawOutput: JSON.stringify(rawOutputChunks, null, 2),
           metadata: metadata,
           provider: 'Bedrock',
+          startTime: startTime,
+          endTime: endTime,
         };
 
-        addChatCompletionStepToTrace(traceStepData);
+        addChatCompletionStepToTrace(traceStepData, openlayerInferencePipelineId);
       } catch (error) {
         console.error('Error in traced completion:', error);
         // Don't rethrow - we don't want tracing errors to break the user's stream
