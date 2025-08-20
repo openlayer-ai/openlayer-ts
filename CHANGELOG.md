@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.12 (2025-08-20)
+
+Full Changelog: [v0.13.11...v0.13.12](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.11...v0.13.12)
+
+### Bug Fixes
+
+* support setting inference pipeline ID from runtime variables ([46fd370](https://github.com/openlayer-ai/openlayer-ts/commit/46fd3703e71dce5f35f9f58f5b582fb0942f7145))
+
 ## 0.13.11 (2025-08-20)
 
 Full Changelog: [v0.13.10...v0.13.11](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.10...v0.13.11)
