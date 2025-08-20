@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.8 (2025-08-20)
+
+Full Changelog: [v0.13.7...v0.13.8](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.7...v0.13.8)
+
+### Chores
+
+* add debug logs to bedrock tracer ([fbf4552](https://github.com/openlayer-ai/openlayer-ts/commit/fbf4552dfbb6b8f38e4282a832bc9756764b301c))
+
 ## 0.13.7 (2025-08-20)
 
 Full Changelog: [v0.13.6...v0.13.7](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.6...v0.13.7)
