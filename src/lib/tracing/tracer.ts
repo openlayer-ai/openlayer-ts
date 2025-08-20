@@ -31,13 +31,15 @@ function createStep(
   inputs?: any,
   output?: any,
   metadata: Record<string, any> | null = null,
+  startTime?: number | null,
+  endTime?: number | null,
 ): [Step, () => void] {
   metadata = metadata || {};
   let newStep: Step;
   if (stepType === StepType.CHAT_COMPLETION) {
-    newStep = new ChatCompletionStep(name, inputs, output, metadata);
+    newStep = new ChatCompletionStep(name, inputs, output, metadata, startTime, endTime);
   } else {
-    newStep = new UserCallStep(name, inputs, output, metadata);
+    newStep = new UserCallStep(name, inputs, output, metadata, startTime, endTime);
   }
 
   const parentStep = getCurrentStep();
@@ -167,6 +169,8 @@ export function addChatCompletionStepToTrace({
   rawOutput = null,
   metadata = {},
   provider = 'OpenAI',
+  startTime = null,
+  endTime = null,
 }: {
   name: string;
   inputs: any;
@@ -180,8 +184,10 @@ export function addChatCompletionStepToTrace({
   rawOutput?: string | null;
   metadata?: Record<string, any>;
   provider?: string;
+  startTime?: number | null;
+  endTime?: number | null;
 }) {
-  const [step, endStep] = createStep(name, StepType.CHAT_COMPLETION, inputs, output, metadata);
+  const [step, endStep] = createStep(name, StepType.CHAT_COMPLETION, inputs, output, metadata, startTime, endTime);
 
   if (step.stepType === StepType.CHAT_COMPLETION) {
     (step as ChatCompletionStep).provider = provider;

@@ -39,14 +39,15 @@ export class Step {
   latency: number | null = null;
   steps: Step[] = [];
 
-  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}, startTime?: number | null, endTime?: number | null) {
     this.name = name;
     this.id = uuidv4();
     this.inputs = inputs;
     this.output = output;
     this.metadata = metadata;
 
-    this.startTime = Date.now();
+    this.startTime = startTime ?? Date.now();
+    this.endTime = endTime ?? null;
   }
 
   addNestedStep(nestedStep: Step): void {
@@ -80,8 +81,8 @@ export class Step {
 }
 
 export class UserCallStep extends Step {
-  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
-    super(name, inputs, output, metadata);
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}, startTime?: number | null, endTime?: number | null) {
+    super(name, inputs, output, metadata, startTime, endTime);
     this.stepType = StepType.USER_CALL;
   }
 }
@@ -96,8 +97,8 @@ export class ChatCompletionStep extends Step {
   modelParameters: Record<string, any> | null = null;
   rawOutput: string | null = null;
 
-  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
-    super(name, inputs, output, metadata);
+    constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}, startTime?: number | null, endTime?: number | null) {
+    super(name, inputs, output, metadata, startTime, endTime);
     this.stepType = StepType.CHAT_COMPLETION;
   }
 
