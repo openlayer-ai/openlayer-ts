@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.10 (2025-08-20)
+
+Full Changelog: [v0.13.9...v0.13.10](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.9...v0.13.10)
+
+### Bug Fixes
+
+* use node module for performance.now() ([b20581d](https://github.com/openlayer-ai/openlayer-ts/commit/b20581da0cb7e4e41262e70d163e0e798a13cba3))
+
 ## 0.13.9 (2025-08-20)
 
 Full Changelog: [v0.13.8...v0.13.9](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.8...v0.13.9)
