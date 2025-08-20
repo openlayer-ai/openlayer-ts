@@ -53,6 +53,7 @@ export function traceBedrockAgent(client: any): any {
     console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
     const startTime = performance.now();
+    console.log('startTime', startTime);
     const input = command.input;
 
     try {
@@ -156,6 +157,7 @@ function createTracedCompletion(
 
         // After the stream is complete, send trace data
         const endTime = performance.now();
+        console.log('endTime', endTime);
         totalTokens = promptTokens + completionTokens;
 
         // Send trace data to Openlayer
