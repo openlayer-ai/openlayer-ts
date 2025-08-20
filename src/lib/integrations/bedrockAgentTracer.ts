@@ -55,7 +55,7 @@ export function traceBedrockAgent(client: any): any {
     console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
     const startTime = performanceNow();
-    console.log('startTime', startTime);
+    console.debug('startTime', startTime);
     const input = command.input;
 
     try {
@@ -131,7 +131,7 @@ function createTracedCompletion(
 
           // Handle trace events
           if (chunkEvent.trace) {
-            console.log(JSON.stringify(chunkEvent.trace, null, 2));
+            console.debug(JSON.stringify(chunkEvent.trace, null, 2));
             traceData.push(chunkEvent.trace);
 
             if (chunkEvent.trace.trace) {
@@ -159,7 +159,7 @@ function createTracedCompletion(
 
         // After the stream is complete, send trace data
         const endTime = performanceNow();
-        console.log('endTime', endTime);
+        console.debug('endTime', endTime);
         totalTokens = promptTokens + completionTokens;
 
         // Send trace data to Openlayer
