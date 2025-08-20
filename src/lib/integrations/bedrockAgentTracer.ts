@@ -1,3 +1,5 @@
+import performanceNow from 'performance-now';
+
 // Make imports optional with try/catch
 let BedrockAgentRuntimeClient: any;
 let InvokeAgentCommand: any;
@@ -52,7 +54,7 @@ export function traceBedrockAgent(client: any): any {
     }
     console.debug('Command identified as InvokeAgentCommand, applying tracing');
 
-    const startTime = performance.now();
+    const startTime = performanceNow();
     console.log('startTime', startTime);
     const input = command.input;
 
@@ -107,7 +109,7 @@ function createTracedCompletion(
 
           // Then collect tracing data
           if (chunkCount === 0) {
-            firstTokenTime = performance.now();
+            firstTokenTime = performanceNow();
           }
           chunkCount++;
 
@@ -156,7 +158,7 @@ function createTracedCompletion(
         }
 
         // After the stream is complete, send trace data
-        const endTime = performance.now();
+        const endTime = performanceNow();
         console.log('endTime', endTime);
         totalTokens = promptTokens + completionTokens;
 
