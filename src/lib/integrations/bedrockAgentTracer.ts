@@ -128,6 +128,7 @@ function createTracedCompletion(
 
           // Handle trace events
           if (chunkEvent.trace) {
+            console.log(JSON.stringify(chunkEvent.trace, null, 2));
             traceData.push(chunkEvent.trace);
 
             if (chunkEvent.trace.trace) {
