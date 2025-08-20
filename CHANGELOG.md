@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.11 (2025-08-20)
+
+Full Changelog: [v0.13.10...v0.13.11](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.10...v0.13.11)
+
+### Chores
+
+* update logs ([2a4208e](https://github.com/openlayer-ai/openlayer-ts/commit/2a4208ed1ba92cb33574525f285ebd46e172579c))
+
 ## 0.13.10 (2025-08-20)
 
 Full Changelog: [v0.13.9...v0.13.10](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.9...v0.13.10)
