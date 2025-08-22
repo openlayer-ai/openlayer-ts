@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0 (2025-08-22)
+
+Full Changelog: [v0.14.1...v0.15.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.14.1...v0.15.0)
+
+### Features
+
+* add traces to dev mode runs and update bedrock example ([acdb00f](https://github.com/openlayer-ai/openlayer-ts/commit/acdb00f4cd25c5464195faa40fb50ee756d12330))
+
 ## 0.14.1 (2025-08-22)
 
 Full Changelog: [v0.14.0...v0.14.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.14.0...v0.14.1)
