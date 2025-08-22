@@ -75,6 +75,8 @@ class CLIHandler {
             undefined
           : postProcessTrace(traceData)?.traceData;
 
+        console.log('Adding trace to dataset: ', traceData?.toJSON());
+
         const output: Output = {
           ...item,
           ...result.otherFields,
@@ -109,7 +111,7 @@ class CLIHandler {
           ...(results.some((r) => typeof r.cost === 'number') ? { costColumnName: 'cost' } : {}),
           ...(results.some((r) => typeof r.tokens === 'number') ? { numOfTokensColumnName: 'tokens' } : {}),
         };
-        
+
         this.writeOutput(results, outputDir, config);
         console.log('Results processing completed. Check console for output.');
       })
