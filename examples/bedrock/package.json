@@ -1,0 +1,15 @@
+{
+  "name": "bedrock-example",
+  "version": "1.0.0",
+  "description": "Bedrock agent example using local openlayer package",
+  "main": "run.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx run.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.862.0",
+    "openlayer": "*",
+    "tsx": "^4.0.0"
+  }
+}
