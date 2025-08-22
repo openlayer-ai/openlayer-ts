@@ -14,7 +14,7 @@ if (publish) {
   client = new Openlayer();
 }
 
-function getCurrentTrace(): Trace | null {
+export function getCurrentTrace(): Trace | null {
   return currentTrace;
 }
 
@@ -225,7 +225,7 @@ export function addChatCompletionStepToTrace(
   endStep();
 }
 
-function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
+export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
   const rootStep = traceObj.steps[0];
 
   const input_variables = rootStep!.inputs;
@@ -239,9 +239,10 @@ function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames
     output: rootStep!.output,
     groundTruth: rootStep!.groundTruth,
     latency: rootStep!.latency,
-    cost: 0, // fix
-    tokens: 0, // fix
+    cost: (rootStep as ChatCompletionStep)!.cost,
+    tokens: (rootStep as ChatCompletionStep)!.tokens,
     steps: processed_steps,
+    metadata: rootStep!.metadata,
   };
 
   if (input_variables) {
