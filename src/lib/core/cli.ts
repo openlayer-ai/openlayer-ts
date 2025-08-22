@@ -75,8 +75,6 @@ class CLIHandler {
             undefined
           : postProcessTrace(traceData)?.traceData;
 
-        console.log('Adding trace to dataset: ', traceData?.toJSON());
-
         const output: Output = {
           ...item,
           ...result.otherFields,
