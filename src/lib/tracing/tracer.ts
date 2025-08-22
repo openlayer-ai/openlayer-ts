@@ -52,6 +52,7 @@ function createStep(
     console.debug('Starting a new trace...');
     console.debug(`Adding step ${name} as the root step`);
     const currentTrace = new Trace();
+    console.log('setting current trace', currentTrace)
     setCurrentTrace(currentTrace);
     currentTrace.addStep(newStep);
   } else {
@@ -114,9 +115,10 @@ function createStep(
         }
       }
 
-      // Reset the entire trace state
-      setCurrentTrace(null);
-      stepStack.length = 0; // Clear the step stack
+      console.log('AOEUAOEUAOEU', traceData?.toJSON())
+      // // Reset the entire trace state
+      // setCurrentTrace(null);
+      // stepStack.length = 0; // Clear the step stack
     } else {
       console.debug(`Ending step ${name}`);
     }
