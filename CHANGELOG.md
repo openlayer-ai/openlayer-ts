@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.1 (2025-08-22)
+
+Full Changelog: [v0.14.0...v0.14.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.14.0...v0.14.1)
+
+### Chores
+
+* debug dev mode traces ([34b60af](https://github.com/openlayer-ai/openlayer-ts/commit/34b60afcdcd049522cd68d92ea26ea10703d5759))
+
 ## 0.14.0 (2025-08-22)
 
 Full Changelog: [v0.13.13...v0.14.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.13...v0.14.0)
