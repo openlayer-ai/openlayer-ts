@@ -1,0 +1,18 @@
+{
+  "taskType": "llm-base",
+  "model": {
+    "modelType": "full",
+    "runtime": "node_20",
+    "installCommand": "npm i && npx tsc",
+    "batchCommand": "npx ts-node run.ts --dataset-path {{ path }} --output-dir {{ outputDirectory }}/{{ name }}",
+    "outputDirectory": "output"
+  },
+  "datasets": [
+    {
+      "label": "validation",
+      "name": "validation",
+      "path": "dataset.json",
+      "inputVariableNames": ["userQuery"]
+    }
+  ]
+}

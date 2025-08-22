@@ -1,36 +1,8 @@
 import performanceNow from 'performance-now';
 
-// Make imports optional with try/catch
-let BedrockAgentRuntimeClient: any;
-let InvokeAgentCommand: any;
-let InvokeAgentCommandInput: any;
-let InvokeAgentCommandOutput: any;
-
-try {
-  const bedrockModule = require('@aws-sdk/client-bedrock-agent-runtime');
-  BedrockAgentRuntimeClient = bedrockModule.BedrockAgentRuntimeClient;
-  InvokeAgentCommand = bedrockModule.InvokeAgentCommand;
-  InvokeAgentCommandInput = bedrockModule.InvokeAgentCommandInput;
-  InvokeAgentCommandOutput = bedrockModule.InvokeAgentCommandOutput;
-} catch (error) {
-  console.warn(
-    'AWS SDK for Bedrock Agent Runtime is not available. Install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
-  );
-  console.debug('Bedrock Agent tracing will not be available. Error:', error);
-}
-
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
-export function traceBedrockAgent(
-  client: any,
-  openlayerInferencePipelineId?: string,
-): any {
-  if (!BedrockAgentRuntimeClient || !InvokeAgentCommand) {
-    throw new Error(
-      'AWS SDK for Bedrock Agent Runtime is not installed. Please install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
-    );
-  }
-
+export function traceBedrockAgent(client: any, openlayerInferencePipelineId?: string): any {
   const originalSend = client.send.bind(client);
 
   client.send = async function (this: any, command: any, options?: any): Promise<any> {
