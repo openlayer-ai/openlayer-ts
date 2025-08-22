@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0 (2025-08-22)
+
+Full Changelog: [v0.13.13...v0.14.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.13...v0.14.0)
+
+### Features
+
+* enable tracing in development mode for TypeScript clients ([0da012d](https://github.com/openlayer-ai/openlayer-ts/commit/0da012dfaac7d979a44a64fe95dfb4a68e87f28c))
+
 ## 0.13.13 (2025-08-20)
 
 Full Changelog: [v0.13.12...v0.13.13](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.12...v0.13.13)
