@@ -39,7 +39,7 @@ export interface Config {
   outputColumnName: string;
   latencyColumnName?: string;
   costColumnName?: string;
-  numOfTokensColumnName?: string;
+  numOfTokenColumnName?: string;
 }
 
 class CLIHandler {
@@ -114,7 +114,7 @@ class CLIHandler {
           },
           ...(results.some((r) => typeof r.latency === 'number') ? { latencyColumnName: 'latency' } : {}),
           ...(results.some((r) => typeof r.cost === 'number') ? { costColumnName: 'cost' } : {}),
-          ...(results.some((r) => typeof r.tokens === 'number') ? { numOfTokensColumnName: 'tokens' } : {}),
+          ...(results.some((r) => typeof r.tokens === 'number') ? { numOfTokenColumnName: 'tokens' } : {}),
         };
 
         this.writeOutput(results, outputDir, config);
