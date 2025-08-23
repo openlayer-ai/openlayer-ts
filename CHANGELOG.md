@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.0 (2025-08-23)
+
+Full Changelog: [v0.15.2...v0.16.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.2...v0.16.0)
+
+### Features
+
+* update pricing for traced bedrock clients ([ac0c7e6](https://github.com/openlayer-ai/openlayer-ts/commit/ac0c7e66c4fc29f1f735436ec899c70ae56b5c29))
+
 ## 0.15.2 (2025-08-23)
 
 Full Changelog: [v0.15.1...v0.15.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.1...v0.15.2)
