@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.2 (2025-08-23)
+
+Full Changelog: [v0.15.1...v0.15.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.1...v0.15.2)
+
+### Bug Fixes
+
+* update config ([b9e0b91](https://github.com/openlayer-ai/openlayer-ts/commit/b9e0b91c64f69d41aedfe0f6ddf0107b953d922a))
+
 ## 0.15.1 (2025-08-22)
 
 Full Changelog: [v0.15.0...v0.15.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.0...v0.15.1)
