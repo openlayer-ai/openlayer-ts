@@ -109,7 +109,6 @@ class CLIHandler {
           outputColumnName: 'output',
           inputVariableNames: results[0]?.metadata?.['inputVariableNames'],
           metadata: {
-            ...(results[0]?.metadata ?? {}),
             outputTimestamp: Date.now(),
           },
           ...(results.some((r) => typeof r.latency === 'number') ? { latencyColumnName: 'latency' } : {}),
