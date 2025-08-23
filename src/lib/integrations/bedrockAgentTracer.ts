@@ -197,7 +197,6 @@ function createTracedCompletion(
           cost: cost,
           model: agentModel || `${input.agentId}:${input.agentAliasId}`,
           modelParameters: extractModelParameters(input),
-          rawOutput: JSON.stringify(rawOutputChunks, null, 2),
           metadata: metadata,
           provider: 'Bedrock',
           startTime: startTime,

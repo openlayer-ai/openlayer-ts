@@ -176,7 +176,6 @@ export function addChatCompletionStepToTrace(
     cost = null,
     model = null,
     modelParameters = null,
-    rawOutput = null,
     metadata = {},
     provider = 'OpenAI',
     startTime = null,
@@ -192,7 +191,6 @@ export function addChatCompletionStepToTrace(
     cost?: number | null;
     model?: string | null;
     modelParameters?: Record<string, any> | null;
-    rawOutput?: string | null;
     metadata?: Record<string, any>;
     provider?: string;
     startTime?: number | null;
@@ -219,7 +217,6 @@ export function addChatCompletionStepToTrace(
     (step as ChatCompletionStep).cost = cost;
     (step as ChatCompletionStep).model = model;
     (step as ChatCompletionStep).modelParameters = modelParameters;
-    (step as ChatCompletionStep).rawOutput = rawOutput;
   }
 
   step.latency = latency;
