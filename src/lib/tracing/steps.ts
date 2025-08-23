@@ -23,7 +23,6 @@ export interface ChatCompletionStepData extends StepData {
   cost: number | null;
   model: string | null;
   modelParameters: Record<string, any> | null;
-  rawOutput: string | null;
 }
 
 export class Step {
@@ -95,7 +94,6 @@ export class ChatCompletionStep extends Step {
   cost: number | null = null;
   model: string | null = null;
   modelParameters: Record<string, any> | null = null;
-  rawOutput: string | null = null;
 
     constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}, startTime?: number | null, endTime?: number | null) {
     super(name, inputs, output, metadata, startTime, endTime);
@@ -113,7 +111,6 @@ export class ChatCompletionStep extends Step {
       cost: this.cost,
       model: this.model,
       modelParameters: this.modelParameters,
-      rawOutput: this.rawOutput,
     };
   }
 }
