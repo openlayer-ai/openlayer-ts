@@ -6,7 +6,7 @@ import { traceBedrockAgent } from 'openlayer/lib/integrations/bedrockAgentTracer
  */
 export class BedrockAgent {
   private client: BedrockAgentRuntimeClient;
-  private tracedClient: any;
+  private tracedClient: BedrockAgentRuntimeClient;
   private agentId: string;
   private agentAliasId: string;
   private region: string;

@@ -173,6 +173,7 @@ export function addChatCompletionStepToTrace(
     tokens = null,
     promptTokens = null,
     completionTokens = null,
+    cost = null,
     model = null,
     modelParameters = null,
     rawOutput = null,
@@ -188,6 +189,7 @@ export function addChatCompletionStepToTrace(
     tokens?: number | null;
     promptTokens?: number | null;
     completionTokens?: number | null;
+    cost?: number | null;
     model?: string | null;
     modelParameters?: Record<string, any> | null;
     rawOutput?: string | null;
@@ -214,6 +216,7 @@ export function addChatCompletionStepToTrace(
     (step as ChatCompletionStep).promptTokens = promptTokens;
     (step as ChatCompletionStep).completionTokens = completionTokens;
     (step as ChatCompletionStep).tokens = tokens;
+    (step as ChatCompletionStep).cost = cost;
     (step as ChatCompletionStep).model = model;
     (step as ChatCompletionStep).modelParameters = modelParameters;
     (step as ChatCompletionStep).rawOutput = rawOutput;
