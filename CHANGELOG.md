@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.1 (2025-08-23)
+
+Full Changelog: [v0.16.0...v0.16.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.0...v0.16.1)
+
+### Bug Fixes
+
+* rm rawOutput to improve dataset load size ([ed7828b](https://github.com/openlayer-ai/openlayer-ts/commit/ed7828bc81456db4c7565c8bda01c1ada1bee8a2))
+
 ## 0.16.0 (2025-08-23)
 
 Full Changelog: [v0.15.2...v0.16.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.2...v0.16.0)
