@@ -67,29 +67,37 @@ class CLIHandler {
     // Process each item in the dataset dynamically
     Promise.all<Output>(
       dataset.map(async (item: any) => {
-        const result = await this.run(item);
-        // Merge the original item fields with the result
-        const traceData = getCurrentTrace() ?? undefined;
-        const postProcessedTrace =
-          typeof traceData === 'undefined' || traceData === null ?
-            undefined
-          : postProcessTrace(traceData)?.traceData;
+        try {
+          const result = await this.run(item);
+          // Merge the original item fields with the result
+          const traceData = getCurrentTrace() ?? undefined;
+          const postProcessedTrace =
+            typeof traceData === 'undefined' || traceData === null ?
+              undefined
+            : postProcessTrace(traceData)?.traceData;
 
-        const output: Output = {
-          ...item,
-          ...result.otherFields,
-          output: result.output,
-          steps: traceData?.toJSON(),
-          latency: postProcessedTrace?.latency,
-          cost: postProcessedTrace?.cost,
-          tokens: postProcessedTrace?.tokens,
-          metadata: {
-            ...(postProcessedTrace?.metadata ?? {}),
-            inputVariableNames: postProcessedTrace?.inputVariableNames,
-          },
-        };
+          const output: Output = {
+            ...item,
+            ...result.otherFields,
+            output: result.output,
+            steps: traceData?.toJSON(),
+            latency: postProcessedTrace?.latency,
+            cost: postProcessedTrace?.cost,
+            tokens: postProcessedTrace?.tokens,
+            metadata: {
+              ...(postProcessedTrace?.metadata ?? {}),
+              inputVariableNames: postProcessedTrace?.inputVariableNames,
+            },
+          };
 
-        return output;
+          return output;
+        } catch (error) {
+          console.error('Error processing dataset: ', error);
+          return {
+            ...item,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       }),
     )
       .then((results) => {
@@ -97,7 +105,6 @@ class CLIHandler {
          * Wait for all rows to be run
          * Write results now to output dir or log to console
          */
-
         const config: Config = {
           outputColumnName: 'output',
           inputVariableNames: results[0]?.metadata?.['inputVariableNames'],
@@ -119,11 +126,6 @@ class CLIHandler {
   }
 
   private writeOutput(results: Output[], outputDir: string, config?: Config) {
-    const resolvedConfig: Config = {
-      metadata: { outputTimestamp: Date.now() },
-      outputColumnName: 'output',
-    };
-
     // Construct an output directory {outputDir}/{datasetName}/
     const outputDirPath = path.resolve(outputDir);
     fs.mkdirSync(outputDirPath, { recursive: true });
@@ -132,7 +134,7 @@ class CLIHandler {
     const configPath = path.join(outputDirPath, 'config.json');
 
     fs.writeFileSync(datasetPath, JSON.stringify(results, null, 4), 'utf8');
-    fs.writeFileSync(configPath, JSON.stringify(resolvedConfig, null, 4), 'utf8');
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4), 'utf8');
 
     console.info(`Output written to ${datasetPath}`);
     console.info(`Config written to ${configPath}`);
