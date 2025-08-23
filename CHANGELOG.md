@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.2 (2025-08-23)
+
+Full Changelog: [v0.16.1...v0.16.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.1...v0.16.2)
+
+### Bug Fixes
+
+* commit metadata ([d133e74](https://github.com/openlayer-ai/openlayer-ts/commit/d133e744378eff5992a040ac82e454048c375ba2))
+
 ## 0.16.1 (2025-08-23)
 
 Full Changelog: [v0.16.0...v0.16.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.0...v0.16.1)
