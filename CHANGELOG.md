@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.3 (2025-08-25)
+
+Full Changelog: [v0.16.2...v0.16.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.2...v0.16.3)
+
+### Bug Fixes
+
+* update example for bedrock dev mode to incl openlayerignore ([dc37d37](https://github.com/openlayer-ai/openlayer-ts/commit/dc37d37f40e8a50c94f5ebe919aab809bf6cc1a0))
+
+
+### Chores
+
+* update CI script ([8135c5a](https://github.com/openlayer-ai/openlayer-ts/commit/8135c5a59ed76005d05e315d2275b901374eb90d))
+
 ## 0.16.2 (2025-08-23)
 
 Full Changelog: [v0.16.1...v0.16.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.1...v0.16.2)
