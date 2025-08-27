@@ -1,39 +1,25 @@
 import performanceNow from 'performance-now';
 
-// Make imports optional with try/catch
-let BedrockAgentRuntimeClient: any;
-let InvokeAgentCommand: any;
-let InvokeAgentCommandInput: any;
-let InvokeAgentCommandOutput: any;
-
-try {
-  const bedrockModule = require('@aws-sdk/client-bedrock-agent-runtime');
-  BedrockAgentRuntimeClient = bedrockModule.BedrockAgentRuntimeClient;
-  InvokeAgentCommand = bedrockModule.InvokeAgentCommand;
-  InvokeAgentCommandInput = bedrockModule.InvokeAgentCommandInput;
-  InvokeAgentCommandOutput = bedrockModule.InvokeAgentCommandOutput;
-} catch (error) {
-  console.warn(
-    'AWS SDK for Bedrock Agent Runtime is not available. Install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
-  );
-  console.debug('Bedrock Agent tracing will not be available. Error:', error);
-}
-
+import {
+  BedrockAgentRuntimeClient,
+  InvokeAgentCommand,
+  InvokeAgentCommandInput,
+  InvokeAgentCommandOutput,
+  ResponseStream,
+} from '@aws-sdk/client-bedrock-agent-runtime';
 import { addChatCompletionStepToTrace } from '../tracing/tracer';
 
 export function traceBedrockAgent(
-  client: any,
+  client: BedrockAgentRuntimeClient,
   openlayerInferencePipelineId?: string,
-): any {
-  if (!BedrockAgentRuntimeClient || !InvokeAgentCommand) {
-    throw new Error(
-      'AWS SDK for Bedrock Agent Runtime is not installed. Please install it with: npm install @aws-sdk/client-bedrock-agent-runtime',
-    );
-  }
-
+): BedrockAgentRuntimeClient {
   const originalSend = client.send.bind(client);
 
-  client.send = async function (this: any, command: any, options?: any): Promise<any> {
+  client.send = async function (
+    this: any,
+    command: InvokeAgentCommand,
+    options?: any,
+  ): Promise<InvokeAgentCommandOutput & { completion: AsyncIterable<ResponseStream> | undefined }> {
     // Debug logging to see what we're receiving
     const hasInput = command?.input;
     const hasAgentId = typeof command?.input?.agentId === 'string';
@@ -52,7 +38,7 @@ export function traceBedrockAgent(
 
     try {
       // Call the original send method
-      const response = await originalSend(command, options);
+      const response: InvokeAgentCommandOutput = await originalSend(command, options);
 
       if (!response.completion) {
         throw new Error('Completion is undefined');
@@ -64,6 +50,7 @@ export function traceBedrockAgent(
         input,
         startTime,
         openlayerInferencePipelineId,
+        client.config.region,
       );
 
       // Return the response with the traced completion
@@ -82,11 +69,12 @@ export function traceBedrockAgent(
 
 // Create a traced completion that collects data while yielding original events
 function createTracedCompletion(
-  originalCompletion: AsyncIterable<any>,
-  input: any,
+  originalCompletion: AsyncIterable<ResponseStream>,
+  input: InvokeAgentCommandInput,
   startTime: number,
   openlayerInferencePipelineId?: string,
-): AsyncIterable<any> {
+  region?: () => Promise<string>,
+): AsyncIterable<ResponseStream> {
   return {
     async *[Symbol.asyncIterator]() {
       let firstTokenTime: number | undefined;
@@ -190,6 +178,14 @@ function createTracedCompletion(
           };
         }
 
+        // Calculate cost based on tokens, model, and region
+        const cost = calculateCost(
+          promptTokens,
+          completionTokens,
+          agentModel,
+          typeof region === 'function' ? await region() : region || 'us-east-1',
+        );
+
         const traceStepData = {
           name: 'AWS Bedrock Agent Invocation',
           inputs: inputs,
@@ -198,9 +194,9 @@ function createTracedCompletion(
           tokens: totalTokens > 0 ? totalTokens : null,
           promptTokens: promptTokens > 0 ? promptTokens : null,
           completionTokens: completionTokens > 0 ? completionTokens : null,
+          cost: cost,
           model: agentModel || `${input.agentId}:${input.agentAliasId}`,
           modelParameters: extractModelParameters(input),
-          rawOutput: JSON.stringify(rawOutputChunks, null, 2),
           metadata: metadata,
           provider: 'Bedrock',
           startTime: startTime,
@@ -330,4 +326,812 @@ function extractModelParameters(input: any): Record<string, any> {
   }
 
   return params;
+}
+
+// Bedrock pricing per 1K tokens by region and model ID (as of 2024)
+// Source: https://aws.amazon.com/bedrock/pricing/
+const BedrockPricing: { [region: string]: { [modelId: string]: { input: number; output: number } } } = {
+  'us-east-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+    'anthropic.claude-sonnet-4': { input: 0.003, output: 0.015 },
+    'anthropic.claude-opus-4': { input: 0.015, output: 0.075 },
+    'anthropic.claude-haiku-4': { input: 0.00025, output: 0.00125 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+    'amazon.nova-pro': { input: 0.003, output: 0.015 },
+    'amazon.nova-express': { input: 0.00025, output: 0.00125 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+    'meta.llama3.1-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3.1-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3.1-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+    'cohere.command-r-v1:0': { input: 0.0015, output: 0.002 },
+    'cohere.command-r-plus-v1:0': { input: 0.003, output: 0.015 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+    'mistral.mistral-7b-instruct-v0:3': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:3': { input: 0.00045, output: 0.0007 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'us-east-2': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+    'anthropic.claude-sonnet-4': { input: 0.003, output: 0.015 },
+    'anthropic.claude-opus-4': { input: 0.015, output: 0.075 },
+    'anthropic.claude-haiku-4': { input: 0.00025, output: 0.00125 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+    'amazon.nova-pro': { input: 0.003, output: 0.015 },
+    'amazon.nova-express': { input: 0.00025, output: 0.00125 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+    'meta.llama3.1-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3.1-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3.1-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+    'cohere.command-r-v1:0': { input: 0.0015, output: 0.002 },
+    'cohere.command-r-plus-v1:0': { input: 0.003, output: 0.015 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+    'mistral.mistral-7b-instruct-v0:3': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:3': { input: 0.00045, output: 0.0007 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'us-west-2': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+    'anthropic.claude-sonnet-4': { input: 0.003, output: 0.015 },
+    'anthropic.claude-opus-4': { input: 0.015, output: 0.075 },
+    'anthropic.claude-haiku-4': { input: 0.00025, output: 0.00125 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'eu-west-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'ap-southeast-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  // Additional regions from AWS Bedrock pricing
+  'us-west-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'eu-central-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'ap-northeast-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'ap-south-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'ca-central-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'sa-east-1': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+
+  'ap-northeast-2': {
+    // Anthropic models
+    'anthropic.claude-3-5-sonnet-20241022-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-3-opus-20240229-v1:0': { input: 0.015, output: 0.075 },
+    'anthropic.claude-3-sonnet-20240229-v1:0': { input: 0.003, output: 0.015 },
+    'anthropic.claude-3-haiku-20240307-v1:0': { input: 0.00025, output: 0.00125 },
+    'anthropic.claude-v2:1': { input: 0.008, output: 0.024 },
+    'anthropic.claude-v2': { input: 0.008, output: 0.024 },
+    'anthropic.claude-instant-v1': { input: 0.00163, output: 0.00551 },
+    'anthropic.claude-sonnet-4': { input: 0.003, output: 0.015 },
+    'anthropic.claude-opus-4': { input: 0.015, output: 0.075 },
+    'anthropic.claude-haiku-4': { input: 0.00025, output: 0.00125 },
+
+    // Amazon models
+    'amazon.titan-text-express-v1': { input: 0.0008, output: 0.0016 },
+    'amazon.titan-text-lite-v1': { input: 0.0003, output: 0.0004 },
+    'amazon.titan-embed-text-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-embed-image-v1': { input: 0.0001, output: 0 },
+    'amazon.titan-image-generator-v1': { input: 0.008, output: 0 },
+
+    // AI21 models
+    'ai21.j2-ultra-v1': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1': { input: 0.0006, output: 0.0006 },
+    'ai21.j2-ultra-v1:0': { input: 0.0128, output: 0.0128 },
+    'ai21.j2-mid-v1:0': { input: 0.008, output: 0.008 },
+    'ai21.j2-light-v1:0': { input: 0.0006, output: 0.0006 },
+
+    // Meta models
+    'meta.llama2-13b-chat-v1': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1': { input: 0.0006, output: 0.0006 },
+    'meta.llama2-13b-chat-v1:0': { input: 0.00075, output: 0.001 },
+    'meta.llama2-70b-chat-v1:0': { input: 0.00195, output: 0.00256 },
+    'meta.llama2-7b-chat-v1:0': { input: 0.0006, output: 0.0006 },
+    'meta.llama3-8b-instruct-v1:0': { input: 0.0002, output: 0.0002 },
+    'meta.llama3-70b-instruct-v1:0': { input: 0.0008, output: 0.0008 },
+    'meta.llama3-405b-instruct-v1:0': { input: 0.0012, output: 0.0012 },
+
+    // Cohere models
+    'cohere.command-text-v14': { input: 0.0015, output: 0.002 },
+    'cohere.command-light-text-v14': { input: 0.0003, output: 0.0006 },
+    'cohere.embed-english-v3': { input: 0.0001, output: 0 },
+    'cohere.embed-multilingual-v3': { input: 0.0001, output: 0 },
+
+    // Mistral models
+    'mistral.mistral-7b-instruct-v0:2': { input: 0.00015, output: 0.0002 },
+    'mistral.mixtral-8x7b-instruct-v0:1': { input: 0.00045, output: 0.0007 },
+    'mistral.mistral-large-2402-v1:0': { input: 0.008, output: 0.024 },
+    'mistral.mistral-small-2402-v1:0': { input: 0.001, output: 0.003 },
+
+    // Stability AI models
+    'stability.stable-diffusion-xl-v1': { input: 0.036, output: 0 }, // per image
+    'stability.stable-diffusion-xl-v1:0': { input: 0.036, output: 0 }, // per image
+
+    // TwelveLabs models
+    'twelvelabs.pegasus-1.2': { input: 0.00049, output: 0.0075 }, // per second + per token
+    'twelvelabs.marengo-embed-2.7': { input: 0.0007, output: 0.00007 }, // per minute + per request
+
+    // Writer models
+    'writer.palmyra-x-5': { input: 0.003, output: 0.015 },
+    'writer.palmyra-x-5:0': { input: 0.003, output: 0.015 },
+  },
+};
+
+function calculateCost(
+  promptTokens: number,
+  completionTokens: number,
+  model: string | null,
+  region: string = 'us-east-1',
+): number | null {
+  if (!model || promptTokens <= 0 || completionTokens <= 0) {
+    return null;
+  }
+
+  const regionPricing = BedrockPricing[region];
+  if (!regionPricing) {
+    console.warn(`No pricing information available for region: ${region}`);
+    return null;
+  }
+
+  const pricing =
+    regionPricing[model] ?? Object.entries(regionPricing).find(([key]) => model.startsWith(key))?.[1];
+  if (!pricing) {
+    console.warn(`No pricing information available for model: ${model} in region: ${region}`);
+    return null;
+  }
+
+  const inputCost = (promptTokens / 1000) * pricing['input'];
+  const outputCost = (completionTokens / 1000) * pricing['output'];
+
+  return inputCost + outputCost;
 }

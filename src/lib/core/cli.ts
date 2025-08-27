@@ -13,6 +13,7 @@
 import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getCurrentTrace, postProcessTrace } from '../tracing/tracer';
 
 // Define shared interfaces and utilities here
 export interface RunReturn {
@@ -20,13 +21,25 @@ export interface RunReturn {
   output: any;
 }
 
+interface Output {
+  output: any;
+  steps?: Array<Record<string, any>>;
+  latency?: number;
+  cost?: number;
+  tokens?: number;
+  metadata?: Record<string, any>;
+}
+
 // Define an interface for the configuration object
 export interface Config {
   inputVariableNames?: string[];
-  metadata: {
-    outputTimestamp: number;
+  metadata?: {
+    outputTimestamp?: number;
   };
   outputColumnName: string;
+  latencyColumnName?: string;
+  costColumnName?: string;
+  numOfTokenColumnName?: string;
 }
 
 class CLIHandler {
@@ -52,11 +65,39 @@ class CLIHandler {
     const dataset = JSON.parse(rawData);
 
     // Process each item in the dataset dynamically
-    Promise.all(
+    Promise.all<Output>(
       dataset.map(async (item: any) => {
-        const result = await this.run(item);
-        // Merge the original item fields with the result
-        return { ...item, ...result.otherFields, output: result.output };
+        try {
+          const result = await this.run(item);
+          // Merge the original item fields with the result
+          const traceData = getCurrentTrace() ?? undefined;
+          const postProcessedTrace =
+            typeof traceData === 'undefined' || traceData === null ?
+              undefined
+            : postProcessTrace(traceData)?.traceData;
+
+          const output: Output = {
+            ...item,
+            ...result.otherFields,
+            output: result.output,
+            steps: traceData?.toJSON(),
+            latency: postProcessedTrace?.latency,
+            cost: postProcessedTrace?.cost,
+            tokens: postProcessedTrace?.tokens,
+            metadata: {
+              ...(postProcessedTrace?.metadata ?? {}),
+              inputVariableNames: postProcessedTrace?.inputVariableNames,
+            },
+          };
+
+          return output;
+        } catch (error) {
+          console.error('Error processing dataset: ', error);
+          return {
+            ...item,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       }),
     )
       .then((results) => {
@@ -64,7 +105,18 @@ class CLIHandler {
          * Wait for all rows to be run
          * Write results now to output dir or log to console
          */
-        this.writeOutput(results, outputDir);
+        const config: Config = {
+          outputColumnName: 'output',
+          inputVariableNames: results[0]?.metadata?.['inputVariableNames'],
+          metadata: {
+            outputTimestamp: Date.now(),
+          },
+          ...(results.some((r) => typeof r.latency === 'number') ? { latencyColumnName: 'latency' } : {}),
+          ...(results.some((r) => typeof r.cost === 'number') ? { costColumnName: 'cost' } : {}),
+          ...(results.some((r) => typeof r.tokens === 'number') ? { numOfTokenColumnName: 'tokens' } : {}),
+        };
+
+        this.writeOutput(results, outputDir, config);
         console.log('Results processing completed. Check console for output.');
       })
       .catch((err) => {
@@ -72,12 +124,7 @@ class CLIHandler {
       });
   }
 
-  private writeOutput(results: RunReturn[], outputDir: string) {
-    const config: Config = {
-      metadata: { outputTimestamp: Date.now() },
-      outputColumnName: 'output',
-    };
-
+  private writeOutput(results: Output[], outputDir: string, config?: Config) {
     // Construct an output directory {outputDir}/{datasetName}/
     const outputDirPath = path.resolve(outputDir);
     fs.mkdirSync(outputDirPath, { recursive: true });

@@ -21,7 +21,7 @@ if (publish) {
   client = new Openlayer();
 }
 
-function getCurrentTrace(): Trace | null {
+export function getCurrentTrace(): Trace | null {
   return currentTrace;
 }
 
@@ -125,9 +125,9 @@ function createStep(
         }
       }
 
-      // Reset the entire trace state
-      setCurrentTrace(null);
-      stepStack.length = 0; // Clear the step stack
+      // // Reset the entire trace state
+      // setCurrentTrace(null);
+      // stepStack.length = 0; // Clear the step stack
     } else {
       console.debug(`Ending step ${name}`);
     }
@@ -184,9 +184,9 @@ export function addChatCompletionStepToTrace(
     tokens = null,
     promptTokens = null,
     completionTokens = null,
+    cost = null,
     model = null,
     modelParameters = null,
-    rawOutput = null,
     metadata = {},
     provider = 'OpenAI',
     startTime = null,
@@ -199,9 +199,9 @@ export function addChatCompletionStepToTrace(
     tokens?: number | null;
     promptTokens?: number | null;
     completionTokens?: number | null;
+    cost?: number | null;
     model?: string | null;
     modelParameters?: Record<string, any> | null;
-    rawOutput?: string | null;
     metadata?: Record<string, any>;
     provider?: string;
     startTime?: number | null;
@@ -225,9 +225,9 @@ export function addChatCompletionStepToTrace(
     (step as ChatCompletionStep).promptTokens = promptTokens;
     (step as ChatCompletionStep).completionTokens = completionTokens;
     (step as ChatCompletionStep).tokens = tokens;
+    (step as ChatCompletionStep).cost = cost;
     (step as ChatCompletionStep).model = model;
     (step as ChatCompletionStep).modelParameters = modelParameters;
-    (step as ChatCompletionStep).rawOutput = rawOutput;
   }
 
   step.latency = latency;
@@ -367,7 +367,7 @@ export function addHandoffStepToTrace(params: {
   return { step, endStep };
 }
 
-function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
+export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
   const rootStep = traceObj.steps[0];
 
   const input_variables = rootStep!.inputs;
@@ -381,9 +381,10 @@ function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames
     output: rootStep!.output,
     groundTruth: rootStep!.groundTruth,
     latency: rootStep!.latency,
-    cost: 0, // fix
-    tokens: 0, // fix
+    cost: (rootStep as ChatCompletionStep)!.cost,
+    tokens: (rootStep as ChatCompletionStep)!.tokens,
     steps: processed_steps,
+    metadata: rootStep!.metadata,
   };
 
   if (input_variables) {

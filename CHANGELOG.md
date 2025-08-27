@@ -1,5 +1,69 @@
 # Changelog
 
+## 0.16.2 (2025-08-23)
+
+Full Changelog: [v0.16.1...v0.16.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.1...v0.16.2)
+
+### Bug Fixes
+
+* commit metadata ([d133e74](https://github.com/openlayer-ai/openlayer-ts/commit/d133e744378eff5992a040ac82e454048c375ba2))
+
+## 0.16.1 (2025-08-23)
+
+Full Changelog: [v0.16.0...v0.16.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.0...v0.16.1)
+
+### Bug Fixes
+
+* rm rawOutput to improve dataset load size ([ed7828b](https://github.com/openlayer-ai/openlayer-ts/commit/ed7828bc81456db4c7565c8bda01c1ada1bee8a2))
+
+## 0.16.0 (2025-08-23)
+
+Full Changelog: [v0.15.2...v0.16.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.2...v0.16.0)
+
+### Features
+
+* update pricing for traced bedrock clients ([ac0c7e6](https://github.com/openlayer-ai/openlayer-ts/commit/ac0c7e66c4fc29f1f735436ec899c70ae56b5c29))
+
+## 0.15.2 (2025-08-23)
+
+Full Changelog: [v0.15.1...v0.15.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.1...v0.15.2)
+
+### Bug Fixes
+
+* update config ([b9e0b91](https://github.com/openlayer-ai/openlayer-ts/commit/b9e0b91c64f69d41aedfe0f6ddf0107b953d922a))
+
+## 0.15.1 (2025-08-22)
+
+Full Changelog: [v0.15.0...v0.15.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.15.0...v0.15.1)
+
+### Chores
+
+* update logs ([4166dd1](https://github.com/openlayer-ai/openlayer-ts/commit/4166dd11b552c7e9cecafd1d406b0fbf00cc25ae))
+
+## 0.15.0 (2025-08-22)
+
+Full Changelog: [v0.14.1...v0.15.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.14.1...v0.15.0)
+
+### Features
+
+* add traces to dev mode runs and update bedrock example ([acdb00f](https://github.com/openlayer-ai/openlayer-ts/commit/acdb00f4cd25c5464195faa40fb50ee756d12330))
+
+## 0.14.1 (2025-08-22)
+
+Full Changelog: [v0.14.0...v0.14.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.14.0...v0.14.1)
+
+### Chores
+
+* debug dev mode traces ([34b60af](https://github.com/openlayer-ai/openlayer-ts/commit/34b60afcdcd049522cd68d92ea26ea10703d5759))
+
+## 0.14.0 (2025-08-22)
+
+Full Changelog: [v0.13.13...v0.14.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.13...v0.14.0)
+
+### Features
+
+* enable tracing in development mode for TypeScript clients ([0da012d](https://github.com/openlayer-ai/openlayer-ts/commit/0da012dfaac7d979a44a64fe95dfb4a68e87f28c))
+
 ## 0.13.13 (2025-08-20)
 
 Full Changelog: [v0.13.12...v0.13.13](https://github.com/openlayer-ai/openlayer-ts/compare/v0.13.12...v0.13.13)
