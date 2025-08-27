@@ -3,19 +3,14 @@
 import { Trace } from './traces';
 import {
   Step,
-  UserCallStep,
   ChatCompletionStep,
-  ChainStep,
   AgentStep,
-  ToolStep,
   RetrieverStep,
   FunctionCallStep,
+  StepType,
+  stepFactory,
 } from './steps';
-import { StepType } from './enums';
 import Openlayer from '../../index';
-import { StepType } from './enums';
-import { ChatCompletionStep, Step, UserCallStep } from './steps';
-import { Trace } from './traces';
 
 let currentTrace: Trace | null = null;
 
@@ -48,32 +43,7 @@ function createStep(
   openlayerInferencePipelineId?: string,
 ): [Step, () => void] {
   metadata = metadata || {};
-  let newStep: Step;
-
-  switch (stepType) {
-    case StepType.CHAT_COMPLETION:
-      newStep = new ChatCompletionStep(name, inputs, output, metadata);
-      break;
-    case StepType.CHAIN:
-      newStep = new ChainStep(name, inputs, output, metadata);
-      break;
-    case StepType.AGENT:
-      newStep = new AgentStep(name, inputs, output, metadata);
-      break;
-    case StepType.TOOL:
-      newStep = new ToolStep(name, inputs, output, metadata);
-      break;
-    case StepType.RETRIEVER:
-      newStep = new RetrieverStep(name, inputs, output, metadata);
-      break;
-    case StepType.FUNCTION_CALL:
-      newStep = new FunctionCallStep(name, inputs, output, metadata);
-      break;
-    case StepType.USER_CALL:
-    default:
-      newStep = new UserCallStep(name, inputs, output, metadata);
-      break;
-  }
+  const newStep = stepFactory(stepType, name, inputs, output, metadata, startTime, endTime);
 
   const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
 
