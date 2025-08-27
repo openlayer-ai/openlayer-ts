@@ -705,14 +705,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         name: step.name || 'Unknown Generation',
         inputs: step.inputs || {},
         output: output || '',
-        rawOutput: rawOutput || null,
         latency,
         tokens: usageDetails?.['total'] || null,
         promptTokens: usageDetails?.['input'] || null,
         completionTokens: usageDetails?.['output'] || null,
         model: modelName || step.model || null,
         modelParameters: step.modelParameters || null,
-        metadata: error ? { ...step.metadata, error } : step.metadata || {},
+        metadata: error ? { ...step.metadata, error, rawOutput: rawOutput || null } : { rawOutput: rawOutput || null, ...step.metadata },
         provider: step.provider || 'Unknown',
       });
     } else {
