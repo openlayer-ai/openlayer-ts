@@ -65,7 +65,16 @@ function createStep(
   stepStack.push(newStep);
 
   const endStep = () => {
+    // Calculate latency for this step before removing from stack
+    newStep.endTime = Date.now();
+    if (newStep.startTime && newStep.endTime) {
+      newStep.latency = newStep.endTime - newStep.startTime;
+    } else {
+      newStep.latency = 0; // Fallback to 0 if timestamps are missing
+    }
+    
     stepStack.pop(); // Remove the current step from the stack
+    console.debug(`Ending step ${newStep.name}`);
 
     if (isRootStep) {
       console.debug('Ending the trace...');
