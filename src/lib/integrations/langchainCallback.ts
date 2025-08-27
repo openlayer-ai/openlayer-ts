@@ -711,7 +711,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         completionTokens: usageDetails?.['output'] || null,
         model: modelName || step.model || null,
         modelParameters: step.modelParameters || null,
-        metadata: error ? { ...step.metadata, error, rawOutput: rawOutput || null } : { rawOutput: rawOutput || null, ...step.metadata },
+        metadata:
+          error ?
+            { ...step.metadata, error, rawOutput: rawOutput || null }
+          : { rawOutput: rawOutput || null, ...step.metadata },
         provider: step.provider || 'Unknown',
       });
     } else {

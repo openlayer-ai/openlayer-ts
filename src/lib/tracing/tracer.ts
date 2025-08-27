@@ -72,7 +72,7 @@ function createStep(
     } else {
       newStep.latency = 0; // Fallback to 0 if timestamps are missing
     }
-    
+
     stepStack.pop(); // Remove the current step from the stack
     console.debug(`Ending step ${newStep.name}`);
 
