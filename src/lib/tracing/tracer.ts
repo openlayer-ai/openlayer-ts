@@ -67,10 +67,13 @@ function createStep(
   const endStep = () => {
     // Calculate latency for this step before removing from stack
     newStep.endTime = Date.now();
-    if (newStep.startTime && newStep.endTime) {
-      newStep.latency = newStep.endTime - newStep.startTime;
-    } else {
-      newStep.latency = 0; // Fallback to 0 if timestamps are missing
+    // Only calculate latency if it hasn't been manually set
+    if (newStep.latency === null) {
+      if (newStep.startTime && newStep.endTime) {
+        newStep.latency = newStep.endTime - newStep.startTime;
+      } else {
+        newStep.latency = 0; // Fallback to 0 if timestamps are missing
+      }
     }
 
     stepStack.pop(); // Remove the current step from the stack
@@ -338,7 +341,6 @@ export function startAgentStep(params: {
   const [step, endStep] = createStep(stepName, StepType.AGENT, params.inputs, undefined, {
     ...params.metadata,
     agentType: params.agentType,
-    startTime: new Date().toISOString(),
   });
 
   if (step instanceof AgentStep) {

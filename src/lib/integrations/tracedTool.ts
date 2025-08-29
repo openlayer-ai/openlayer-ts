@@ -52,28 +52,20 @@ export function tracedTool<T extends Record<string, any>>(
           ...config.metadata,
           toolType: 'traced_tool',
           executionContext: 'auto_traced',
-          startTime: new Date().toISOString(),
         },
       });
 
       try {
-        const startTime = performance.now();
-
         // Execute the original function
         const result = await func(typedInput);
 
-        const endTime = performance.now();
-        const executionTime = endTime - startTime;
-
-        // Update function step with result and timing
+        // Update function step with result (timing handled automatically by step framework)
         functionStep.log({
           output: result,
           metadata: {
             ...functionStep.metadata,
-            executionTimeMs: Math.round(executionTime),
             outputLength: typeof result === 'string' ? result.length : JSON.stringify(result).length,
             success: true,
-            endTime: new Date().toISOString(),
           },
         });
 
@@ -86,7 +78,6 @@ export function tracedTool<T extends Record<string, any>>(
             error: error instanceof Error ? error.message : String(error),
             errorType: error instanceof Error ? error.constructor.name : 'Unknown',
             success: false,
-            endTime: new Date().toISOString(),
           },
         });
         throw error;
@@ -147,27 +138,19 @@ export function tracedAgent<T, R>(
         ...config.metadata,
         agentVersion: config.version || '1.0.0',
         executionContext: 'traced_agent',
-        startTime: new Date().toISOString(),
       },
     });
 
     try {
-      const startTime = performance.now();
-
       // Execute the agent function
       const result = await agentFunc(input);
 
-      const endTime = performance.now();
-      const executionTime = endTime - startTime;
-
-      // Update agent step with result and timing
+      // Update agent step with result (timing handled automatically by step framework)
       agentStep.log({
         output: result,
         metadata: {
           ...agentStep.metadata,
-          executionTimeMs: Math.round(executionTime),
           success: true,
-          endTime: new Date().toISOString(),
         },
       });
 
@@ -180,7 +163,6 @@ export function tracedAgent<T, R>(
           error: error instanceof Error ? error.message : String(error),
           errorType: error instanceof Error ? error.constructor.name : 'Unknown',
           success: false,
-          endTime: new Date().toISOString(),
         },
       });
       throw error;
