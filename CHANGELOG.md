@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.16.3 (2025-09-04)
+
+Full Changelog: [v0.16.2...v0.16.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.2...v0.16.3)
+
+### Bug Fixes
+
+* update example for bedrock dev mode to incl openlayerignore ([dc37d37](https://github.com/openlayer-ai/openlayer-ts/commit/dc37d37f40e8a50c94f5ebe919aab809bf6cc1a0))
+
+
+### Chores
+
+* update CI script ([4243b7a](https://github.com/openlayer-ai/openlayer-ts/commit/4243b7a69565ac0cbaeea0d18b71e1d6cab15683))
+* update package dependencies and improve tracing latency calculation ([d984e00](https://github.com/openlayer-ai/openlayer-ts/commit/d984e000f02fdce03b55120b4dfe8b0333ae3990))
+
+
+### Refactors
+
+* consolidate StepType enum and related functionality into steps.ts ([7ac626e](https://github.com/openlayer-ai/openlayer-ts/commit/7ac626e5093034ddbf26d490bd961bd1b8dd5236))
+* improve code readability and formatting across multiple files ([0d3cfe0](https://github.com/openlayer-ai/openlayer-ts/commit/0d3cfe06592debc483603cafdbd100425ee61230))
+* streamline timing handling in tracedTool and tracedAgent ([56ee199](https://github.com/openlayer-ai/openlayer-ts/commit/56ee19953682b91ac02bbb12df90d5e092423f63))
+
 ## 0.16.2 (2025-08-23)
 
 Full Changelog: [v0.16.1...v0.16.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.1...v0.16.2)
