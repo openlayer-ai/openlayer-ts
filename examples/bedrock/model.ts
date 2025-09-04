@@ -47,18 +47,14 @@ export class BedrockAgent {
       sessionId?: string;
       enableTrace?: boolean;
       enableRealTimeOutput?: boolean;
-    } = {}
+    } = {},
   ): Promise<{
     sessionId: string;
     output: string;
     success: boolean;
     error?: string;
   }> {
-    const {
-      sessionId = `session-${Date.now()}`,
-      enableTrace = true,
-      enableRealTimeOutput = false,
-    } = options;
+    const { sessionId = `session-${Date.now()}`, enableTrace = true, enableRealTimeOutput = false } = options;
 
     // Create the command
     const command = new InvokeAgentCommand({
@@ -87,7 +83,7 @@ export class BedrockAgent {
         if (event.chunk?.bytes) {
           const text = new TextDecoder('utf-8').decode(event.chunk.bytes);
           finalOutput += text;
-          
+
           if (enableRealTimeOutput) {
             process.stdout.write(text); // Real-time output
           }

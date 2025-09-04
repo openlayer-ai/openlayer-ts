@@ -1,9 +1,16 @@
 // tracing/tracer.ts
 
-import Openlayer from '../../index';
-import { StepType } from './enums';
-import { ChatCompletionStep, Step, UserCallStep } from './steps';
 import { Trace } from './traces';
+import {
+  Step,
+  ChatCompletionStep,
+  AgentStep,
+  RetrieverStep,
+  FunctionCallStep,
+  StepType,
+  stepFactory,
+} from './steps';
+import Openlayer from '../../index';
 
 let currentTrace: Trace | null = null;
 
@@ -36,12 +43,7 @@ function createStep(
   openlayerInferencePipelineId?: string,
 ): [Step, () => void] {
   metadata = metadata || {};
-  let newStep: Step;
-  if (stepType === StepType.CHAT_COMPLETION) {
-    newStep = new ChatCompletionStep(name, inputs, output, metadata, startTime, endTime);
-  } else {
-    newStep = new UserCallStep(name, inputs, output, metadata, startTime, endTime);
-  }
+  const newStep = stepFactory(stepType, name, inputs, output, metadata, startTime, endTime);
 
   const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
 
@@ -63,7 +65,19 @@ function createStep(
   stepStack.push(newStep);
 
   const endStep = () => {
+    // Calculate latency for this step before removing from stack
+    newStep.endTime = Date.now();
+    // Only calculate latency if it hasn't been manually set
+    if (newStep.latency === null) {
+      if (newStep.startTime && newStep.endTime) {
+        newStep.latency = newStep.endTime - newStep.startTime;
+      } else {
+        newStep.latency = 0; // Fallback to 0 if timestamps are missing
+      }
+    }
+
     stepStack.pop(); // Remove the current step from the stack
+    console.debug(`Ending step ${newStep.name}`);
 
     if (isRootStep) {
       console.debug('Ending the trace...');
@@ -223,6 +237,136 @@ export function addChatCompletionStepToTrace(
 
   step.log({ inputs, output, metadata });
   endStep();
+}
+
+export function addChainStepToTrace(params: {
+  name: string;
+  inputs: any;
+  output?: any;
+  metadata?: Record<string, any>;
+}) {
+  // Add "Handoffs: " prefix for chain steps (representing workflow transitions)
+  const stepName = `Handoffs: ${params.name}`;
+  const [step, endStep] = createStep(stepName, StepType.CHAIN, params.inputs, params.output, params.metadata);
+  return { step, endStep };
+}
+
+export function addAgentStepToTrace(params: {
+  name: string;
+  inputs: any;
+  output?: any;
+  metadata?: Record<string, any>;
+  tool?: string;
+  action?: any;
+}) {
+  // Add "Agent: " prefix for agent steps
+  const stepName = `Agent: ${params.name}`;
+  const [step, endStep] = createStep(stepName, StepType.AGENT, params.inputs, params.output, params.metadata);
+  if (step instanceof AgentStep) {
+    step.tool = params.tool || null;
+    step.action = params.action || null;
+  }
+  return { step, endStep };
+}
+
+export function addToolStepToTrace(params: {
+  name: string;
+  inputs: any;
+  output?: any;
+  metadata?: Record<string, any>;
+}) {
+  const [step, endStep] = createStep(
+    params.name,
+    StepType.TOOL,
+    params.inputs,
+    params.output,
+    params.metadata,
+  );
+  return { step, endStep };
+}
+
+export function addRetrieverStepToTrace(params: {
+  name: string;
+  inputs: any;
+  output?: any;
+  metadata?: Record<string, any>;
+  documents?: any[];
+}) {
+  const [step, endStep] = createStep(
+    params.name,
+    StepType.RETRIEVER,
+    params.inputs,
+    params.output,
+    params.metadata,
+  );
+  if (step instanceof RetrieverStep) {
+    step.documents = params.documents || [];
+  }
+  return { step, endStep };
+}
+
+export function addFunctionCallStepToTrace(params: {
+  name: string;
+  functionName: string;
+  arguments: Record<string, any>;
+  output?: any;
+  metadata?: Record<string, any>;
+}) {
+  // Add "Tool Call: " prefix for better dashboard visibility
+  const stepName = `Tool Call: ${params.name}`;
+  const [step, endStep] = createStep(
+    stepName,
+    StepType.FUNCTION_CALL,
+    params.arguments,
+    params.output,
+    params.metadata,
+  );
+  if (step instanceof FunctionCallStep) {
+    step.functionName = params.functionName;
+    step.arguments = params.arguments;
+    step.result = params.output;
+  }
+  return { step, endStep };
+}
+
+// Enhanced agent step creator with nested LLM tracking
+export function startAgentStep(params: {
+  name: string;
+  agentType: string;
+  inputs: any;
+  metadata?: Record<string, any>;
+}) {
+  // Add "Agent: " prefix for better dashboard visibility
+  const stepName = `Agent: ${params.name}`;
+  const [step, endStep] = createStep(stepName, StepType.AGENT, params.inputs, undefined, {
+    ...params.metadata,
+    agentType: params.agentType,
+  });
+
+  if (step instanceof AgentStep) {
+    step.action = params.inputs;
+  }
+
+  return { step, endStep };
+}
+
+// Explicit handoff function for agent-to-agent or component-to-component transitions
+export function addHandoffStepToTrace(params: {
+  name: string;
+  fromComponent: string;
+  toComponent: string;
+  handoffData: any;
+  metadata?: Record<string, any>;
+}) {
+  const stepName = `Handoffs: ${params.fromComponent} → ${params.toComponent}`;
+  const [step, endStep] = createStep(stepName, StepType.CHAIN, params.handoffData, undefined, {
+    ...params.metadata,
+    handoffType: 'component_transition',
+    fromComponent: params.fromComponent,
+    toComponent: params.toComponent,
+    timestamp: new Date().toISOString(),
+  });
+  return { step, endStep };
 }
 
 export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
