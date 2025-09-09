@@ -37,7 +37,9 @@ describe('resource data', () => {
         numOfTokenColumnName: 'tokens',
         prompt: [{ content: '{{ user_query }}', role: 'user' }],
         questionColumnName: 'question',
+        sessionIdColumnName: 'session_id',
         timestampColumnName: 'timestamp',
+        userIdColumnName: 'user_id',
       },
       rows: [{ user_query: 'bar', output: 'bar', tokens: 'bar', cost: 'bar', timestamp: 'bar' }],
     });
