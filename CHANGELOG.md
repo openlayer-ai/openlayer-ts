@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.17.0 (2025-09-09)
+
+Full Changelog: [v0.16.3...v0.17.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.3...v0.17.0)
+
+### Features
+
+* **api:** api update ([0f199f5](https://github.com/openlayer-ai/openlayer-ts/commit/0f199f58a01448f9bf67ce49659e2b66cdce5ae8))
+
+
+### Bug Fixes
+
+* coerce nullable values to undefined ([ad82989](https://github.com/openlayer-ai/openlayer-ts/commit/ad82989db94aec8bd1e3e7d5e5129077d22e72d3))
+
+
+### Chores
+
+* ci build action ([f3022ae](https://github.com/openlayer-ai/openlayer-ts/commit/f3022ae1d2c5b5807956e855b5bda7179a8cbc90))
+
 ## 0.16.3 (2025-09-04)
 
 Full Changelog: [v0.16.2...v0.16.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.2...v0.16.3)
