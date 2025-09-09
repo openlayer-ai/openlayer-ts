@@ -119,10 +119,20 @@ export namespace DataStreamParams {
     questionColumnName?: string;
 
     /**
+     * Name of the column with the session id.
+     */
+    sessionIdColumnName?: string | null;
+
+    /**
      * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
      * If not provided, the upload timestamp is used.
      */
     timestampColumnName?: string;
+
+    /**
+     * Name of the column with the user id.
+     */
+    userIdColumnName?: string | null;
   }
 
   export namespace LlmData {
