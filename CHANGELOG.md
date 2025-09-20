@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.17.1 (2025-09-20)
+
+Full Changelog: [v0.17.0...v0.17.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.17.0...v0.17.1)
+
+### Bug Fixes
+
+* **backend:** more upgrades to examples ([ebd0a51](https://github.com/openlayer-ai/openlayer-ts/commit/ebd0a5131970b051407d402a1f1c55993bf463e7))
+* yarn upgrade form-data for vulnerability ([cc222a0](https://github.com/openlayer-ai/openlayer-ts/commit/cc222a00ec5d5807b4621fa5a35cf452985535bf))
+
+
+### Chores
+
+* do not install brew dependencies in ./scripts/bootstrap by default ([55a402e](https://github.com/openlayer-ai/openlayer-ts/commit/55a402e77e8dd04ec442f739a893c72ad23b3af4))
+
 ## 0.17.0 (2025-09-09)
 
 Full Changelog: [v0.16.3...v0.17.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.3...v0.17.0)
