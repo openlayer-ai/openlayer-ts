@@ -1,9 +1,11 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
 import * as TestResultsAPI from './test-results';
 import { TestResultListParams, TestResultListResponse, TestResults } from './test-results';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Commits extends APIResource {
   testResults: TestResultsAPI.TestResults = new TestResultsAPI.TestResults(this._client);
@@ -11,8 +13,8 @@ export class Commits extends APIResource {
   /**
    * Retrieve a project version (commit) by its id.
    */
-  retrieve(projectVersionId: string, options?: Core.RequestOptions): Core.APIPromise<CommitRetrieveResponse> {
-    return this._client.get(`/versions/${projectVersionId}`, options);
+  retrieve(projectVersionID: string, options?: RequestOptions): APIPromise<CommitRetrieveResponse> {
+    return this._client.get(path`/versions/${projectVersionID}`, options);
   }
 }
 

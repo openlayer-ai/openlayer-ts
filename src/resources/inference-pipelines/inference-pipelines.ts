@@ -1,14 +1,16 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
 import * as DataAPI from './data';
 import { Data, DataStreamParams, DataStreamResponse } from './data';
 import * as RowsAPI from './rows';
 import { RowUpdateParams, RowUpdateResponse, Rows } from './rows';
 import * as TestResultsAPI from './test-results';
 import { TestResultListParams, TestResultListResponse, TestResults } from './test-results';
+import { APIPromise } from '../../core/api-promise';
+import { buildHeaders } from '../../internal/headers';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class InferencePipelines extends APIResource {
   data: DataAPI.Data = new DataAPI.Data(this._client);
@@ -27,23 +29,11 @@ export class InferencePipelines extends APIResource {
    * ```
    */
   retrieve(
-    inferencePipelineId: string,
-    query?: InferencePipelineRetrieveParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineRetrieveResponse>;
-  retrieve(
-    inferencePipelineId: string,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineRetrieveResponse>;
-  retrieve(
-    inferencePipelineId: string,
-    query: InferencePipelineRetrieveParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineRetrieveResponse> {
-    if (isRequestOptions(query)) {
-      return this.retrieve(inferencePipelineId, {}, query);
-    }
-    return this._client.get(`/inference-pipelines/${inferencePipelineId}`, { query, ...options });
+    inferencePipelineID: string,
+    query: InferencePipelineRetrieveParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineRetrieveResponse> {
+    return this._client.get(path`/inference-pipelines/${inferencePipelineID}`, { query, ...options });
   }
 
   /**
@@ -58,23 +48,11 @@ export class InferencePipelines extends APIResource {
    * ```
    */
   update(
-    inferencePipelineId: string,
-    body?: InferencePipelineUpdateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineUpdateResponse>;
-  update(
-    inferencePipelineId: string,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineUpdateResponse>;
-  update(
-    inferencePipelineId: string,
-    body: InferencePipelineUpdateParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineUpdateResponse> {
-    if (isRequestOptions(body)) {
-      return this.update(inferencePipelineId, {}, body);
-    }
-    return this._client.put(`/inference-pipelines/${inferencePipelineId}`, { body, ...options });
+    inferencePipelineID: string,
+    body: InferencePipelineUpdateParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineUpdateResponse> {
+    return this._client.put(path`/inference-pipelines/${inferencePipelineID}`, { body, ...options });
   }
 
   /**
@@ -87,10 +65,10 @@ export class InferencePipelines extends APIResource {
    * );
    * ```
    */
-  delete(inferencePipelineId: string, options?: Core.RequestOptions): Core.APIPromise<void> {
-    return this._client.delete(`/inference-pipelines/${inferencePipelineId}`, {
+  delete(inferencePipelineID: string, options?: RequestOptions): APIPromise<void> {
+    return this._client.delete(path`/inference-pipelines/${inferencePipelineID}`, {
       ...options,
-      headers: { Accept: '*/*', ...options?.headers },
+      headers: buildHeaders([{ Accept: '*/*' }, options?.headers]),
     });
   }
 }

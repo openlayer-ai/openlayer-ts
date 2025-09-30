@@ -1,28 +1,20 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class TestResults extends APIResource {
   /**
    * List the test results for a project commit (project version).
    */
   list(
-    projectVersionId: string,
-    query?: TestResultListParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestResultListResponse>;
-  list(projectVersionId: string, options?: Core.RequestOptions): Core.APIPromise<TestResultListResponse>;
-  list(
-    projectVersionId: string,
-    query: TestResultListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestResultListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list(projectVersionId, {}, query);
-    }
-    return this._client.get(`/versions/${projectVersionId}/results`, { query, ...options });
+    projectVersionID: string,
+    query: TestResultListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<TestResultListResponse> {
+    return this._client.get(path`/versions/${projectVersionID}/results`, { query, ...options });
   }
 }
 
