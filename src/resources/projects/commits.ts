@@ -1,8 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Commits extends APIResource {
   /**
@@ -20,11 +21,11 @@ export class Commits extends APIResource {
    * ```
    */
   create(
-    projectId: string,
+    projectID: string,
     body: CommitCreateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<CommitCreateResponse> {
-    return this._client.post(`/projects/${projectId}/versions`, { body, ...options });
+    options?: RequestOptions,
+  ): APIPromise<CommitCreateResponse> {
+    return this._client.post(path`/projects/${projectID}/versions`, { body, ...options });
   }
 
   /**
@@ -38,20 +39,11 @@ export class Commits extends APIResource {
    * ```
    */
   list(
-    projectId: string,
-    query?: CommitListParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<CommitListResponse>;
-  list(projectId: string, options?: Core.RequestOptions): Core.APIPromise<CommitListResponse>;
-  list(
-    projectId: string,
-    query: CommitListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<CommitListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list(projectId, {}, query);
-    }
-    return this._client.get(`/projects/${projectId}/versions`, { query, ...options });
+    projectID: string,
+    query: CommitListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<CommitListResponse> {
+    return this._client.get(path`/projects/${projectID}/versions`, { query, ...options });
   }
 }
 

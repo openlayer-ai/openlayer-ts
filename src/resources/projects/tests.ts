@@ -1,8 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Tests extends APIResource {
   /**
@@ -24,11 +25,11 @@ export class Tests extends APIResource {
    * ```
    */
   create(
-    projectId: string,
+    projectID: string,
     body: TestCreateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestCreateResponse> {
-    return this._client.post(`/projects/${projectId}/tests`, { body, ...options });
+    options?: RequestOptions,
+  ): APIPromise<TestCreateResponse> {
+    return this._client.post(path`/projects/${projectID}/tests`, { body, ...options });
   }
 
   /**
@@ -47,11 +48,11 @@ export class Tests extends APIResource {
    * ```
    */
   update(
-    projectId: string,
+    projectID: string,
     body: TestUpdateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestUpdateResponse> {
-    return this._client.put(`/projects/${projectId}/tests`, { body, ...options });
+    options?: RequestOptions,
+  ): APIPromise<TestUpdateResponse> {
+    return this._client.put(path`/projects/${projectID}/tests`, { body, ...options });
   }
 
   /**
@@ -65,20 +66,11 @@ export class Tests extends APIResource {
    * ```
    */
   list(
-    projectId: string,
-    query?: TestListParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestListResponse>;
-  list(projectId: string, options?: Core.RequestOptions): Core.APIPromise<TestListResponse>;
-  list(
-    projectId: string,
-    query: TestListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list(projectId, {}, query);
-    }
-    return this._client.get(`/projects/${projectId}/tests`, { query, ...options });
+    projectID: string,
+    query: TestListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<TestListResponse> {
+    return this._client.get(path`/projects/${projectID}/tests`, { query, ...options });
   }
 }
 

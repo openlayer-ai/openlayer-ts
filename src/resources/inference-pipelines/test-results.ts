@@ -1,8 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class TestResults extends APIResource {
   /**
@@ -17,20 +18,11 @@ export class TestResults extends APIResource {
    * ```
    */
   list(
-    inferencePipelineId: string,
-    query?: TestResultListParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestResultListResponse>;
-  list(inferencePipelineId: string, options?: Core.RequestOptions): Core.APIPromise<TestResultListResponse>;
-  list(
-    inferencePipelineId: string,
-    query: TestResultListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<TestResultListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list(inferencePipelineId, {}, query);
-    }
-    return this._client.get(`/inference-pipelines/${inferencePipelineId}/results`, { query, ...options });
+    inferencePipelineID: string,
+    query: TestResultListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<TestResultListResponse> {
+    return this._client.get(path`/inference-pipelines/${inferencePipelineID}/results`, { query, ...options });
   }
 }
 

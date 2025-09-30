@@ -1,0 +1,6 @@
+{
+  "pkg": "openlayer",
+  "githubRepo": "https://github.com/stainless-sdks/openlayer-typescript",
+  "clientClass": "Openlayer",
+  "methods": []
+}

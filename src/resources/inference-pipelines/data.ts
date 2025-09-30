@@ -1,7 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Data extends APIResource {
   /**
@@ -28,11 +30,14 @@ export class Data extends APIResource {
    * ```
    */
   stream(
-    inferencePipelineId: string,
+    inferencePipelineID: string,
     body: DataStreamParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<DataStreamResponse> {
-    return this._client.post(`/inference-pipelines/${inferencePipelineId}/data-stream`, { body, ...options });
+    options?: RequestOptions,
+  ): APIPromise<DataStreamResponse> {
+    return this._client.post(path`/inference-pipelines/${inferencePipelineID}/data-stream`, {
+      body,
+      ...options,
+    });
   }
 }
 

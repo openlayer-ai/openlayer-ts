@@ -1,7 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Rows extends APIResource {
   /**
@@ -16,12 +18,12 @@ export class Rows extends APIResource {
    * ```
    */
   update(
-    inferencePipelineId: string,
+    inferencePipelineID: string,
     params: RowUpdateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<RowUpdateResponse> {
+    options?: RequestOptions,
+  ): APIPromise<RowUpdateResponse> {
     const { inferenceId, ...body } = params;
-    return this._client.put(`/inference-pipelines/${inferencePipelineId}/rows`, {
+    return this._client.put(path`/inference-pipelines/${inferencePipelineID}/rows`, {
       query: { inferenceId },
       body,
       ...options,
