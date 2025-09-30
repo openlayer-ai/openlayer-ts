@@ -19,8 +19,8 @@ Types:
 
 Methods:
 
-- <code title="post /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">create</a>(projectId, { ...params }) -> CommitCreateResponse</code>
-- <code title="get /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">list</a>(projectId, { ...params }) -> CommitListResponse</code>
+- <code title="post /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">create</a>(projectID, { ...params }) -> CommitCreateResponse</code>
+- <code title="get /projects/{projectId}/versions">client.projects.commits.<a href="./src/resources/projects/commits.ts">list</a>(projectID, { ...params }) -> CommitListResponse</code>
 
 ## InferencePipelines
 
@@ -31,8 +31,8 @@ Types:
 
 Methods:
 
-- <code title="post /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">create</a>(projectId, { ...params }) -> InferencePipelineCreateResponse</code>
-- <code title="get /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">list</a>(projectId, { ...params }) -> InferencePipelineListResponse</code>
+- <code title="post /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">create</a>(projectID, { ...params }) -> InferencePipelineCreateResponse</code>
+- <code title="get /projects/{projectId}/inference-pipelines">client.projects.inferencePipelines.<a href="./src/resources/projects/inference-pipelines.ts">list</a>(projectID, { ...params }) -> InferencePipelineListResponse</code>
 
 ## Tests
 
@@ -44,9 +44,9 @@ Types:
 
 Methods:
 
-- <code title="post /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">create</a>(projectId, { ...params }) -> TestCreateResponse</code>
-- <code title="put /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">update</a>(projectId, { ...params }) -> TestUpdateResponse</code>
-- <code title="get /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">list</a>(projectId, { ...params }) -> TestListResponse</code>
+- <code title="post /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">create</a>(projectID, { ...params }) -> TestCreateResponse</code>
+- <code title="put /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">update</a>(projectID, { ...params }) -> TestUpdateResponse</code>
+- <code title="get /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">list</a>(projectID, { ...params }) -> TestListResponse</code>
 
 # Commits
 
@@ -56,7 +56,7 @@ Types:
 
 Methods:
 
-- <code title="get /versions/{projectVersionId}">client.commits.<a href="./src/resources/commits/commits.ts">retrieve</a>(projectVersionId) -> CommitRetrieveResponse</code>
+- <code title="get /versions/{projectVersionId}">client.commits.<a href="./src/resources/commits/commits.ts">retrieve</a>(projectVersionID) -> CommitRetrieveResponse</code>
 
 ## TestResults
 
@@ -66,7 +66,7 @@ Types:
 
 Methods:
 
-- <code title="get /versions/{projectVersionId}/results">client.commits.testResults.<a href="./src/resources/commits/test-results.ts">list</a>(projectVersionId, { ...params }) -> TestResultListResponse</code>
+- <code title="get /versions/{projectVersionId}/results">client.commits.testResults.<a href="./src/resources/commits/test-results.ts">list</a>(projectVersionID, { ...params }) -> TestResultListResponse</code>
 
 # InferencePipelines
 
@@ -77,9 +77,9 @@ Types:
 
 Methods:
 
-- <code title="get /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieve</a>(inferencePipelineId, { ...params }) -> InferencePipelineRetrieveResponse</code>
-- <code title="put /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">update</a>(inferencePipelineId, { ...params }) -> InferencePipelineUpdateResponse</code>
-- <code title="delete /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">delete</a>(inferencePipelineId) -> void</code>
+- <code title="get /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieve</a>(inferencePipelineID, { ...params }) -> InferencePipelineRetrieveResponse</code>
+- <code title="put /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">update</a>(inferencePipelineID, { ...params }) -> InferencePipelineUpdateResponse</code>
+- <code title="delete /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">delete</a>(inferencePipelineID) -> void</code>
 
 ## Data
 
@@ -89,7 +89,7 @@ Types:
 
 Methods:
 
-- <code title="post /inference-pipelines/{inferencePipelineId}/data-stream">client.inferencePipelines.data.<a href="./src/resources/inference-pipelines/data.ts">stream</a>(inferencePipelineId, { ...params }) -> DataStreamResponse</code>
+- <code title="post /inference-pipelines/{inferencePipelineId}/data-stream">client.inferencePipelines.data.<a href="./src/resources/inference-pipelines/data.ts">stream</a>(inferencePipelineID, { ...params }) -> DataStreamResponse</code>
 
 ## Rows
 
@@ -99,7 +99,7 @@ Types:
 
 Methods:
 
-- <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">update</a>(inferencePipelineId, { ...params }) -> RowUpdateResponse</code>
+- <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">update</a>(inferencePipelineID, { ...params }) -> RowUpdateResponse</code>
 
 ## TestResults
 
@@ -109,7 +109,7 @@ Types:
 
 Methods:
 
-- <code title="get /inference-pipelines/{inferencePipelineId}/results">client.inferencePipelines.testResults.<a href="./src/resources/inference-pipelines/test-results.ts">list</a>(inferencePipelineId, { ...params }) -> TestResultListResponse</code>
+- <code title="get /inference-pipelines/{inferencePipelineId}/results">client.inferencePipelines.testResults.<a href="./src/resources/inference-pipelines/test-results.ts">list</a>(inferencePipelineID, { ...params }) -> TestResultListResponse</code>
 
 # Storage
 
