@@ -7,7 +7,9 @@ dist
 dist-deno
 /*.tgz
 .idea/
+.eslintcache
 .env
 **/.env
 **/.openlayer
 examples/bedrock/output
+
