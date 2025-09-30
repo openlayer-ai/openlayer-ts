@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.17.1 (2025-09-30)
+
+Full Changelog: [v0.17.0...v0.17.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.17.0...v0.17.1)
+
+### Bug Fixes
+
+* **backend:** more upgrades to examples ([ebd0a51](https://github.com/openlayer-ai/openlayer-ts/commit/ebd0a5131970b051407d402a1f1c55993bf463e7))
+* yarn upgrade form-data for vulnerability ([cc222a0](https://github.com/openlayer-ai/openlayer-ts/commit/cc222a00ec5d5807b4621fa5a35cf452985535bf))
+
+
+### Performance Improvements
+
+* faster formatting ([d80c10c](https://github.com/openlayer-ai/openlayer-ts/commit/d80c10cfa73e859a18b76177c134891ac5b2fe84))
+
+
+### Chores
+
+* do not install brew dependencies in ./scripts/bootstrap by default ([55a402e](https://github.com/openlayer-ai/openlayer-ts/commit/55a402e77e8dd04ec442f739a893c72ad23b3af4))
+* **internal:** codegen related update ([fa4eb8b](https://github.com/openlayer-ai/openlayer-ts/commit/fa4eb8bffc2007c2c6ca7ffe7e0f9a0a59c7d435))
+* **internal:** fix incremental formatting in some cases ([6b294aa](https://github.com/openlayer-ai/openlayer-ts/commit/6b294aa76c5722ae7e442a7d9ad1a3c487c13e16))
+* **internal:** ignore .eslintcache ([455578b](https://github.com/openlayer-ai/openlayer-ts/commit/455578b399f4b722fc28185d91e70c9d2ef76e97))
+* **internal:** remove deprecated `compilerOptions.baseUrl` from tsconfig.json ([60a3a49](https://github.com/openlayer-ai/openlayer-ts/commit/60a3a49421700a05c11006de24de24f6b060878f))
+
 ## 0.17.0 (2025-09-09)
 
 Full Changelog: [v0.16.3...v0.17.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.16.3...v0.17.0)
