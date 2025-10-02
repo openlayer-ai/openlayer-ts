@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.18.0 (2025-10-02)
+
+Full Changelog: [v0.17.1...v0.18.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.17.1...v0.18.0)
+
+### Features
+
+* **api:** manual updates ([b9c60be](https://github.com/openlayer-ai/openlayer-ts/commit/b9c60bee4b6f12dd44afe77dce020789c0702229))
+* **api:** manual updates ([bf8b436](https://github.com/openlayer-ai/openlayer-ts/commit/bf8b436d243cb66d88dc30e0e2b91825db707209))
+
+
+### Bug Fixes
+
+* remove conflicting and unnecessary dependencies ([d6b6e9e](https://github.com/openlayer-ai/openlayer-ts/commit/d6b6e9e0f296083a4387c15c876e936ae2a7e6db))
+* remove outdated core.ts ([ab9035b](https://github.com/openlayer-ai/openlayer-ts/commit/ab9035b091b9847016bdcb11347103a72fc173fb))
+
+
+### Chores
+
+* formatting ([eb75878](https://github.com/openlayer-ai/openlayer-ts/commit/eb75878242811ad45c041d17f20aae3f8f67d45e))
+
 ## 0.17.1 (2025-09-30)
 
 Full Changelog: [v0.17.0...v0.17.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.17.0...v0.17.1)
