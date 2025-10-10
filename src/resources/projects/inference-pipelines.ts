@@ -1,8 +1,9 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class InferencePipelines extends APIResource {
   /**
@@ -21,11 +22,11 @@ export class InferencePipelines extends APIResource {
    * ```
    */
   create(
-    projectId: string,
+    projectID: string,
     body: InferencePipelineCreateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineCreateResponse> {
-    return this._client.post(`/projects/${projectId}/inference-pipelines`, { body, ...options });
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineCreateResponse> {
+    return this._client.post(path`/projects/${projectID}/inference-pipelines`, { body, ...options });
   }
 
   /**
@@ -40,20 +41,11 @@ export class InferencePipelines extends APIResource {
    * ```
    */
   list(
-    projectId: string,
-    query?: InferencePipelineListParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineListResponse>;
-  list(projectId: string, options?: Core.RequestOptions): Core.APIPromise<InferencePipelineListResponse>;
-  list(
-    projectId: string,
-    query: InferencePipelineListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<InferencePipelineListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list(projectId, {}, query);
-    }
-    return this._client.get(`/projects/${projectId}/inference-pipelines`, { query, ...options });
+    projectID: string,
+    query: InferencePipelineListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineListResponse> {
+    return this._client.get(path`/projects/${projectID}/inference-pipelines`, { query, ...options });
   }
 }
 

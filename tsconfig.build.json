@@ -1,12 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "include": ["dist/src"],
-  "exclude": ["dist/src/_shims/*-deno.ts"],
+  "exclude": [],
   "compilerOptions": {
     "rootDir": "./dist/src",
     "paths": {
-      "openlayer/*": ["dist/src/*"],
-      "openlayer": ["dist/src/index.ts"],
+      "openlayer/*": ["./dist/src/*"],
+      "openlayer": ["./dist/src/index.ts"]
     },
     "noEmit": false,
     "declaration": true,

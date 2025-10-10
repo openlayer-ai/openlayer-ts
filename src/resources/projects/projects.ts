@@ -1,8 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import { isRequestOptions } from '../../core';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
 import * as CommitsAPI from './commits';
 import {
   CommitCreateParams,
@@ -29,6 +27,8 @@ import {
   TestUpdateResponse,
   Tests,
 } from './tests';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
 
 export class Projects extends APIResource {
   commits: CommitsAPI.Commits = new CommitsAPI.Commits(this._client);
@@ -48,7 +48,7 @@ export class Projects extends APIResource {
    * });
    * ```
    */
-  create(body: ProjectCreateParams, options?: Core.RequestOptions): Core.APIPromise<ProjectCreateResponse> {
+  create(body: ProjectCreateParams, options?: RequestOptions): APIPromise<ProjectCreateResponse> {
     return this._client.post('/projects', { body, ...options });
   }
 
@@ -60,15 +60,10 @@ export class Projects extends APIResource {
    * const projects = await client.projects.list();
    * ```
    */
-  list(query?: ProjectListParams, options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
-  list(options?: Core.RequestOptions): Core.APIPromise<ProjectListResponse>;
   list(
-    query: ProjectListParams | Core.RequestOptions = {},
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<ProjectListResponse> {
-    if (isRequestOptions(query)) {
-      return this.list({}, query);
-    }
+    query: ProjectListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<ProjectListResponse> {
     return this._client.get('/projects', { query, ...options });
   }
 }

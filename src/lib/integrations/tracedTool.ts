@@ -39,7 +39,6 @@ export function tracedTool<T extends Record<string, any>>(
     responseSchema?: z.ZodSchema<any>;
   },
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (tool as any)(
     async (input: unknown) => {
       const typedInput = input as T;

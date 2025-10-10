@@ -1,16 +1,14 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIResource } from '../../resource';
-import * as Core from '../../core';
+import { APIResource } from '../../core/resource';
+import { APIPromise } from '../../core/api-promise';
+import { RequestOptions } from '../../internal/request-options';
 
 export class PresignedURL extends APIResource {
   /**
    * Retrieve a presigned url to post storage artifacts.
    */
-  create(
-    params: PresignedURLCreateParams,
-    options?: Core.RequestOptions,
-  ): Core.APIPromise<PresignedURLCreateResponse> {
+  create(params: PresignedURLCreateParams, options?: RequestOptions): APIPromise<PresignedURLCreateResponse> {
     const { objectName } = params;
     return this._client.post('/storage/presigned-url', { query: { objectName }, ...options });
   }
