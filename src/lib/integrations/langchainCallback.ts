@@ -417,10 +417,15 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Tool start with ID: ${runId}`);
 
+      // Enhanced tool identification and metadata extraction
+      const toolName = this.extractToolName(tool, name);
+      const enhancedMetadata = this.extractToolMetadata(tool, tags, metadata);
+      const processedInput = this.processToolInput(input, tool);
+
       const { step, endStep } = addToolStepToTrace({
-        name: name ?? tool.id.at(-1)?.toString() ?? 'Tool execution',
-        inputs: input,
-        metadata: this.joinTagsAndMetaData(tags, metadata) || {},
+        name: toolName,
+        inputs: processedInput,
+        metadata: enhancedMetadata,
       });
 
       this.runMap.set(runId, { step, endStep });
@@ -433,9 +438,12 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Tool end with ID: ${runId}`);
 
+      // Process output for better structured data capture
+      const processedOutput = this.processToolOutput(output, runId);
+
       this.handleStepEnd({
         runId,
-        output: output,
+        output: processedOutput,
       });
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
@@ -516,6 +524,212 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
+
+  /**
+   * Extract tool name with enhanced DynamicStructuredTool support
+   */
+  private extractToolName(tool: Serialized, name?: string): string {
+    // If explicit name is provided, use it
+    if (name) {
+      return name;
+    }
+
+    // Check if this is a DynamicStructuredTool by looking at the serialized structure
+    const toolId = tool.id;
+    if (Array.isArray(toolId) && toolId.length > 0) {
+      const toolType = toolId[0];
+      
+      // DynamicStructuredTool detection
+      if (toolType === 'DynamicStructuredTool' || toolType === 'dynamic_structured_tool') {
+        // Try to extract name from kwargs or other properties
+        const kwargs = (tool as any).kwargs;
+        if (kwargs?.name) {
+          return kwargs.name;
+        }
+      }
+      
+      // Fallback to last element of id array
+      return toolId[toolId.length - 1]?.toString() ?? 'Tool execution';
+    }
+
+    return 'Tool execution';
+  }
+
+  /**
+   * Extract and enhance tool metadata, especially for DynamicStructuredTool
+   */
+  private extractToolMetadata(
+    tool: Serialized, 
+    tags?: string[], 
+    metadata?: Record<string, unknown>
+  ): Record<string, unknown> {
+    const baseMetadata = this.joinTagsAndMetaData(tags, metadata) || {};
+    
+    // Enhanced metadata for DynamicStructuredTool
+    const toolId = tool.id;
+    if (Array.isArray(toolId) && toolId.length > 0) {
+      const toolType = toolId[0];
+      
+      if (toolType === 'DynamicStructuredTool' || toolType === 'dynamic_structured_tool') {
+        const kwargs = (tool as any).kwargs;
+        
+        return {
+          ...baseMetadata,
+          toolType: 'DynamicStructuredTool',
+          toolClass: toolType,
+          
+          // Extract description if available
+          ...(kwargs?.description && { toolDescription: kwargs.description }),
+          
+          // Extract schema information if available
+          ...(kwargs?.schema && { 
+            schemaType: this.getSchemaType(kwargs.schema),
+            schema: this.serializeSchema(kwargs.schema)
+          }),
+          
+          // Mark as structured/validated input
+          hasStructuredInput: true,
+          inputValidation: 'schema-based',
+          
+          // Additional dynamic tool metadata
+          isDynamicTool: true,
+          executionContext: 'langchain_dynamic_tool',
+        };
+      }
+    }
+
+    // Standard tool metadata
+    return {
+      ...baseMetadata,
+      toolType: 'StandardTool',
+      toolClass: Array.isArray(toolId) ? toolId[0] : 'unknown',
+      isDynamicTool: false,
+    };
+  }
+
+  /**
+   * Process tool input with enhanced handling for structured inputs
+   */
+  private processToolInput(input: string, tool: Serialized): any {
+    const toolId = tool.id;
+    
+    // For DynamicStructuredTool, try to parse structured input
+    if (Array.isArray(toolId) && toolId.length > 0) {
+      const toolType = toolId[0];
+      
+      if (toolType === 'DynamicStructuredTool' || toolType === 'dynamic_structured_tool') {
+        try {
+          // Try to parse JSON input (common for structured tools)
+          const parsed = JSON.parse(input);
+          return {
+            raw: input,
+            parsed: parsed,
+            inputType: 'structured'
+          };
+        } catch {
+          // If parsing fails, return as-is but mark as structured tool input
+          return {
+            raw: input,
+            inputType: 'structured_string'
+          };
+        }
+      }
+    }
+
+    // For regular tools, return input as-is
+    return input;
+  }
+
+  /**
+   * Determine schema type (Zod, JSON Schema, etc.)
+   */
+  private getSchemaType(schema: any): string {
+    if (!schema) return 'unknown';
+    
+    // Zod schema detection
+    if (schema._def || schema.parse) {
+      return 'zod';
+    }
+    
+    // JSON Schema detection
+    if (schema.type || schema.properties || schema.$schema) {
+      return 'json_schema';
+    }
+    
+    return 'custom';
+  }
+
+  /**
+   * Serialize schema for metadata (safe serialization)
+   */
+  private serializeSchema(schema: any): any {
+    if (!schema) return null;
+    
+    try {
+      // For Zod schemas, try to extract basic structure
+      if (schema._def) {
+        return {
+          type: 'zod',
+          typeName: schema._def.typeName || 'unknown',
+          // Don't serialize the full Zod object to avoid circular references
+        };
+      }
+      
+      // For JSON Schema, return as-is (should be serializable)
+      if (schema.type || schema.properties) {
+        return schema;
+      }
+      
+      // For other schemas, return minimal info
+      return {
+        type: 'custom',
+        hasSchema: true
+      };
+    } catch {
+      return {
+        type: 'unknown',
+        serializationFailed: true
+      };
+    }
+  }
+
+  /**
+   * Process tool output with enhanced information for DynamicStructuredTool
+   */
+  private processToolOutput(output: string, runId: string): any {
+    const runData = this.runMap.get(runId);
+    if (!runData) {
+      return output; // Fallback to original output if no run data
+    }
+
+    const step = runData.step;
+    const isDynamicTool = step?.metadata?.isDynamicTool;
+    
+    if (isDynamicTool) {
+      try {
+        // Try to parse JSON output for structured tools
+        const parsed = JSON.parse(output);
+        return {
+          raw: output,
+          parsed: parsed,
+          outputType: 'structured',
+          outputLength: output.length,
+          fromDynamicTool: true
+        };
+      } catch {
+        // If parsing fails, still provide enhanced metadata
+        return {
+          raw: output,
+          outputType: 'string',
+          outputLength: output.length,
+          fromDynamicTool: true
+        };
+      }
+    }
+
+    // For regular tools, return output with minimal enhancement
+    return output;
+  }
 
   private async handleGenerationStart(
     llm: Serialized,
