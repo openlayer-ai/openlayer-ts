@@ -146,7 +146,26 @@ export interface InferencePipelineRetrieveResponse {
    */
   totalGoalCount: number;
 
+  dataBackend?:
+    | InferencePipelineRetrieveResponse.UnionMember0
+    | InferencePipelineRetrieveResponse.BackendType
+    | InferencePipelineRetrieveResponse.UnionMember2
+    | InferencePipelineRetrieveResponse.UnionMember3
+    | InferencePipelineRetrieveResponse.UnionMember4
+    | InferencePipelineRetrieveResponse.UnionMember5
+    | null;
+
+  /**
+   * The last time the data was polled.
+   */
+  dateLastPolled?: string | null;
+
   project?: InferencePipelineRetrieveResponse.Project | null;
+
+  /**
+   * The total number of records in the data backend.
+   */
+  totalRecordsCount?: number | null;
 
   workspace?: InferencePipelineRetrieveResponse.Workspace | null;
 
@@ -159,6 +178,66 @@ export interface InferencePipelineRetrieveResponse {
 export namespace InferencePipelineRetrieveResponse {
   export interface Links {
     app: string;
+  }
+
+  export interface UnionMember0 {
+    backendType: 'bigquery';
+
+    bigqueryConnectionId: string | null;
+
+    datasetId: string;
+
+    projectId: string;
+
+    tableId: string | null;
+
+    partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
+  }
+
+  export interface BackendType {
+    backendType: 'default';
+  }
+
+  export interface UnionMember2 {
+    backendType: 'snowflake';
+
+    database: string;
+
+    schema: string;
+
+    snowflakeConnectionId: string | null;
+
+    table: string | null;
+  }
+
+  export interface UnionMember3 {
+    backendType: 'databricks_dtl';
+
+    databricksDtlConnectionId: string | null;
+
+    tableId: string | null;
+  }
+
+  export interface UnionMember4 {
+    backendType: 'redshift';
+
+    redshiftConnectionId: string | null;
+
+    schemaName: string;
+
+    tableName: string;
+  }
+
+  export interface UnionMember5 {
+    backendType: 'postgres';
+
+    database: string;
+
+    postgresConnectionId: string | null;
+
+    schema: string;
+
+    table: string | null;
   }
 
   export interface Project {
@@ -435,7 +514,26 @@ export interface InferencePipelineUpdateResponse {
    */
   totalGoalCount: number;
 
+  dataBackend?:
+    | InferencePipelineUpdateResponse.UnionMember0
+    | InferencePipelineUpdateResponse.BackendType
+    | InferencePipelineUpdateResponse.UnionMember2
+    | InferencePipelineUpdateResponse.UnionMember3
+    | InferencePipelineUpdateResponse.UnionMember4
+    | InferencePipelineUpdateResponse.UnionMember5
+    | null;
+
+  /**
+   * The last time the data was polled.
+   */
+  dateLastPolled?: string | null;
+
   project?: InferencePipelineUpdateResponse.Project | null;
+
+  /**
+   * The total number of records in the data backend.
+   */
+  totalRecordsCount?: number | null;
 
   workspace?: InferencePipelineUpdateResponse.Workspace | null;
 
@@ -448,6 +546,66 @@ export interface InferencePipelineUpdateResponse {
 export namespace InferencePipelineUpdateResponse {
   export interface Links {
     app: string;
+  }
+
+  export interface UnionMember0 {
+    backendType: 'bigquery';
+
+    bigqueryConnectionId: string | null;
+
+    datasetId: string;
+
+    projectId: string;
+
+    tableId: string | null;
+
+    partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
+  }
+
+  export interface BackendType {
+    backendType: 'default';
+  }
+
+  export interface UnionMember2 {
+    backendType: 'snowflake';
+
+    database: string;
+
+    schema: string;
+
+    snowflakeConnectionId: string | null;
+
+    table: string | null;
+  }
+
+  export interface UnionMember3 {
+    backendType: 'databricks_dtl';
+
+    databricksDtlConnectionId: string | null;
+
+    tableId: string | null;
+  }
+
+  export interface UnionMember4 {
+    backendType: 'redshift';
+
+    redshiftConnectionId: string | null;
+
+    schemaName: string;
+
+    tableName: string;
+  }
+
+  export interface UnionMember5 {
+    backendType: 'postgres';
+
+    database: string;
+
+    postgresConnectionId: string | null;
+
+    schema: string;
+
+    table: string | null;
   }
 
   export interface Project {
