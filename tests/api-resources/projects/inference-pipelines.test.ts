@@ -26,6 +26,21 @@ describe('resource inferencePipelines', () => {
     const response = await client.projects.inferencePipelines.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       description: 'This pipeline is used for production.',
       name: 'production',
+      dataBackend: {
+        backendType: 'bigquery',
+        bigqueryConnectionId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+        config: {
+          groundTruthColumnName: 'ground_truth',
+          humanFeedbackColumnName: 'human_feedback',
+          inferenceIdColumnName: 'id',
+          latencyColumnName: 'latency',
+          timestampColumnName: 'timestamp',
+        },
+        datasetId: 'my-dataset',
+        projectId: 'my-project',
+        tableId: 'my-table',
+        partitionType: 'DAY',
+      },
       project: { name: 'My Project', taskType: 'llm-base', description: 'My project description.' },
       workspace: {
         name: 'Openlayer',
