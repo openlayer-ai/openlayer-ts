@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.19.0 (2025-10-22)
+
+Full Changelog: [v0.18.0...v0.19.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.18.0...v0.19.0)
+
+### Features
+
+* **api:** api update ([c5a26e6](https://github.com/openlayer-ai/openlayer-ts/commit/c5a26e6d0485aeaa3089f227f795959417be4fa1))
+
+
+### Chores
+
+* **internal:** use npm pack for build uploads ([fca405f](https://github.com/openlayer-ai/openlayer-ts/commit/fca405ff655d33d21ea2eb9097f969574fed46da))
+* **jsdoc:** fix [@link](https://github.com/link) annotations to refer only to parts of the package‘s public interface ([2acf567](https://github.com/openlayer-ai/openlayer-ts/commit/2acf5677a5ec1a312ea6dcdefd962f02510480de))
+
 ## 0.18.0 (2025-10-02)
 
 Full Changelog: [v0.17.1...v0.18.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.17.1...v0.18.0)
