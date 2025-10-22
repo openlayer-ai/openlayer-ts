@@ -122,7 +122,26 @@ export interface InferencePipelineCreateResponse {
    */
   totalGoalCount: number;
 
+  dataBackend?:
+    | InferencePipelineCreateResponse.UnionMember0
+    | InferencePipelineCreateResponse.BackendType
+    | InferencePipelineCreateResponse.UnionMember2
+    | InferencePipelineCreateResponse.UnionMember3
+    | InferencePipelineCreateResponse.UnionMember4
+    | InferencePipelineCreateResponse.UnionMember5
+    | null;
+
+  /**
+   * The last time the data was polled.
+   */
+  dateLastPolled?: string | null;
+
   project?: InferencePipelineCreateResponse.Project | null;
+
+  /**
+   * The total number of records in the data backend.
+   */
+  totalRecordsCount?: number | null;
 
   workspace?: InferencePipelineCreateResponse.Workspace | null;
 
@@ -135,6 +154,66 @@ export interface InferencePipelineCreateResponse {
 export namespace InferencePipelineCreateResponse {
   export interface Links {
     app: string;
+  }
+
+  export interface UnionMember0 {
+    backendType: 'bigquery';
+
+    bigqueryConnectionId: string | null;
+
+    datasetId: string;
+
+    projectId: string;
+
+    tableId: string | null;
+
+    partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
+  }
+
+  export interface BackendType {
+    backendType: 'default';
+  }
+
+  export interface UnionMember2 {
+    backendType: 'snowflake';
+
+    database: string;
+
+    schema: string;
+
+    snowflakeConnectionId: string | null;
+
+    table: string | null;
+  }
+
+  export interface UnionMember3 {
+    backendType: 'databricks_dtl';
+
+    databricksDtlConnectionId: string | null;
+
+    tableId: string | null;
+  }
+
+  export interface UnionMember4 {
+    backendType: 'redshift';
+
+    redshiftConnectionId: string | null;
+
+    schemaName: string;
+
+    tableName: string;
+  }
+
+  export interface UnionMember5 {
+    backendType: 'postgres';
+
+    database: string;
+
+    postgresConnectionId: string | null;
+
+    schema: string;
+
+    table: string | null;
   }
 
   export interface Project {
@@ -416,7 +495,26 @@ export namespace InferencePipelineListResponse {
      */
     totalGoalCount: number;
 
+    dataBackend?:
+      | Item.UnionMember0
+      | Item.BackendType
+      | Item.UnionMember2
+      | Item.UnionMember3
+      | Item.UnionMember4
+      | Item.UnionMember5
+      | null;
+
+    /**
+     * The last time the data was polled.
+     */
+    dateLastPolled?: string | null;
+
     project?: Item.Project | null;
+
+    /**
+     * The total number of records in the data backend.
+     */
+    totalRecordsCount?: number | null;
 
     workspace?: Item.Workspace | null;
 
@@ -429,6 +527,66 @@ export namespace InferencePipelineListResponse {
   export namespace Item {
     export interface Links {
       app: string;
+    }
+
+    export interface UnionMember0 {
+      backendType: 'bigquery';
+
+      bigqueryConnectionId: string | null;
+
+      datasetId: string;
+
+      projectId: string;
+
+      tableId: string | null;
+
+      partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
+    }
+
+    export interface BackendType {
+      backendType: 'default';
+    }
+
+    export interface UnionMember2 {
+      backendType: 'snowflake';
+
+      database: string;
+
+      schema: string;
+
+      snowflakeConnectionId: string | null;
+
+      table: string | null;
+    }
+
+    export interface UnionMember3 {
+      backendType: 'databricks_dtl';
+
+      databricksDtlConnectionId: string | null;
+
+      tableId: string | null;
+    }
+
+    export interface UnionMember4 {
+      backendType: 'redshift';
+
+      redshiftConnectionId: string | null;
+
+      schemaName: string;
+
+      tableName: string;
+    }
+
+    export interface UnionMember5 {
+      backendType: 'postgres';
+
+      database: string;
+
+      postgresConnectionId: string | null;
+
+      schema: string;
+
+      table: string | null;
     }
 
     export interface Project {
@@ -644,12 +802,251 @@ export interface InferencePipelineCreateParams {
    */
   name: string;
 
+  dataBackend?:
+    | InferencePipelineCreateParams.UnionMember0
+    | InferencePipelineCreateParams.BackendType
+    | InferencePipelineCreateParams.UnionMember2
+    | InferencePipelineCreateParams.UnionMember3
+    | InferencePipelineCreateParams.UnionMember4
+    | InferencePipelineCreateParams.UnionMember5
+    | null;
+
   project?: InferencePipelineCreateParams.Project | null;
 
   workspace?: InferencePipelineCreateParams.Workspace | null;
 }
 
 export namespace InferencePipelineCreateParams {
+  export interface UnionMember0 {
+    backendType: 'bigquery';
+
+    bigqueryConnectionId: string | null;
+
+    config: UnionMember0.Config;
+
+    datasetId: string;
+
+    projectId: string;
+
+    tableId: string | null;
+
+    partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
+  }
+
+  export namespace UnionMember0 {
+    export interface Config {
+      /**
+       * Name of the column with the ground truths.
+       */
+      groundTruthColumnName?: string | null;
+
+      /**
+       * Name of the column with human feedback.
+       */
+      humanFeedbackColumnName?: string | null;
+
+      /**
+       * Name of the column with the inference ids. This is useful if you want to update
+       * rows at a later point in time. If not provided, a unique id is generated by
+       * Openlayer.
+       */
+      inferenceIdColumnName?: string | null;
+
+      /**
+       * Name of the column with the latencies.
+       */
+      latencyColumnName?: string | null;
+
+      /**
+       * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
+       * If not provided, the upload timestamp is used.
+       */
+      timestampColumnName?: string | null;
+    }
+  }
+
+  export interface BackendType {
+    backendType: 'default';
+  }
+
+  export interface UnionMember2 {
+    backendType: 'snowflake';
+
+    config: UnionMember2.Config;
+
+    database: string;
+
+    schema: string;
+
+    snowflakeConnectionId: string | null;
+
+    table: string | null;
+  }
+
+  export namespace UnionMember2 {
+    export interface Config {
+      /**
+       * Name of the column with the ground truths.
+       */
+      groundTruthColumnName?: string | null;
+
+      /**
+       * Name of the column with human feedback.
+       */
+      humanFeedbackColumnName?: string | null;
+
+      /**
+       * Name of the column with the inference ids. This is useful if you want to update
+       * rows at a later point in time. If not provided, a unique id is generated by
+       * Openlayer.
+       */
+      inferenceIdColumnName?: string | null;
+
+      /**
+       * Name of the column with the latencies.
+       */
+      latencyColumnName?: string | null;
+
+      /**
+       * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
+       * If not provided, the upload timestamp is used.
+       */
+      timestampColumnName?: string | null;
+    }
+  }
+
+  export interface UnionMember3 {
+    backendType: 'databricks_dtl';
+
+    config: UnionMember3.Config;
+
+    databricksDtlConnectionId: string | null;
+
+    tableId: string | null;
+  }
+
+  export namespace UnionMember3 {
+    export interface Config {
+      /**
+       * Name of the column with the ground truths.
+       */
+      groundTruthColumnName?: string | null;
+
+      /**
+       * Name of the column with human feedback.
+       */
+      humanFeedbackColumnName?: string | null;
+
+      /**
+       * Name of the column with the inference ids. This is useful if you want to update
+       * rows at a later point in time. If not provided, a unique id is generated by
+       * Openlayer.
+       */
+      inferenceIdColumnName?: string | null;
+
+      /**
+       * Name of the column with the latencies.
+       */
+      latencyColumnName?: string | null;
+
+      /**
+       * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
+       * If not provided, the upload timestamp is used.
+       */
+      timestampColumnName?: string | null;
+    }
+  }
+
+  export interface UnionMember4 {
+    backendType: 'redshift';
+
+    config: UnionMember4.Config;
+
+    redshiftConnectionId: string | null;
+
+    schemaName: string;
+
+    tableName: string;
+  }
+
+  export namespace UnionMember4 {
+    export interface Config {
+      /**
+       * Name of the column with the ground truths.
+       */
+      groundTruthColumnName?: string | null;
+
+      /**
+       * Name of the column with human feedback.
+       */
+      humanFeedbackColumnName?: string | null;
+
+      /**
+       * Name of the column with the inference ids. This is useful if you want to update
+       * rows at a later point in time. If not provided, a unique id is generated by
+       * Openlayer.
+       */
+      inferenceIdColumnName?: string | null;
+
+      /**
+       * Name of the column with the latencies.
+       */
+      latencyColumnName?: string | null;
+
+      /**
+       * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
+       * If not provided, the upload timestamp is used.
+       */
+      timestampColumnName?: string | null;
+    }
+  }
+
+  export interface UnionMember5 {
+    backendType: 'postgres';
+
+    config: UnionMember5.Config;
+
+    database: string;
+
+    postgresConnectionId: string | null;
+
+    schema: string;
+
+    table: string | null;
+  }
+
+  export namespace UnionMember5 {
+    export interface Config {
+      /**
+       * Name of the column with the ground truths.
+       */
+      groundTruthColumnName?: string | null;
+
+      /**
+       * Name of the column with human feedback.
+       */
+      humanFeedbackColumnName?: string | null;
+
+      /**
+       * Name of the column with the inference ids. This is useful if you want to update
+       * rows at a later point in time. If not provided, a unique id is generated by
+       * Openlayer.
+       */
+      inferenceIdColumnName?: string | null;
+
+      /**
+       * Name of the column with the latencies.
+       */
+      latencyColumnName?: string | null;
+
+      /**
+       * Name of the column with the timestamps. Timestamps must be in UNIX sec format.
+       * If not provided, the upload timestamp is used.
+       */
+      timestampColumnName?: string | null;
+    }
+  }
+
   export interface Project {
     /**
      * The project name.
