@@ -189,6 +189,12 @@ export interface TestCreateResponse {
   archived?: boolean;
 
   /**
+   * Whether to apply the test to all pipelines (data sources) or to a specific set
+   * of pipelines. Only applies to tests that use production data.
+   */
+  defaultToAllPipelines?: boolean | null;
+
+  /**
    * The delay window in seconds. Only applies to tests that use production data.
    */
   delayWindow?: number | null;
@@ -198,6 +204,24 @@ export interface TestCreateResponse {
    * data.
    */
   evaluationWindow?: number | null;
+
+  /**
+   * Array of pipelines (data sources) to which the test should not be applied. Only
+   * applies to tests that use production data.
+   */
+  excludePipelines?: Array<string> | null;
+
+  /**
+   * Whether to include historical data in the test result. Only applies to tests
+   * that use production data.
+   */
+  includeHistoricalData?: boolean | null;
+
+  /**
+   * Array of pipelines (data sources) to which the test should be applied. Only
+   * applies to tests that use production data.
+   */
+  includePipelines?: Array<string> | null;
 
   /**
    * Whether the test uses an ML model.
@@ -432,6 +456,12 @@ export namespace TestListResponse {
     archived?: boolean;
 
     /**
+     * Whether to apply the test to all pipelines (data sources) or to a specific set
+     * of pipelines. Only applies to tests that use production data.
+     */
+    defaultToAllPipelines?: boolean | null;
+
+    /**
      * The delay window in seconds. Only applies to tests that use production data.
      */
     delayWindow?: number | null;
@@ -441,6 +471,24 @@ export namespace TestListResponse {
      * data.
      */
     evaluationWindow?: number | null;
+
+    /**
+     * Array of pipelines (data sources) to which the test should not be applied. Only
+     * applies to tests that use production data.
+     */
+    excludePipelines?: Array<string> | null;
+
+    /**
+     * Whether to include historical data in the test result. Only applies to tests
+     * that use production data.
+     */
+    includeHistoricalData?: boolean | null;
+
+    /**
+     * Array of pipelines (data sources) to which the test should be applied. Only
+     * applies to tests that use production data.
+     */
+    includePipelines?: Array<string> | null;
 
     /**
      * Whether the test uses an ML model.
@@ -620,6 +668,12 @@ export interface TestCreateParams {
   archived?: boolean;
 
   /**
+   * Whether to apply the test to all pipelines (data sources) or to a specific set
+   * of pipelines. Only applies to tests that use production data.
+   */
+  defaultToAllPipelines?: boolean | null;
+
+  /**
    * The delay window in seconds. Only applies to tests that use production data.
    */
   delayWindow?: number | null;
@@ -629,6 +683,24 @@ export interface TestCreateParams {
    * data.
    */
   evaluationWindow?: number | null;
+
+  /**
+   * Array of pipelines (data sources) to which the test should not be applied. Only
+   * applies to tests that use production data.
+   */
+  excludePipelines?: Array<string> | null;
+
+  /**
+   * Whether to include historical data in the test result. Only applies to tests
+   * that use production data.
+   */
+  includeHistoricalData?: boolean | null;
+
+  /**
+   * Array of pipelines (data sources) to which the test should be applied. Only
+   * applies to tests that use production data.
+   */
+  includePipelines?: Array<string> | null;
 
   /**
    * Whether the test uses an ML model.
