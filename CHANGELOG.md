@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **integrations:** add support for OpenAI Responses API in tracer
+  - Added automatic tracing for the new Responses API (`client.responses.create()`)
+  - Maintained backward compatibility with Chat Completions API
+  - Support for streaming, function/tool calling, and multi-turn conversations
+  - Token usage tracking with proper mapping (input_tokens, output_tokens)
+  - Comprehensive examples and documentation
+
 ## 0.19.0 (2025-10-22)
 
 Full Changelog: [v0.18.0...v0.19.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.18.0...v0.19.0)
