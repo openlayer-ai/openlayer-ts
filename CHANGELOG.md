@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.20.0 (2025-12-17)
+
+Full Changelog: [v0.19.0...v0.20.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.19.0...v0.20.0)
+
+### Features
+
+* **api:** add test evaluation method ([0de80ed](https://github.com/openlayer-ai/openlayer-ts/commit/0de80ed7f4373ac25cedb6216be143ea54a37845))
+* **api:** api update ([a68f1ff](https://github.com/openlayer-ai/openlayer-ts/commit/a68f1ffe52342d421c9ce976ddb138d6fabc5819))
+
+
+### Bug Fixes
+
+* **mcp:** correct code tool API endpoint ([4526c6d](https://github.com/openlayer-ai/openlayer-ts/commit/4526c6d310cd8c00c58f45000da627aac87471c4))
+* **mcp:** return correct lines on typescript errors ([ca8957b](https://github.com/openlayer-ai/openlayer-ts/commit/ca8957b57beabbd8877aff07a0fd56030960cd0c))
+
+
+### Chores
+
+* **client:** fix logger property type ([393ea60](https://github.com/openlayer-ai/openlayer-ts/commit/393ea6033378bce745d0bc32d2798e45df3dc584))
+* **internal:** codegen related update ([db610ae](https://github.com/openlayer-ai/openlayer-ts/commit/db610aee6fa6b72f21f5474fc561a92d0fe1859d))
+* **internal:** codegen related update ([ee2b679](https://github.com/openlayer-ai/openlayer-ts/commit/ee2b679da0f1136a640c261786d7c59b43f01685))
+* **internal:** upgrade eslint ([ba4b81f](https://github.com/openlayer-ai/openlayer-ts/commit/ba4b81f6819bec7107a162829b13f637576cd2e1))
+
 ## 0.19.0 (2025-10-22)
 
 Full Changelog: [v0.18.0...v0.19.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.18.0...v0.19.0)
