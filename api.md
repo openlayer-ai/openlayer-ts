@@ -122,3 +122,13 @@ Types:
 Methods:
 
 - <code title="post /storage/presigned-url">client.storage.presignedURL.<a href="./src/resources/storage/presigned-url.ts">create</a>({ ...params }) -> PresignedURLCreateResponse</code>
+
+# Tests
+
+Types:
+
+- <code><a href="./src/resources/tests.ts">TestEvaluateResponse</a></code>
+
+Methods:
+
+- <code title="post /tests/{testId}/evaluate">client.tests.<a href="./src/resources/tests.ts">evaluate</a>(testID, { ...params }) -> TestEvaluateResponse</code>
