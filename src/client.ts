@@ -17,6 +17,7 @@ import * as Errors from './core/error';
 import * as Uploads from './core/uploads';
 import * as API from './resources/index';
 import { APIPromise } from './core/api-promise';
+import { TestEvaluateParams, TestEvaluateResponse, Tests } from './resources/tests';
 import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
 import {
   InferencePipelineRetrieveParams,
@@ -724,12 +725,14 @@ export class Openlayer {
   commits: API.Commits = new API.Commits(this);
   inferencePipelines: API.InferencePipelines = new API.InferencePipelines(this);
   storage: API.Storage = new API.Storage(this);
+  tests: API.Tests = new API.Tests(this);
 }
 
 Openlayer.Projects = Projects;
 Openlayer.Commits = Commits;
 Openlayer.InferencePipelines = InferencePipelines;
 Openlayer.Storage = Storage;
+Openlayer.Tests = Tests;
 
 export declare namespace Openlayer {
   export type RequestOptions = Opts.RequestOptions;
@@ -753,4 +756,10 @@ export declare namespace Openlayer {
   };
 
   export { Storage as Storage };
+
+  export {
+    Tests as Tests,
+    type TestEvaluateResponse as TestEvaluateResponse,
+    type TestEvaluateParams as TestEvaluateParams,
+  };
 }

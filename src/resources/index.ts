@@ -16,3 +16,4 @@ export {
   type ProjectListParams,
 } from './projects/projects';
 export { Storage } from './storage/storage';
+export { Tests, type TestEvaluateResponse, type TestEvaluateParams } from './tests';
