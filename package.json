@@ -28,9 +28,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent-runtime": "^3.862.0",
-    "@langchain/community": "^0.3.51",
-    "@langchain/core": "^0.3.3",
-    "@langchain/langgraph": "^0.4.5",
+    "@langchain/community": "^0.3.59",
+    "@langchain/core": "^0.3.80",
+    "@langchain/langgraph": "^0.4.9",
     "commander": "^12.1.0",
     "openai": "^4.49.0",
     "performance-now": "^2.1.0",

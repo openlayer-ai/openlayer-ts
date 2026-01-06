@@ -10,11 +10,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@langchain/core": "^0.3.77",
-    "@langchain/openai": "^0.6.12",
+    "@langchain/core": "^0.3.80",
+    "@langchain/openai": "^0.6.17",
     "form-data": "^4.0.4",
-    "langchain": "^0.3.34",
+    "langchain": "^0.3.37",
     "openai": "^5.20.3",
-    "openlayer": "^0.17.0"
+    "openlayer": "^0.20.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
