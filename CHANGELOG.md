@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.1 (2026-01-06)
+
+Full Changelog: [v0.20.0...v0.20.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.0...v0.20.1)
+
+### Chores
+
+* **closes OPEN-8613:** https://github.com/openlayer-ai/openlayer-ts/security/dependabot/31 ([7d92610](https://github.com/openlayer-ai/openlayer-ts/commit/7d92610c4aa163a5567fa48c20a66e5a00dc42f3))
+* **internal:** codegen related update ([7c3c9f9](https://github.com/openlayer-ai/openlayer-ts/commit/7c3c9f9f6ff1eb8f87d2ec3a450fef53522a735e))
+
 ## 0.20.0 (2025-12-17)
 
 Full Changelog: [v0.19.0...v0.20.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.19.0...v0.20.0)
