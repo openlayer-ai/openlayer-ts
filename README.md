@@ -26,24 +26,27 @@ const client = new Openlayer({
   apiKey: process.env['OPENLAYER_API_KEY'], // This is the default and can be omitted
 });
 
-const response = await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
-  config: {
-    inputVariableNames: ['user_query'],
-    outputColumnName: 'output',
-    numOfTokenColumnName: 'tokens',
-    costColumnName: 'cost',
-    timestampColumnName: 'timestamp',
-  },
-  rows: [
-    {
-      user_query: 'what is the meaning of life?',
-      output: '42',
-      tokens: 7,
-      cost: 0.02,
-      timestamp: 1610000000,
+const response = await client.inferencePipelines.data.stream(
+  '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+  {
+    config: {
+      inputVariableNames: ['user_query'],
+      outputColumnName: 'output',
+      numOfTokenColumnName: 'tokens',
+      costColumnName: 'cost',
+      timestampColumnName: 'timestamp',
     },
-  ],
-});
+    rows: [
+      {
+        user_query: 'what is the meaning of life?',
+        output: '42',
+        tokens: 7,
+        cost: 0.02,
+        timestamp: 1610000000,
+      },
+    ],
+  },
+);
 
 console.log(response.success);
 ```
@@ -78,10 +81,8 @@ const params: Openlayer.InferencePipelines.DataStreamParams = {
     },
   ],
 };
-const response: Openlayer.InferencePipelines.DataStreamResponse = await client.inferencePipelines.data.stream(
-  '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-  params,
-);
+const response: Openlayer.InferencePipelines.DataStreamResponse =
+  await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', params);
 ```
 
 Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
@@ -153,7 +154,22 @@ const client = new Openlayer({
 });
 
 // Or, configure per-request:
-await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what is the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1610000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+  config: {
+  inputVariableNames: ['user_query'],
+  outputColumnName: 'output',
+  numOfTokenColumnName: 'tokens',
+  costColumnName: 'cost',
+  timestampColumnName: 'timestamp',
+},
+  rows: [{
+  user_query: 'what is the meaning of life?',
+  output: '42',
+  tokens: 7,
+  cost: 0.02,
+  timestamp: 1610000000,
+}],
+}, {
   maxRetries: 5,
 });
 ```
@@ -170,7 +186,22 @@ const client = new Openlayer({
 });
 
 // Override per-request:
-await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', { config: { inputVariableNames: ['user_query'], outputColumnName: 'output', numOfTokenColumnName: 'tokens', costColumnName: 'cost', timestampColumnName: 'timestamp' }, rows: [{ user_query: 'what is the meaning of life?', output: '42', tokens: 7, cost: 0.02, timestamp: 1610000000 }] }, {
+await client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+  config: {
+  inputVariableNames: ['user_query'],
+  outputColumnName: 'output',
+  numOfTokenColumnName: 'tokens',
+  costColumnName: 'cost',
+  timestampColumnName: 'timestamp',
+},
+  rows: [{
+  user_query: 'what is the meaning of life?',
+  output: '42',
+  tokens: 7,
+  cost: 0.02,
+  timestamp: 1610000000,
+}],
+}, {
   timeout: 5 * 1000,
 });
 ```

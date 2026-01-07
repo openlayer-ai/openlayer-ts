@@ -41,7 +41,11 @@ describe('resource inferencePipelines', () => {
         tableId: 'my-table',
         partitionType: 'DAY',
       },
-      project: { name: 'My Project', taskType: 'llm-base', description: 'My project description.' },
+      project: {
+        name: 'My Project',
+        taskType: 'llm-base',
+        description: 'My project description.',
+      },
       workspace: {
         name: 'Openlayer',
         slug: 'openlayer',
@@ -68,7 +72,11 @@ describe('resource inferencePipelines', () => {
     await expect(
       client.projects.inferencePipelines.list(
         '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-        { name: 'name', page: 1, perPage: 1 },
+        {
+          name: 'name',
+          page: 1,
+          perPage: 1,
+        },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Openlayer.NotFoundError);
