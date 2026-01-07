@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.2 (2026-01-07)
+
+Full Changelog: [v0.20.1...v0.20.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.1...v0.20.2)
+
+### Chores
+
+* break long lines in snippets into multiline ([4c24061](https://github.com/openlayer-ai/openlayer-ts/commit/4c240611be2fe2745735b9724c879491da7c785c))
+
 ## 0.20.1 (2026-01-06)
 
 Full Changelog: [v0.20.0...v0.20.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.0...v0.20.1)
