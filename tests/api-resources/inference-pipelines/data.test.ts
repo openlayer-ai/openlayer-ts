@@ -11,7 +11,15 @@ describe('resource data', () => {
   test('stream: only required params', async () => {
     const responsePromise = client.inferencePipelines.data.stream('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       config: { outputColumnName: 'output' },
-      rows: [{ user_query: 'bar', output: 'bar', tokens: 'bar', cost: 'bar', timestamp: 'bar' }],
+      rows: [
+        {
+          user_query: 'bar',
+          output: 'bar',
+          tokens: 'bar',
+          cost: 'bar',
+          timestamp: 'bar',
+        },
+      ],
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -40,7 +48,15 @@ describe('resource data', () => {
         timestampColumnName: 'timestamp',
         userIdColumnName: 'user_id',
       },
-      rows: [{ user_query: 'bar', output: 'bar', tokens: 'bar', cost: 'bar', timestamp: 'bar' }],
+      rows: [
+        {
+          user_query: 'bar',
+          output: 'bar',
+          tokens: 'bar',
+          cost: 'bar',
+          timestamp: 'bar',
+        },
+      ],
     });
   });
 });
