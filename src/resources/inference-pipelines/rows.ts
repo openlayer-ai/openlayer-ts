@@ -13,7 +13,10 @@ export class Rows extends APIResource {
    * ```ts
    * const row = await client.inferencePipelines.rows.update(
    *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-   *   { inferenceId: 'inferenceId', row: {} },
+   *   {
+   *     inferenceId: 'inferenceId',
+   *     row: {},
+   *   },
    * );
    * ```
    */
