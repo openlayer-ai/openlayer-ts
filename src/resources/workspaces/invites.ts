@@ -112,34 +112,10 @@ export namespace InviteCreateResponse {
 }
 
 export interface InviteListResponse {
-  _meta: InviteListResponse._Meta;
-
   items: Array<InviteListResponse.Item>;
 }
 
 export namespace InviteListResponse {
-  export interface _Meta {
-    /**
-     * The current page.
-     */
-    page: number;
-
-    /**
-     * The number of items per page.
-     */
-    perPage: number;
-
-    /**
-     * The total number of items.
-     */
-    totalItems: number;
-
-    /**
-     * The total number of pages.
-     */
-    totalPages: number;
-  }
-
   export interface Item {
     /**
      * The invite id.
