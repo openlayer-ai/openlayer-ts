@@ -34,6 +34,12 @@ import {
   Projects,
 } from './resources/projects/projects';
 import { Storage } from './resources/storage/storage';
+import {
+  WorkspaceRetrieveResponse,
+  WorkspaceUpdateParams,
+  WorkspaceUpdateResponse,
+  Workspaces,
+} from './resources/workspaces/workspaces';
 import { type Fetch } from './internal/builtin-types';
 import { HeadersLike, NullableHeaders, buildHeaders } from './internal/headers';
 import { FinalRequestOptions, RequestOptions } from './internal/request-options';
@@ -722,6 +728,7 @@ export class Openlayer {
   static toFile = Uploads.toFile;
 
   projects: API.Projects = new API.Projects(this);
+  workspaces: API.Workspaces = new API.Workspaces(this);
   commits: API.Commits = new API.Commits(this);
   inferencePipelines: API.InferencePipelines = new API.InferencePipelines(this);
   storage: API.Storage = new API.Storage(this);
@@ -729,6 +736,7 @@ export class Openlayer {
 }
 
 Openlayer.Projects = Projects;
+Openlayer.Workspaces = Workspaces;
 Openlayer.Commits = Commits;
 Openlayer.InferencePipelines = InferencePipelines;
 Openlayer.Storage = Storage;
@@ -743,6 +751,13 @@ export declare namespace Openlayer {
     type ProjectListResponse as ProjectListResponse,
     type ProjectCreateParams as ProjectCreateParams,
     type ProjectListParams as ProjectListParams,
+  };
+
+  export {
+    Workspaces as Workspaces,
+    type WorkspaceRetrieveResponse as WorkspaceRetrieveResponse,
+    type WorkspaceUpdateResponse as WorkspaceUpdateResponse,
+    type WorkspaceUpdateParams as WorkspaceUpdateParams,
   };
 
   export { Commits as Commits, type CommitRetrieveResponse as CommitRetrieveResponse };
