@@ -123,12 +123,12 @@ export interface InferencePipelineCreateResponse {
   totalGoalCount: number;
 
   dataBackend?:
-    | InferencePipelineCreateResponse.UnionMember0
-    | InferencePipelineCreateResponse.BackendType
-    | InferencePipelineCreateResponse.UnionMember2
-    | InferencePipelineCreateResponse.UnionMember3
-    | InferencePipelineCreateResponse.UnionMember4
-    | InferencePipelineCreateResponse.UnionMember5
+    | InferencePipelineCreateResponse.BigQueryDataBackend
+    | InferencePipelineCreateResponse.DefaultDataBackend
+    | InferencePipelineCreateResponse.SnowflakeDataBackend
+    | InferencePipelineCreateResponse.DatabricksDtlDataBackend
+    | InferencePipelineCreateResponse.RedshiftDataBackend
+    | InferencePipelineCreateResponse.PostgresDataBackend
     | null;
 
   /**
@@ -156,7 +156,7 @@ export namespace InferencePipelineCreateResponse {
     app: string;
   }
 
-  export interface UnionMember0 {
+  export interface BigQueryDataBackend {
     backendType: 'bigquery';
 
     bigqueryConnectionId: string | null;
@@ -170,11 +170,11 @@ export namespace InferencePipelineCreateResponse {
     partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
   }
 
-  export interface BackendType {
+  export interface DefaultDataBackend {
     backendType: 'default';
   }
 
-  export interface UnionMember2 {
+  export interface SnowflakeDataBackend {
     backendType: 'snowflake';
 
     database: string;
@@ -186,7 +186,7 @@ export namespace InferencePipelineCreateResponse {
     table: string | null;
   }
 
-  export interface UnionMember3 {
+  export interface DatabricksDtlDataBackend {
     backendType: 'databricks_dtl';
 
     databricksDtlConnectionId: string | null;
@@ -194,7 +194,7 @@ export namespace InferencePipelineCreateResponse {
     tableId: string | null;
   }
 
-  export interface UnionMember4 {
+  export interface RedshiftDataBackend {
     backendType: 'redshift';
 
     redshiftConnectionId: string | null;
@@ -204,7 +204,7 @@ export namespace InferencePipelineCreateResponse {
     tableName: string;
   }
 
-  export interface UnionMember5 {
+  export interface PostgresDataBackend {
     backendType: 'postgres';
 
     database: string;
@@ -496,12 +496,12 @@ export namespace InferencePipelineListResponse {
     totalGoalCount: number;
 
     dataBackend?:
-      | Item.UnionMember0
-      | Item.BackendType
-      | Item.UnionMember2
-      | Item.UnionMember3
-      | Item.UnionMember4
-      | Item.UnionMember5
+      | Item.BigQueryDataBackend
+      | Item.DefaultDataBackend
+      | Item.SnowflakeDataBackend
+      | Item.DatabricksDtlDataBackend
+      | Item.RedshiftDataBackend
+      | Item.PostgresDataBackend
       | null;
 
     /**
@@ -529,7 +529,7 @@ export namespace InferencePipelineListResponse {
       app: string;
     }
 
-    export interface UnionMember0 {
+    export interface BigQueryDataBackend {
       backendType: 'bigquery';
 
       bigqueryConnectionId: string | null;
@@ -543,11 +543,11 @@ export namespace InferencePipelineListResponse {
       partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
     }
 
-    export interface BackendType {
+    export interface DefaultDataBackend {
       backendType: 'default';
     }
 
-    export interface UnionMember2 {
+    export interface SnowflakeDataBackend {
       backendType: 'snowflake';
 
       database: string;
@@ -559,7 +559,7 @@ export namespace InferencePipelineListResponse {
       table: string | null;
     }
 
-    export interface UnionMember3 {
+    export interface DatabricksDtlDataBackend {
       backendType: 'databricks_dtl';
 
       databricksDtlConnectionId: string | null;
@@ -567,7 +567,7 @@ export namespace InferencePipelineListResponse {
       tableId: string | null;
     }
 
-    export interface UnionMember4 {
+    export interface RedshiftDataBackend {
       backendType: 'redshift';
 
       redshiftConnectionId: string | null;
@@ -577,7 +577,7 @@ export namespace InferencePipelineListResponse {
       tableName: string;
     }
 
-    export interface UnionMember5 {
+    export interface PostgresDataBackend {
       backendType: 'postgres';
 
       database: string;
@@ -803,12 +803,12 @@ export interface InferencePipelineCreateParams {
   name: string;
 
   dataBackend?:
-    | InferencePipelineCreateParams.UnionMember0
-    | InferencePipelineCreateParams.BackendType
-    | InferencePipelineCreateParams.UnionMember2
-    | InferencePipelineCreateParams.UnionMember3
-    | InferencePipelineCreateParams.UnionMember4
-    | InferencePipelineCreateParams.UnionMember5
+    | InferencePipelineCreateParams.BigQueryDataBackend
+    | InferencePipelineCreateParams.DefaultDataBackend
+    | InferencePipelineCreateParams.SnowflakeDataBackend
+    | InferencePipelineCreateParams.DatabricksDtlDataBackend
+    | InferencePipelineCreateParams.RedshiftDataBackend
+    | InferencePipelineCreateParams.PostgresDataBackend
     | null;
 
   project?: InferencePipelineCreateParams.Project | null;
@@ -817,12 +817,12 @@ export interface InferencePipelineCreateParams {
 }
 
 export namespace InferencePipelineCreateParams {
-  export interface UnionMember0 {
+  export interface BigQueryDataBackend {
     backendType: 'bigquery';
 
     bigqueryConnectionId: string | null;
 
-    config: UnionMember0.Config;
+    config: BigQueryDataBackend.Config;
 
     datasetId: string;
 
@@ -833,7 +833,7 @@ export namespace InferencePipelineCreateParams {
     partitionType?: 'DAY' | 'MONTH' | 'YEAR' | null;
   }
 
-  export namespace UnionMember0 {
+  export namespace BigQueryDataBackend {
     export interface Config {
       /**
        * Name of the column with the ground truths.
@@ -865,14 +865,14 @@ export namespace InferencePipelineCreateParams {
     }
   }
 
-  export interface BackendType {
+  export interface DefaultDataBackend {
     backendType: 'default';
   }
 
-  export interface UnionMember2 {
+  export interface SnowflakeDataBackend {
     backendType: 'snowflake';
 
-    config: UnionMember2.Config;
+    config: SnowflakeDataBackend.Config;
 
     database: string;
 
@@ -883,7 +883,7 @@ export namespace InferencePipelineCreateParams {
     table: string | null;
   }
 
-  export namespace UnionMember2 {
+  export namespace SnowflakeDataBackend {
     export interface Config {
       /**
        * Name of the column with the ground truths.
@@ -915,17 +915,17 @@ export namespace InferencePipelineCreateParams {
     }
   }
 
-  export interface UnionMember3 {
+  export interface DatabricksDtlDataBackend {
     backendType: 'databricks_dtl';
 
-    config: UnionMember3.Config;
+    config: DatabricksDtlDataBackend.Config;
 
     databricksDtlConnectionId: string | null;
 
     tableId: string | null;
   }
 
-  export namespace UnionMember3 {
+  export namespace DatabricksDtlDataBackend {
     export interface Config {
       /**
        * Name of the column with the ground truths.
@@ -957,10 +957,10 @@ export namespace InferencePipelineCreateParams {
     }
   }
 
-  export interface UnionMember4 {
+  export interface RedshiftDataBackend {
     backendType: 'redshift';
 
-    config: UnionMember4.Config;
+    config: RedshiftDataBackend.Config;
 
     redshiftConnectionId: string | null;
 
@@ -969,7 +969,7 @@ export namespace InferencePipelineCreateParams {
     tableName: string;
   }
 
-  export namespace UnionMember4 {
+  export namespace RedshiftDataBackend {
     export interface Config {
       /**
        * Name of the column with the ground truths.
@@ -1001,10 +1001,10 @@ export namespace InferencePipelineCreateParams {
     }
   }
 
-  export interface UnionMember5 {
+  export interface PostgresDataBackend {
     backendType: 'postgres';
 
-    config: UnionMember5.Config;
+    config: PostgresDataBackend.Config;
 
     database: string;
 
@@ -1015,7 +1015,7 @@ export namespace InferencePipelineCreateParams {
     table: string | null;
   }
 
-  export namespace UnionMember5 {
+  export namespace PostgresDataBackend {
     export interface Config {
       /**
        * Name of the column with the ground truths.
