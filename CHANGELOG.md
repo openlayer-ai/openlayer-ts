@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.21.1 (2026-01-08)
+
+Full Changelog: [v0.21.0...v0.21.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.21.0...v0.21.1)
+
+### Chores
+
+* **closes OPEN-8644:** address warnings on Stainless studio ([fbe2684](https://github.com/openlayer-ai/openlayer-ts/commit/fbe26845f9426f77efb7326c75a3983692c937a3))
+* remove _meta ([a90ea03](https://github.com/openlayer-ai/openlayer-ts/commit/a90ea031090830b2e1612c130161f988313cca8f))
+
 ## 0.21.0 (2026-01-08)
 
 Full Changelog: [v0.20.2...v0.21.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.2...v0.21.0)
