@@ -48,6 +48,40 @@ Methods:
 - <code title="put /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">update</a>(projectID, { ...params }) -> TestUpdateResponse</code>
 - <code title="get /projects/{projectId}/tests">client.projects.tests.<a href="./src/resources/projects/tests.ts">list</a>(projectID, { ...params }) -> TestListResponse</code>
 
+# Workspaces
+
+Types:
+
+- <code><a href="./src/resources/workspaces/workspaces.ts">WorkspaceRetrieveResponse</a></code>
+- <code><a href="./src/resources/workspaces/workspaces.ts">WorkspaceUpdateResponse</a></code>
+
+Methods:
+
+- <code title="get /workspaces/{workspaceId}">client.workspaces.<a href="./src/resources/workspaces/workspaces.ts">retrieve</a>(workspaceID) -> WorkspaceRetrieveResponse</code>
+- <code title="put /workspaces/{workspaceId}">client.workspaces.<a href="./src/resources/workspaces/workspaces.ts">update</a>(workspaceID, { ...params }) -> WorkspaceUpdateResponse</code>
+
+## Invites
+
+Types:
+
+- <code><a href="./src/resources/workspaces/invites.ts">InviteCreateResponse</a></code>
+- <code><a href="./src/resources/workspaces/invites.ts">InviteListResponse</a></code>
+
+Methods:
+
+- <code title="post /workspaces/{workspaceId}/invites">client.workspaces.invites.<a href="./src/resources/workspaces/invites.ts">create</a>(workspaceID, { ...params }) -> InviteCreateResponse</code>
+- <code title="get /workspaces/{workspaceId}/invites">client.workspaces.invites.<a href="./src/resources/workspaces/invites.ts">list</a>(workspaceID, { ...params }) -> InviteListResponse</code>
+
+## APIKeys
+
+Types:
+
+- <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyCreateResponse</a></code>
+
+Methods:
+
+- <code title="post /workspaces/{workspaceId}/api-keys">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">create</a>(workspaceID, { ...params }) -> APIKeyCreateResponse</code>
+
 # Commits
 
 Types:

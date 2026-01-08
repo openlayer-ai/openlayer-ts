@@ -17,3 +17,9 @@ export {
 } from './projects/projects';
 export { Storage } from './storage/storage';
 export { Tests, type TestEvaluateResponse, type TestEvaluateParams } from './tests';
+export {
+  Workspaces,
+  type WorkspaceRetrieveResponse,
+  type WorkspaceUpdateResponse,
+  type WorkspaceUpdateParams,
+} from './workspaces/workspaces';

@@ -71,6 +71,10 @@ This affects the following methods:
 - `client.projects.commits.list()`
 - `client.projects.inferencePipelines.list()`
 - `client.projects.tests.list()`
+- `client.workspaces.update()`
+- `client.workspaces.invites.create()`
+- `client.workspaces.invites.list()`
+- `client.workspaces.apiKeys.create()`
 - `client.commits.testResults.list()`
 - `client.inferencePipelines.retrieve()`
 - `client.inferencePipelines.update()`
