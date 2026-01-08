@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.0 (2026-01-08)
+
+Full Changelog: [v0.20.2...v0.21.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.2...v0.21.0)
+
+### Features
+
+* **api:** add missing endpoints ([a2575a5](https://github.com/openlayer-ai/openlayer-ts/commit/a2575a55be04df4eff4401d5fbe90f888dd3d044))
+
 ## 0.20.2 (2026-01-07)
 
 Full Changelog: [v0.20.1...v0.20.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.20.1...v0.20.2)
