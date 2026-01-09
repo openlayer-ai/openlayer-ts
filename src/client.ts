@@ -17,7 +17,13 @@ import * as Errors from './core/error';
 import * as Uploads from './core/uploads';
 import * as API from './resources/index';
 import { APIPromise } from './core/api-promise';
-import { TestEvaluateParams, TestEvaluateResponse, Tests } from './resources/tests';
+import {
+  TestEvaluateParams,
+  TestEvaluateResponse,
+  TestListResultsParams,
+  TestListResultsResponse,
+  Tests,
+} from './resources/tests';
 import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
 import {
   InferencePipelineRetrieveParams,
@@ -775,6 +781,8 @@ export declare namespace Openlayer {
   export {
     Tests as Tests,
     type TestEvaluateResponse as TestEvaluateResponse,
+    type TestListResultsResponse as TestListResultsResponse,
     type TestEvaluateParams as TestEvaluateParams,
+    type TestListResultsParams as TestListResultsParams,
   };
 }

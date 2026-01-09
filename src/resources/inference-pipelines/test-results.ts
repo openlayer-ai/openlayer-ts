@@ -77,15 +77,44 @@ export namespace TestResultListResponse {
      */
     statusMessage: string | null;
 
+    expectedValues?: Array<Item.ExpectedValue>;
+
     goal?: Item.Goal;
 
     /**
      * The test id.
      */
     goalId?: string | null;
+
+    /**
+     * The URL to the rows of the test result.
+     */
+    rows?: string;
+
+    /**
+     * The body of the rows request.
+     */
+    rowsBody?: Item.RowsBody | null;
   }
 
   export namespace Item {
+    export interface ExpectedValue {
+      /**
+       * the lower threshold for the expected value
+       */
+      lowerThreshold?: number | null;
+
+      /**
+       * One of the `measurement` values in the test's thresholds
+       */
+      measurement?: string;
+
+      /**
+       * The upper threshold for the expected value
+       */
+      upperThreshold?: number | null;
+    }
+
     export interface Goal {
       /**
        * The test id.
@@ -315,6 +344,62 @@ export namespace TestResultListResponse {
 
           value: unknown;
         }
+      }
+    }
+
+    /**
+     * The body of the rows request.
+     */
+    export interface RowsBody {
+      columnFilters?: Array<
+        RowsBody.SetColumnFilter | RowsBody.NumericColumnFilter | RowsBody.StringColumnFilter
+      > | null;
+
+      excludeRowIdList?: Array<number> | null;
+
+      notSearchQueryAnd?: Array<string> | null;
+
+      notSearchQueryOr?: Array<string> | null;
+
+      rowIdList?: Array<number> | null;
+
+      searchQueryAnd?: Array<string> | null;
+
+      searchQueryOr?: Array<string> | null;
+    }
+
+    export namespace RowsBody {
+      export interface SetColumnFilter {
+        /**
+         * The name of the column.
+         */
+        measurement: string;
+
+        operator: 'contains_none' | 'contains_any' | 'contains_all' | 'one_of' | 'none_of';
+
+        value: Array<string | number>;
+      }
+
+      export interface NumericColumnFilter {
+        /**
+         * The name of the column.
+         */
+        measurement: string;
+
+        operator: '>' | '>=' | 'is' | '<' | '<=' | '!=';
+
+        value: number | null;
+      }
+
+      export interface StringColumnFilter {
+        /**
+         * The name of the column.
+         */
+        measurement: string;
+
+        operator: 'is' | '!=';
+
+        value: string | boolean;
       }
     }
   }
