@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.0 (2026-01-09)
+
+Full Changelog: [v0.21.1...v0.22.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.21.1...v0.22.0)
+
+### Features
+
+* **closes OPEN-8532:** expose 'tests/{id}/results' endpoint ([d53a122](https://github.com/openlayer-ai/openlayer-ts/commit/d53a1227d3cc39d096e75796e769dc944cbfb60d))
+
 ## 0.21.1 (2026-01-08)
 
 Full Changelog: [v0.21.0...v0.21.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.21.0...v0.21.1)
