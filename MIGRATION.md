@@ -79,6 +79,7 @@ This affects the following methods:
 - `client.inferencePipelines.retrieve()`
 - `client.inferencePipelines.update()`
 - `client.inferencePipelines.testResults.list()`
+- `client.tests.listResults()`
 
 ### Removed `httpAgent` in favor of `fetchOptions`
 
