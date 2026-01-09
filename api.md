@@ -162,7 +162,9 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/tests.ts">TestEvaluateResponse</a></code>
+- <code><a href="./src/resources/tests.ts">TestListResultsResponse</a></code>
 
 Methods:
 
 - <code title="post /tests/{testId}/evaluate">client.tests.<a href="./src/resources/tests.ts">evaluate</a>(testID, { ...params }) -> TestEvaluateResponse</code>
+- <code title="get /tests/{testId}/results">client.tests.<a href="./src/resources/tests.ts">listResults</a>(testID, { ...params }) -> TestListResultsResponse</code>
