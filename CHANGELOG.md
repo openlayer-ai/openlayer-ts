@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.1 (2026-01-12)
+
+Full Changelog: [v0.22.0...v0.22.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.0...v0.22.1)
+
+### Chores
+
+* **closes OPEN-8576:** expose delete project endpoint ([5dce84b](https://github.com/openlayer-ai/openlayer-ts/commit/5dce84beecffbb707d22ac9035bb5f0e8e145400))
+
 ## 0.22.0 (2026-01-09)
 
 Full Changelog: [v0.21.1...v0.22.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.21.1...v0.22.0)
