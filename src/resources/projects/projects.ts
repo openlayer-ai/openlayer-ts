@@ -28,7 +28,9 @@ import {
   Tests,
 } from './tests';
 import { APIPromise } from '../../core/api-promise';
+import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
+import { path } from '../../internal/utils/path';
 
 export class Projects extends APIResource {
   commits: CommitsAPI.Commits = new CommitsAPI.Commits(this._client);
@@ -65,6 +67,23 @@ export class Projects extends APIResource {
     options?: RequestOptions,
   ): APIPromise<ProjectListResponse> {
     return this._client.get('/projects', { query, ...options });
+  }
+
+  /**
+   * Delete a project by its ID.
+   *
+   * @example
+   * ```ts
+   * await client.projects.delete(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
+   */
+  delete(projectID: string, options?: RequestOptions): APIPromise<void> {
+    return this._client.delete(path`/projects/${projectID}`, {
+      ...options,
+      headers: buildHeaders([{ Accept: '*/*' }, options?.headers]),
+    });
   }
 }
 
