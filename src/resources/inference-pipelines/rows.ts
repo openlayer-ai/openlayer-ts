@@ -45,12 +45,12 @@ export interface RowUpdateParams {
   inferenceId: string;
 
   /**
-   * Body param:
+   * Body param
    */
   row: unknown;
 
   /**
-   * Body param:
+   * Body param
    */
   config?: RowUpdateParams.Config | null;
 }
