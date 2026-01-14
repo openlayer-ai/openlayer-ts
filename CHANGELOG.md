@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.2 (2026-01-14)
+
+Full Changelog: [v0.22.1...v0.22.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.1...v0.22.2)
+
+### Chores
+
+* fix typo in descriptions ([f269804](https://github.com/openlayer-ai/openlayer-ts/commit/f2698047de4d1e6432c4e62e2609ca2d40b0de93))
+
 ## 0.22.1 (2026-01-12)
 
 Full Changelog: [v0.22.0...v0.22.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.0...v0.22.1)
