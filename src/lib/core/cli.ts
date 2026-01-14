@@ -42,6 +42,85 @@ export interface Config {
   numOfTokenColumnName?: string;
 }
 
+export type DatasetFormat = 'csv' | 'json';
+
+export function detectDatasetFormat(datasetPath: string): DatasetFormat {
+  const ext = path.extname(datasetPath).toLowerCase();
+  if (ext === '.csv') {
+    return 'csv';
+  }
+  if (ext === '.json') {
+    return 'json';
+  }
+  throw new Error(`Unsupported dataset format: ${datasetPath}`);
+}
+
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && next === '"') {
+        current += '"';
+        i += 1; // skip escaped quote
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        current += char;
+      }
+    } else if (char === ',') {
+      result.push(current);
+      current = '';
+    } else if (char === '"') {
+      inQuotes = true;
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current);
+  return result;
+}
+
+export function parseCsv(content: string): Record<string, string>[] {
+  const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const headers = parseCsvLine(lines[0]!);
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((header, idx) => {
+      row[header] = values[idx] ?? '';
+    });
+    return row;
+  });
+}
+
+export function loadDataset(datasetPath: string): { data: any[]; format: DatasetFormat } {
+  const datasetFullPath = path.resolve(datasetPath);
+  const rawData = fs.readFileSync(datasetFullPath, 'utf8');
+  const format = detectDatasetFormat(datasetFullPath);
+
+  if (format === 'json') {
+    const parsed = JSON.parse(rawData);
+    if (!Array.isArray(parsed)) {
+      throw new Error('Dataset JSON must be an array of records');
+    }
+    return { data: parsed, format };
+  }
+
+  const parsed = parseCsv(rawData);
+  return { data: parsed, format };
+}
+
 class CLIHandler {
   private run: (...args: any[]) => Promise<any>;
 
@@ -59,10 +138,7 @@ class CLIHandler {
     const options = program.opts();
     const { datasetPath, outputDir } = options;
 
-    // Load dataset
-    const datasetFullPath = path.resolve(datasetPath);
-    const rawData = fs.readFileSync(datasetFullPath, 'utf8');
-    const dataset = JSON.parse(rawData);
+    const { data: dataset } = loadDataset(datasetPath);
 
     // Process each item in the dataset dynamically
     Promise.all<Output>(
