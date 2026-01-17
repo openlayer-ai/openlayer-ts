@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.22.3 (2026-01-17)
+
+Full Changelog: [v0.22.2...v0.22.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.2...v0.22.3)
+
+### Chores
+
+* **internal:** update `actions/checkout` version ([cd1e79b](https://github.com/openlayer-ai/openlayer-ts/commit/cd1e79b30f0fa232613679a25ad835252beb299e))
+* **internal:** upgrade babel, qs, js-yaml ([edec21f](https://github.com/openlayer-ai/openlayer-ts/commit/edec21f59343c9e9b2c893100f3a6e12d8591690))
+
 ## 0.22.2 (2026-01-14)
 
 Full Changelog: [v0.22.1...v0.22.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.1...v0.22.2)
