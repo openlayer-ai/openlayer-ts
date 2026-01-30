@@ -14,11 +14,22 @@ import Openlayer from '../../index';
 
 let currentTrace: Trace | null = null;
 
-const publish = process.env['OPENLAYER_DISABLE_PUBLISH'] != 'true';
+// Lazy-initialized Openlayer client to ensure environment variables are loaded
 let client: Openlayer | null = null;
-if (publish) {
-  console.debug('Publishing is enabled');
-  client = new Openlayer();
+let clientInitialized = false;
+
+function getOpenlayerClient(): Openlayer | null {
+  if (clientInitialized) {
+    return client;
+  }
+  clientInitialized = true;
+
+  const publish = process.env['OPENLAYER_DISABLE_PUBLISH'] !== 'true';
+  if (publish) {
+    console.debug('Publishing is enabled');
+    client = new Openlayer();
+  }
+  return client;
 }
 
 export function getCurrentTrace(): Trace | null {
@@ -85,10 +96,11 @@ function createStep(
       // Post process trace and get the input variable names
       const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
 
-      if (publish && inferencePipelineId) {
+      const openlayerClient = getOpenlayerClient();
+      if (openlayerClient && inferencePipelineId) {
         console.debug('Uploading trace to Openlayer...');
 
-        client!.inferencePipelines.data
+        openlayerClient.inferencePipelines.data
           .stream(inferencePipelineId, {
             config: {
               outputColumnName: 'output',
@@ -121,8 +133,8 @@ function createStep(
             );
           });
       } else {
-        if (!publish) {
-          console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true)');
+        if (!openlayerClient) {
+          console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true or missing API key)');
         } else if (!inferencePipelineId) {
           console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
         }
