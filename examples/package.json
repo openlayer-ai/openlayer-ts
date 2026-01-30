@@ -14,8 +14,8 @@
     "@langchain/openai": "^0.6.17",
     "form-data": "^4.0.4",
     "langchain": "^0.3.37",
-    "openai": "^5.20.3",
-    "openlayer": "^0.20.0"
+    "openai": "^4.104.0",
+    "openlayer": "^0.22.2"
   },
   "devDependencies": {
     "tsx": "^4.21.0",
