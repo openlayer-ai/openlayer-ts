@@ -71,6 +71,29 @@ export class InferencePipelines extends APIResource {
       headers: buildHeaders([{ Accept: '*/*' }, options?.headers]),
     });
   }
+
+  /**
+   * Get aggregated user data for an inference pipeline with pagination and metadata.
+   *
+   * Returns a list of users who have interacted with the inference pipeline,
+   * including their activity statistics such as session counts, record counts, token
+   * usage, and costs.
+   *
+   * @example
+   * ```ts
+   * const response =
+   *   await client.inferencePipelines.retrieveUsers(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
+   */
+  retrieveUsers(
+    inferencePipelineID: string,
+    query: InferencePipelineRetrieveUsersParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineRetrieveUsersResponse> {
+    return this._client.get(path`/inference-pipelines/${inferencePipelineID}/users`, { query, ...options });
+  }
 }
 
 export interface InferencePipelineRetrieveResponse {
@@ -809,6 +832,52 @@ export namespace InferencePipelineUpdateResponse {
   }
 }
 
+export interface InferencePipelineRetrieveUsersResponse {
+  /**
+   * Array of user aggregation data
+   */
+  items: Array<InferencePipelineRetrieveUsersResponse.Item>;
+}
+
+export namespace InferencePipelineRetrieveUsersResponse {
+  export interface Item {
+    /**
+     * The unique user identifier
+     */
+    id: string;
+
+    /**
+     * Total cost for this user
+     */
+    cost: number;
+
+    /**
+     * Timestamp of the user's first event/trace
+     */
+    dateOfFirstRecord: string;
+
+    /**
+     * Timestamp of the user's last event/trace
+     */
+    dateOfLastRecord: string;
+
+    /**
+     * Total number of traces/rows for this user
+     */
+    records: number;
+
+    /**
+     * Count of unique sessions for this user
+     */
+    sessions: number;
+
+    /**
+     * Total token count for this user
+     */
+    tokens: number;
+  }
+}
+
 export interface InferencePipelineRetrieveParams {
   /**
    * Expand specific nested objects.
@@ -834,6 +903,18 @@ export interface InferencePipelineUpdateParams {
   referenceDatasetUri?: string | null;
 }
 
+export interface InferencePipelineRetrieveUsersParams {
+  /**
+   * The page to return in a paginated query.
+   */
+  page?: number;
+
+  /**
+   * Maximum number of items to return per page.
+   */
+  perPage?: number;
+}
+
 InferencePipelines.Data = Data;
 InferencePipelines.Rows = Rows;
 InferencePipelines.TestResults = TestResults;
@@ -842,8 +923,10 @@ export declare namespace InferencePipelines {
   export {
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveUsersResponse as InferencePipelineRetrieveUsersResponse,
     type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+    type InferencePipelineRetrieveUsersParams as InferencePipelineRetrieveUsersParams,
   };
 
   export {

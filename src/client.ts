@@ -28,6 +28,8 @@ import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
 import {
   InferencePipelineRetrieveParams,
   InferencePipelineRetrieveResponse,
+  InferencePipelineRetrieveUsersParams,
+  InferencePipelineRetrieveUsersResponse,
   InferencePipelineUpdateParams,
   InferencePipelineUpdateResponse,
   InferencePipelines,
@@ -779,8 +781,10 @@ export declare namespace Openlayer {
     InferencePipelines as InferencePipelines,
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveUsersResponse as InferencePipelineRetrieveUsersResponse,
     type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+    type InferencePipelineRetrieveUsersParams as InferencePipelineRetrieveUsersParams,
   };
 
   export { Storage as Storage };
