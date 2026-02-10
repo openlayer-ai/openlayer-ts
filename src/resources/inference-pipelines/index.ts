@@ -5,8 +5,10 @@ export {
   InferencePipelines,
   type InferencePipelineRetrieveResponse,
   type InferencePipelineUpdateResponse,
+  type InferencePipelineRetrieveUsersResponse,
   type InferencePipelineRetrieveParams,
   type InferencePipelineUpdateParams,
+  type InferencePipelineRetrieveUsersParams,
 } from './inference-pipelines';
 export { Rows, type RowUpdateResponse, type RowUpdateParams } from './rows';
 export { TestResults, type TestResultListResponse, type TestResultListParams } from './test-results';
