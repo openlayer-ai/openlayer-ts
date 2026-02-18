@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.23.0 (2026-02-18)
+
+Full Changelog: [v0.22.2...v0.23.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.2...v0.23.0)
+
+### Features
+
+* **closes OPEN-7560:** update openAI tracer for Responses API ([f317c69](https://github.com/openlayer-ai/openlayer-ts/commit/f317c69547d991c15a56b6d946815333c3c834d4))
+
+
+### Bug Fixes
+
+* **client:** avoid memory leak with abort signals ([ac632d1](https://github.com/openlayer-ai/openlayer-ts/commit/ac632d1bf6003f7ef4f0d4da8047b86b158c5be4))
+* **client:** avoid removing abort listener too early ([7a1e23a](https://github.com/openlayer-ai/openlayer-ts/commit/7a1e23a9cc1b852050fe0b602c968fdd024d0f90))
+* linting issues ([85c2b91](https://github.com/openlayer-ai/openlayer-ts/commit/85c2b912b6f1f3eb0a866499169a5162b32ba32f))
+
+
+### Chores
+
+* **ci:** upgrade `actions/github-script` ([e0ef477](https://github.com/openlayer-ai/openlayer-ts/commit/e0ef477dc7f5042f11bd3aea4fae2901b81ba22d))
+* **client:** do not parse responses with empty content-length ([9020c0d](https://github.com/openlayer-ai/openlayer-ts/commit/9020c0d48e5c2f30073c0df187c579c90432c07c))
+* **client:** restructure abort controller binding ([fa81c52](https://github.com/openlayer-ai/openlayer-ts/commit/fa81c522c2c310c8cf5339268d91cec4e80c43ff))
+* **closes OPEN-8647:** add endpoint to retrieve aggregated user data for inference pipelines ([be1da42](https://github.com/openlayer-ai/openlayer-ts/commit/be1da42e273981c4bfcfe0c52333882defe6daa9))
+* **internal/client:** fix form-urlencoded requests ([15bbb24](https://github.com/openlayer-ai/openlayer-ts/commit/15bbb247edb716f0a498895557238539bc45846d))
+* **internal:** avoid type checking errors with ts-reset ([7eb0085](https://github.com/openlayer-ai/openlayer-ts/commit/7eb00857d6676731765c884d7ea5a2a027d74a92))
+* **internal:** update `actions/checkout` version ([cd1e79b](https://github.com/openlayer-ai/openlayer-ts/commit/cd1e79b30f0fa232613679a25ad835252beb299e))
+* **internal:** upgrade babel, qs, js-yaml ([edec21f](https://github.com/openlayer-ai/openlayer-ts/commit/edec21f59343c9e9b2c893100f3a6e12d8591690))
+
 ## 0.22.2 (2026-01-14)
 
 Full Changelog: [v0.22.1...v0.22.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.1...v0.22.2)

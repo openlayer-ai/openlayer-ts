@@ -28,6 +28,8 @@ import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
 import {
   InferencePipelineRetrieveParams,
   InferencePipelineRetrieveResponse,
+  InferencePipelineRetrieveUsersParams,
+  InferencePipelineRetrieveUsersResponse,
   InferencePipelineUpdateParams,
   InferencePipelineUpdateResponse,
   InferencePipelines,
@@ -467,7 +469,7 @@ export class Openlayer {
       loggerFor(this).info(`${responseInfo} - ${retryMessage}`);
 
       const errText = await response.text().catch((err: any) => castToError(err).message);
-      const errJSON = safeJSON(errText);
+      const errJSON = safeJSON(errText) as any;
       const errMessage = errJSON ? undefined : errText;
 
       loggerFor(this).debug(
@@ -508,9 +510,10 @@ export class Openlayer {
     controller: AbortController,
   ): Promise<Response> {
     const { signal, method, ...options } = init || {};
-    if (signal) signal.addEventListener('abort', () => controller.abort());
+    const abort = this._makeAbort(controller);
+    if (signal) signal.addEventListener('abort', abort, { once: true });
 
-    const timeout = setTimeout(() => controller.abort(), ms);
+    const timeout = setTimeout(abort, ms);
 
     const isReadableBody =
       ((globalThis as any).ReadableStream && options.body instanceof (globalThis as any).ReadableStream) ||
@@ -677,6 +680,12 @@ export class Openlayer {
     return headers.values;
   }
 
+  private _makeAbort(controller: AbortController) {
+    // note: we can't just inline this method inside `fetchWithTimeout()` because then the closure
+    //       would capture all request options, and cause a memory leak.
+    return () => controller.abort();
+  }
+
   private buildBody({ options: { body, headers: rawHeaders } }: { options: FinalRequestOptions }): {
     bodyHeaders: HeadersLike;
     body: BodyInit | undefined;
@@ -709,6 +718,14 @@ export class Openlayer {
         (Symbol.iterator in body && 'next' in body && typeof body.next === 'function'))
     ) {
       return { bodyHeaders: undefined, body: Shims.ReadableStreamFrom(body as AsyncIterable<Uint8Array>) };
+    } else if (
+      typeof body === 'object' &&
+      headers.values.get('content-type') === 'application/x-www-form-urlencoded'
+    ) {
+      return {
+        bodyHeaders: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: this.stringifyQuery(body as Record<string, unknown>),
+      };
     } else {
       return this.#encoder({ body, headers });
     }
@@ -772,8 +789,10 @@ export declare namespace Openlayer {
     InferencePipelines as InferencePipelines,
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveUsersResponse as InferencePipelineRetrieveUsersResponse,
     type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+    type InferencePipelineRetrieveUsersParams as InferencePipelineRetrieveUsersParams,
   };
 
   export { Storage as Storage };
