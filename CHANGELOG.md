@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.1 (2026-02-20)
+
+Full Changelog: [v0.23.0...v0.23.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.0...v0.23.1)
+
+### Chores
+
+* update mock server docs ([7c5374b](https://github.com/openlayer-ai/openlayer-ts/commit/7c5374b44dd9cc9d34373d20fb49f23e813d5afe))
+
 ## 0.23.0 (2026-02-18)
 
 Full Changelog: [v0.22.2...v0.23.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.22.2...v0.23.0)
