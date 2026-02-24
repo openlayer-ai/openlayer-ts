@@ -60,7 +60,7 @@ $ yarn link openlayer
 # With pnpm
 $ pnpm link --global
 $ cd ../my-package
-$ pnpm link -—global openlayer
+$ pnpm link --global openlayer
 ```
 
 ## Running tests
