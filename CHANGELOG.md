@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.2 (2026-02-24)
+
+Full Changelog: [v0.23.1...v0.23.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.1...v0.23.2)
+
+### Bug Fixes
+
+* **docs/contributing:** correct pnpm link command ([0101be2](https://github.com/openlayer-ai/openlayer-ts/commit/0101be2f3fb286447df6ffc415a2e9b664653596))
+
 ## 0.23.1 (2026-02-20)
 
 Full Changelog: [v0.23.0...v0.23.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.0...v0.23.1)
