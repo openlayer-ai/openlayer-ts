@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.3 (2026-02-27)
+
+Full Changelog: [v0.23.2...v0.23.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.2...v0.23.3)
+
+### Chores
+
+* **internal:** move stringifyQuery implementation to internal function ([f10ee40](https://github.com/openlayer-ai/openlayer-ts/commit/f10ee40e10a733c61efd6d42395c50a035c41c74))
+
 ## 0.23.2 (2026-02-24)
 
 Full Changelog: [v0.23.1...v0.23.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.1...v0.23.2)
