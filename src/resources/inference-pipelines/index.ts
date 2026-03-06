@@ -10,5 +10,11 @@ export {
   type InferencePipelineUpdateParams,
   type InferencePipelineRetrieveUsersParams,
 } from './inference-pipelines';
-export { Rows, type RowUpdateResponse, type RowUpdateParams } from './rows';
+export {
+  Rows,
+  type RowCreateResponse,
+  type RowUpdateResponse,
+  type RowCreateParams,
+  type RowUpdateParams,
+} from './rows';
 export { TestResults, type TestResultListResponse, type TestResultListParams } from './test-results';
