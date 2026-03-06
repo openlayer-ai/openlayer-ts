@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.24.0 (2026-03-06)
+
+Full Changelog: [v0.23.3...v0.24.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.3...v0.24.0)
+
+### Features
+
+* **api:** update POST /rows to use list method name ([2b2dae8](https://github.com/openlayer-ai/openlayer-ts/commit/2b2dae84c570db5d33e9ad074556e4398d12be8c))
+* **closes OPEN-9425:** document /rows endpoint in API reference and … ([1de68b4](https://github.com/openlayer-ai/openlayer-ts/commit/1de68b413eab1dd0b35bb286d6b7ab95bddb1e35))
+
+
+### Chores
+
+* **internal:** codegen related update ([4c9d687](https://github.com/openlayer-ai/openlayer-ts/commit/4c9d687f10cac67ddb467f95575b44fc27d75988))
+* **test:** do not count install time for mock server timeout ([72c2e00](https://github.com/openlayer-ai/openlayer-ts/commit/72c2e0057d230624025e865517062e2910c5b0c1))
+
 ## 0.23.3 (2026-02-27)
 
 Full Changelog: [v0.23.2...v0.23.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.2...v0.23.3)
