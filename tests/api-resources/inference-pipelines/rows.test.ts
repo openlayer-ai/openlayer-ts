@@ -8,46 +8,6 @@ const client = new Openlayer({
 });
 
 describe('resource rows', () => {
-  test('create', async () => {
-    const responsePromise = client.inferencePipelines.rows.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
-    const rawResponse = await responsePromise.asResponse();
-    expect(rawResponse).toBeInstanceOf(Response);
-    const response = await responsePromise;
-    expect(response).not.toBeInstanceOf(Response);
-    const dataAndResponse = await responsePromise.withResponse();
-    expect(dataAndResponse.data).toBe(response);
-    expect(dataAndResponse.response).toBe(rawResponse);
-  });
-
-  test('create: request options and params are passed correctly', async () => {
-    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
-    await expect(
-      client.inferencePipelines.rows.create(
-        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-        {
-          asc: true,
-          page: 1,
-          perPage: 1,
-          sortColumn: 'sortColumn',
-          columnFilters: [
-            {
-              measurement: 'openlayer_token_set',
-              operator: 'contains_none',
-              value: ['cat'],
-            },
-          ],
-          excludeRowIdList: [0],
-          notSearchQueryAnd: ['string'],
-          notSearchQueryOr: ['string'],
-          rowIdList: [0],
-          searchQueryAnd: ['string'],
-          searchQueryOr: ['string'],
-        },
-        { path: '/_stainless_unknown_path' },
-      ),
-    ).rejects.toThrow(Openlayer.NotFoundError);
-  });
-
   test('update: only required params', async () => {
     const responsePromise = client.inferencePipelines.rows.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
       inferenceId: 'inferenceId',
@@ -74,5 +34,45 @@ describe('resource rows', () => {
         timestampColumnName: 'timestamp',
       },
     });
+  });
+
+  test('list', async () => {
+    const responsePromise = client.inferencePipelines.rows.list('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('list: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      client.inferencePipelines.rows.list(
+        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+        {
+          asc: true,
+          page: 1,
+          perPage: 1,
+          sortColumn: 'sortColumn',
+          columnFilters: [
+            {
+              measurement: 'openlayer_token_set',
+              operator: 'contains_none',
+              value: ['cat'],
+            },
+          ],
+          excludeRowIdList: [0],
+          notSearchQueryAnd: ['string'],
+          notSearchQueryOr: ['string'],
+          rowIdList: [0],
+          searchQueryAnd: ['string'],
+          searchQueryOr: ['string'],
+        },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Openlayer.NotFoundError);
   });
 });

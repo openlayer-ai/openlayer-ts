@@ -79,7 +79,7 @@ This affects the following methods:
 - `client.inferencePipelines.retrieve()`
 - `client.inferencePipelines.update()`
 - `client.inferencePipelines.retrieveUsers()`
-- `client.inferencePipelines.rows.create()`
+- `client.inferencePipelines.rows.list()`
 - `client.inferencePipelines.testResults.list()`
 - `client.tests.listResults()`
 

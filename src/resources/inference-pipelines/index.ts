@@ -12,9 +12,9 @@ export {
 } from './inference-pipelines';
 export {
   Rows,
-  type RowCreateResponse,
   type RowUpdateResponse,
-  type RowCreateParams,
+  type RowListResponse,
   type RowUpdateParams,
+  type RowListParams,
 } from './rows';
 export { TestResults, type TestResultListResponse, type TestResultListParams } from './test-results';
