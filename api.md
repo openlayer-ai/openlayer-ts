@@ -132,13 +132,13 @@ Methods:
 
 Types:
 
-- <code><a href="./src/resources/inference-pipelines/rows.ts">RowCreateResponse</a></code>
 - <code><a href="./src/resources/inference-pipelines/rows.ts">RowUpdateResponse</a></code>
+- <code><a href="./src/resources/inference-pipelines/rows.ts">RowListResponse</a></code>
 
 Methods:
 
-- <code title="post /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">create</a>(inferencePipelineID, { ...params }) -> RowCreateResponse</code>
 - <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">update</a>(inferencePipelineID, { ...params }) -> RowUpdateResponse</code>
+- <code title="post /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">list</a>(inferencePipelineID, { ...params }) -> RowListResponse</code>
 
 ## TestResults
 

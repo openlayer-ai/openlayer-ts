@@ -7,29 +7,6 @@ import { path } from '../../internal/utils/path';
 
 export class Rows extends APIResource {
   /**
-   * A list of rows for an inference pipeline.
-   *
-   * @example
-   * ```ts
-   * const row = await client.inferencePipelines.rows.create(
-   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-   * );
-   * ```
-   */
-  create(
-    inferencePipelineID: string,
-    params: RowCreateParams | null | undefined = {},
-    options?: RequestOptions,
-  ): APIPromise<RowCreateResponse> {
-    const { asc, page, perPage, sortColumn, ...body } = params ?? {};
-    return this._client.post(path`/inference-pipelines/${inferencePipelineID}/rows`, {
-      query: { asc, page, perPage, sortColumn },
-      body,
-      ...options,
-    });
-  }
-
-  /**
    * Update an inference data point in an inference pipeline.
    *
    * @example
@@ -55,15 +32,28 @@ export class Rows extends APIResource {
       ...options,
     });
   }
-}
 
-export interface RowCreateResponse {
-  items: Array<RowCreateResponse.Item>;
-}
-
-export namespace RowCreateResponse {
-  export interface Item {
-    openlayer_row_id: number;
+  /**
+   * A list of rows for an inference pipeline.
+   *
+   * @example
+   * ```ts
+   * const rows = await client.inferencePipelines.rows.list(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
+   */
+  list(
+    inferencePipelineID: string,
+    params: RowListParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<RowListResponse> {
+    const { asc, page, perPage, sortColumn, ...body } = params ?? {};
+    return this._client.post(path`/inference-pipelines/${inferencePipelineID}/rows`, {
+      query: { asc, page, perPage, sortColumn },
+      body,
+      ...options,
+    });
   }
 }
 
@@ -71,97 +61,13 @@ export interface RowUpdateResponse {
   success: true;
 }
 
-export interface RowCreateParams {
-  /**
-   * Query param: Whether or not to sort on the sortColumn in ascending order.
-   */
-  asc?: boolean;
-
-  /**
-   * Query param: The page to return in a paginated query.
-   */
-  page?: number;
-
-  /**
-   * Query param: Maximum number of items to return per page.
-   */
-  perPage?: number;
-
-  /**
-   * Query param: Name of the column to sort on
-   */
-  sortColumn?: string;
-
-  /**
-   * Body param
-   */
-  columnFilters?: Array<
-    RowCreateParams.SetColumnFilter | RowCreateParams.NumericColumnFilter | RowCreateParams.StringColumnFilter
-  > | null;
-
-  /**
-   * Body param
-   */
-  excludeRowIdList?: Array<number> | null;
-
-  /**
-   * Body param
-   */
-  notSearchQueryAnd?: Array<string> | null;
-
-  /**
-   * Body param
-   */
-  notSearchQueryOr?: Array<string> | null;
-
-  /**
-   * Body param
-   */
-  rowIdList?: Array<number> | null;
-
-  /**
-   * Body param
-   */
-  searchQueryAnd?: Array<string> | null;
-
-  /**
-   * Body param
-   */
-  searchQueryOr?: Array<string> | null;
+export interface RowListResponse {
+  items: Array<RowListResponse.Item>;
 }
 
-export namespace RowCreateParams {
-  export interface SetColumnFilter {
-    /**
-     * The name of the column.
-     */
-    measurement: string;
-
-    operator: 'contains_none' | 'contains_any' | 'contains_all' | 'one_of' | 'none_of';
-
-    value: Array<string | number>;
-  }
-
-  export interface NumericColumnFilter {
-    /**
-     * The name of the column.
-     */
-    measurement: string;
-
-    operator: '>' | '>=' | 'is' | '<' | '<=' | '!=';
-
-    value: number | null;
-  }
-
-  export interface StringColumnFilter {
-    /**
-     * The name of the column.
-     */
-    measurement: string;
-
-    operator: 'is' | '!=';
-
-    value: string | boolean;
+export namespace RowListResponse {
+  export interface Item {
+    openlayer_row_id: number;
   }
 }
 
@@ -214,11 +120,105 @@ export namespace RowUpdateParams {
   }
 }
 
+export interface RowListParams {
+  /**
+   * Query param: Whether or not to sort on the sortColumn in ascending order.
+   */
+  asc?: boolean;
+
+  /**
+   * Query param: The page to return in a paginated query.
+   */
+  page?: number;
+
+  /**
+   * Query param: Maximum number of items to return per page.
+   */
+  perPage?: number;
+
+  /**
+   * Query param: Name of the column to sort on
+   */
+  sortColumn?: string;
+
+  /**
+   * Body param
+   */
+  columnFilters?: Array<
+    RowListParams.SetColumnFilter | RowListParams.NumericColumnFilter | RowListParams.StringColumnFilter
+  > | null;
+
+  /**
+   * Body param
+   */
+  excludeRowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryOr?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  rowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryOr?: Array<string> | null;
+}
+
+export namespace RowListParams {
+  export interface SetColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'contains_none' | 'contains_any' | 'contains_all' | 'one_of' | 'none_of';
+
+    value: Array<string | number>;
+  }
+
+  export interface NumericColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: '>' | '>=' | 'is' | '<' | '<=' | '!=';
+
+    value: number | null;
+  }
+
+  export interface StringColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'is' | '!=';
+
+    value: string | boolean;
+  }
+}
+
 export declare namespace Rows {
   export {
-    type RowCreateResponse as RowCreateResponse,
     type RowUpdateResponse as RowUpdateResponse,
-    type RowCreateParams as RowCreateParams,
+    type RowListResponse as RowListResponse,
     type RowUpdateParams as RowUpdateParams,
+    type RowListParams as RowListParams,
   };
 }
