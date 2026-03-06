@@ -4,7 +4,7 @@ import { APIResource } from '../../core/resource';
 import * as DataAPI from './data';
 import { Data, DataStreamParams, DataStreamResponse } from './data';
 import * as RowsAPI from './rows';
-import { RowUpdateParams, RowUpdateResponse, Rows } from './rows';
+import { RowCreateParams, RowCreateResponse, RowUpdateParams, RowUpdateResponse, Rows } from './rows';
 import * as TestResultsAPI from './test-results';
 import { TestResultListParams, TestResultListResponse, TestResults } from './test-results';
 import { APIPromise } from '../../core/api-promise';
@@ -937,7 +937,9 @@ export declare namespace InferencePipelines {
 
   export {
     Rows as Rows,
+    type RowCreateResponse as RowCreateResponse,
     type RowUpdateResponse as RowUpdateResponse,
+    type RowCreateParams as RowCreateParams,
     type RowUpdateParams as RowUpdateParams,
   };
 
