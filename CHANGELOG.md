@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.24.1 (2026-03-08)
+
+Full Changelog: [v0.24.0...v0.24.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.0...v0.24.1)
+
+### Bug Fixes
+
+* **client:** preserve URL params already embedded in path ([2bd51c5](https://github.com/openlayer-ai/openlayer-ts/commit/2bd51c577efeb4ba5ff1f1abe2cf044bf4b93d7d))
+
+
+### Chores
+
+* **ci:** skip uploading artifacts on stainless-internal branches ([4ce2deb](https://github.com/openlayer-ai/openlayer-ts/commit/4ce2deb1a4657540d4234afee071d0fad53950e9))
+
 ## 0.24.0 (2026-03-06)
 
 Full Changelog: [v0.23.3...v0.24.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.23.3...v0.24.0)
