@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.24.2 (2026-03-10)
+
+Full Changelog: [v0.24.1...v0.24.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.1...v0.24.2)
+
+### Chores
+
+* **internal:** update dependencies to address dependabot vulnerabilities ([1fbea9b](https://github.com/openlayer-ai/openlayer-ts/commit/1fbea9bfbbb9c5a0a80a7122d9df4b49c0a97920))
+
 ## 0.24.1 (2026-03-08)
 
 Full Changelog: [v0.24.0...v0.24.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.0...v0.24.1)
