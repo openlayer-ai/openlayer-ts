@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.24.3 (2026-03-20)
+
+Full Changelog: [v0.24.2...v0.24.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.2...v0.24.3)
+
+### Chores
+
+* **internal:** tweak CI branches ([70b9ea6](https://github.com/openlayer-ai/openlayer-ts/commit/70b9ea646bc03ce2b905639b871acce913a70cbc))
+
+
+### Refactors
+
+* **tests:** switch from prism to steady ([d0f274b](https://github.com/openlayer-ai/openlayer-ts/commit/d0f274b10bbae1d7a0732d2f3594e00dc75685e4))
+
 ## 0.24.2 (2026-03-10)
 
 Full Changelog: [v0.24.1...v0.24.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.1...v0.24.2)
