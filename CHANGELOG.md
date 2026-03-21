@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.4 (2026-03-21)
+
+Full Changelog: [v0.24.3...v0.24.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.3...v0.24.4)
+
+### Chores
+
+* **tests:** bump steady to v0.19.4 ([1f8016d](https://github.com/openlayer-ai/openlayer-ts/commit/1f8016dff7b893231261ddc7bb0b8f64e1f4e125))
+* **tests:** bump steady to v0.19.5 ([c7ccced](https://github.com/openlayer-ai/openlayer-ts/commit/c7ccceda93edf53c0692b1f1882353a70f419adf))
+
 ## 0.24.3 (2026-03-20)
 
 Full Changelog: [v0.24.2...v0.24.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.2...v0.24.3)
