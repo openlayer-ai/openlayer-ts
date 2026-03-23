@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.25.0 (2026-03-23)
+
+Full Changelog: [v0.24.3...v0.25.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.3...v0.25.0)
+
+### Features
+
+* **closes OPEN-5988:** openlayer-ts should accept csv datasets ([5399658](https://github.com/openlayer-ai/openlayer-ts/commit/5399658a40a29593943b225030becbbcbe0dde91))
+
+
+### Chores
+
+* **tests:** bump steady to v0.19.4 ([140fde6](https://github.com/openlayer-ai/openlayer-ts/commit/140fde6da9cc92b76401d261ecc2c63461c23857))
+* **tests:** bump steady to v0.19.5 ([c0b13a9](https://github.com/openlayer-ai/openlayer-ts/commit/c0b13a972442028cc6b73f6c56cee0b97e85df02))
+
 ## 0.24.3 (2026-03-20)
 
 Full Changelog: [v0.24.2...v0.24.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.2...v0.24.3)
