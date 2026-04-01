@@ -73,6 +73,35 @@ export class InferencePipelines extends APIResource {
   }
 
   /**
+   * Get aggregated session data for an inference pipeline with pagination and
+   * metadata.
+   *
+   * Returns a list of sessions for the inference pipeline, including activity
+   * statistics such as record counts, token usage, cost, latency, and the first and
+   * last records.
+   *
+   * @example
+   * ```ts
+   * const response =
+   *   await client.inferencePipelines.retrieveSessions(
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   );
+   * ```
+   */
+  retrieveSessions(
+    inferencePipelineID: string,
+    params: InferencePipelineRetrieveSessionsParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<InferencePipelineRetrieveSessionsResponse> {
+    const { asc, page, perPage, sortColumn, ...body } = params ?? {};
+    return this._client.post(path`/inference-pipelines/${inferencePipelineID}/sessions`, {
+      query: { asc, page, perPage, sortColumn },
+      body,
+      ...options,
+    });
+  }
+
+  /**
    * Get aggregated user data for an inference pipeline with pagination and metadata.
    *
    * Returns a list of users who have interacted with the inference pipeline,
@@ -89,10 +118,15 @@ export class InferencePipelines extends APIResource {
    */
   retrieveUsers(
     inferencePipelineID: string,
-    query: InferencePipelineRetrieveUsersParams | null | undefined = {},
+    params: InferencePipelineRetrieveUsersParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<InferencePipelineRetrieveUsersResponse> {
-    return this._client.get(path`/inference-pipelines/${inferencePipelineID}/users`, { query, ...options });
+    const { asc, page, perPage, sortColumn, ...body } = params ?? {};
+    return this._client.post(path`/inference-pipelines/${inferencePipelineID}/users`, {
+      query: { asc, page, perPage, sortColumn },
+      body,
+      ...options,
+    });
   }
 }
 
@@ -832,6 +866,77 @@ export namespace InferencePipelineUpdateResponse {
   }
 }
 
+export interface InferencePipelineRetrieveSessionsResponse {
+  /**
+   * Array of session aggregation data
+   */
+  items: Array<InferencePipelineRetrieveSessionsResponse.Item>;
+}
+
+export namespace InferencePipelineRetrieveSessionsResponse {
+  export interface Item {
+    /**
+     * The unique session identifier
+     */
+    id: string;
+
+    /**
+     * Total cost for the session
+     */
+    cost: number;
+
+    /**
+     * Latest/most recent timestamp in the session
+     */
+    dateCreated: string;
+
+    /**
+     * Timestamp of the first request in the session
+     */
+    dateOfFirstRecord: string;
+
+    /**
+     * Timestamp of the last request in the session
+     */
+    dateOfLastRecord: string;
+
+    /**
+     * Duration between first and last request (in milliseconds)
+     */
+    duration: number;
+
+    /**
+     * The complete first record in the session
+     */
+    firstRecord: { [key: string]: unknown };
+
+    /**
+     * The complete last record in the session
+     */
+    lastRecord: { [key: string]: unknown };
+
+    /**
+     * Total latency for the session (in milliseconds)
+     */
+    latency: number;
+
+    /**
+     * Total number of records/traces in the session
+     */
+    records: number;
+
+    /**
+     * Total token count for the session
+     */
+    tokens: number;
+
+    /**
+     * List of unique user IDs that participated in this session
+     */
+    userIds: Array<string>;
+  }
+}
+
 export interface InferencePipelineRetrieveUsersResponse {
   /**
    * Array of user aggregation data
@@ -903,16 +1008,196 @@ export interface InferencePipelineUpdateParams {
   referenceDatasetUri?: string | null;
 }
 
-export interface InferencePipelineRetrieveUsersParams {
+export interface InferencePipelineRetrieveSessionsParams {
   /**
-   * The page to return in a paginated query.
+   * Query param: Whether or not to sort on the sortColumn in ascending order.
+   */
+  asc?: boolean;
+
+  /**
+   * Query param: The page to return in a paginated query.
    */
   page?: number;
 
   /**
-   * Maximum number of items to return per page.
+   * Query param: Maximum number of items to return per page.
    */
   perPage?: number;
+
+  /**
+   * Query param: Name of the column to sort on
+   */
+  sortColumn?: string;
+
+  /**
+   * Body param
+   */
+  columnFilters?: Array<
+    | InferencePipelineRetrieveSessionsParams.SetColumnFilter
+    | InferencePipelineRetrieveSessionsParams.NumericColumnFilter
+    | InferencePipelineRetrieveSessionsParams.StringColumnFilter
+  > | null;
+
+  /**
+   * Body param
+   */
+  excludeRowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryOr?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  rowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryOr?: Array<string> | null;
+}
+
+export namespace InferencePipelineRetrieveSessionsParams {
+  export interface SetColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'contains_none' | 'contains_any' | 'contains_all' | 'one_of' | 'none_of';
+
+    value: Array<string | number>;
+  }
+
+  export interface NumericColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: '>' | '>=' | 'is' | '<' | '<=' | '!=';
+
+    value: number | null;
+  }
+
+  export interface StringColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'is' | '!=';
+
+    value: string | boolean;
+  }
+}
+
+export interface InferencePipelineRetrieveUsersParams {
+  /**
+   * Query param: Whether or not to sort on the sortColumn in ascending order.
+   */
+  asc?: boolean;
+
+  /**
+   * Query param: The page to return in a paginated query.
+   */
+  page?: number;
+
+  /**
+   * Query param: Maximum number of items to return per page.
+   */
+  perPage?: number;
+
+  /**
+   * Query param: Name of the column to sort on
+   */
+  sortColumn?: string;
+
+  /**
+   * Body param
+   */
+  columnFilters?: Array<
+    | InferencePipelineRetrieveUsersParams.SetColumnFilter
+    | InferencePipelineRetrieveUsersParams.NumericColumnFilter
+    | InferencePipelineRetrieveUsersParams.StringColumnFilter
+  > | null;
+
+  /**
+   * Body param
+   */
+  excludeRowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  notSearchQueryOr?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  rowIdList?: Array<number> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryAnd?: Array<string> | null;
+
+  /**
+   * Body param
+   */
+  searchQueryOr?: Array<string> | null;
+}
+
+export namespace InferencePipelineRetrieveUsersParams {
+  export interface SetColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'contains_none' | 'contains_any' | 'contains_all' | 'one_of' | 'none_of';
+
+    value: Array<string | number>;
+  }
+
+  export interface NumericColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: '>' | '>=' | 'is' | '<' | '<=' | '!=';
+
+    value: number | null;
+  }
+
+  export interface StringColumnFilter {
+    /**
+     * The name of the column.
+     */
+    measurement: string;
+
+    operator: 'is' | '!=';
+
+    value: string | boolean;
+  }
 }
 
 InferencePipelines.Data = Data;
@@ -923,9 +1208,11 @@ export declare namespace InferencePipelines {
   export {
     type InferencePipelineRetrieveResponse as InferencePipelineRetrieveResponse,
     type InferencePipelineUpdateResponse as InferencePipelineUpdateResponse,
+    type InferencePipelineRetrieveSessionsResponse as InferencePipelineRetrieveSessionsResponse,
     type InferencePipelineRetrieveUsersResponse as InferencePipelineRetrieveUsersResponse,
     type InferencePipelineRetrieveParams as InferencePipelineRetrieveParams,
     type InferencePipelineUpdateParams as InferencePipelineUpdateParams,
+    type InferencePipelineRetrieveSessionsParams as InferencePipelineRetrieveSessionsParams,
     type InferencePipelineRetrieveUsersParams as InferencePipelineRetrieveUsersParams,
   };
 
