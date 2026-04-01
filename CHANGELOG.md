@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0 (2026-04-01)
+
+Full Changelog: [v0.25.1...v0.26.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.25.1...v0.26.0)
+
+### Features
+
+* Cid/fetching endpoints ([c342796](https://github.com/openlayer-ai/openlayer-ts/commit/c34279653495c39b10937deccb4e12e73d597e37))
+
 ## 0.25.1 (2026-04-01)
 
 Full Changelog: [v0.25.0...v0.25.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.25.0...v0.25.1)
