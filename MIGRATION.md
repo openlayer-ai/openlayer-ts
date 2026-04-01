@@ -78,6 +78,7 @@ This affects the following methods:
 - `client.commits.testResults.list()`
 - `client.inferencePipelines.retrieve()`
 - `client.inferencePipelines.update()`
+- `client.inferencePipelines.retrieveSessions()`
 - `client.inferencePipelines.retrieveUsers()`
 - `client.inferencePipelines.rows.list()`
 - `client.inferencePipelines.testResults.list()`
