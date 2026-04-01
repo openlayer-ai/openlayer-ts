@@ -109,6 +109,7 @@ Types:
 
 - <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineRetrieveResponse</a></code>
 - <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineUpdateResponse</a></code>
+- <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineRetrieveSessionsResponse</a></code>
 - <code><a href="./src/resources/inference-pipelines/inference-pipelines.ts">InferencePipelineRetrieveUsersResponse</a></code>
 
 Methods:
@@ -116,7 +117,8 @@ Methods:
 - <code title="get /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieve</a>(inferencePipelineID, { ...params }) -> InferencePipelineRetrieveResponse</code>
 - <code title="put /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">update</a>(inferencePipelineID, { ...params }) -> InferencePipelineUpdateResponse</code>
 - <code title="delete /inference-pipelines/{inferencePipelineId}">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">delete</a>(inferencePipelineID) -> void</code>
-- <code title="get /inference-pipelines/{inferencePipelineId}/users">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieveUsers</a>(inferencePipelineID, { ...params }) -> InferencePipelineRetrieveUsersResponse</code>
+- <code title="post /inference-pipelines/{inferencePipelineId}/sessions">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieveSessions</a>(inferencePipelineID, { ...params }) -> InferencePipelineRetrieveSessionsResponse</code>
+- <code title="post /inference-pipelines/{inferencePipelineId}/users">client.inferencePipelines.<a href="./src/resources/inference-pipelines/inference-pipelines.ts">retrieveUsers</a>(inferencePipelineID, { ...params }) -> InferencePipelineRetrieveUsersResponse</code>
 
 ## Data
 

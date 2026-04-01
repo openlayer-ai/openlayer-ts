@@ -5,9 +5,11 @@ export {
   InferencePipelines,
   type InferencePipelineRetrieveResponse,
   type InferencePipelineUpdateResponse,
+  type InferencePipelineRetrieveSessionsResponse,
   type InferencePipelineRetrieveUsersResponse,
   type InferencePipelineRetrieveParams,
   type InferencePipelineUpdateParams,
+  type InferencePipelineRetrieveSessionsParams,
   type InferencePipelineRetrieveUsersParams,
 } from './inference-pipelines/inference-pipelines';
 export {
