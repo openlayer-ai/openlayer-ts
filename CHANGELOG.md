@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.25.1 (2026-04-01)
+
+Full Changelog: [v0.25.0...v0.25.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.25.0...v0.25.1)
+
+### Chores
+
+* **ci:** skip lint on metadata-only changes ([bf22ece](https://github.com/openlayer-ai/openlayer-ts/commit/bf22ece21bc8e17b00a9da87cd8c9eb984bdf2a9))
+* **internal:** codegen related update ([de14f62](https://github.com/openlayer-ai/openlayer-ts/commit/de14f6278e45f5873d8f6869bf10f59bf768f217))
+* **internal:** update gitignore ([4ad8476](https://github.com/openlayer-ai/openlayer-ts/commit/4ad8476c3b9439328145b7ee161430f4bf96dbea))
+* **internal:** update multipart form array serialization ([ff5b7c5](https://github.com/openlayer-ai/openlayer-ts/commit/ff5b7c5bac7a792838100130d0088ccd9c8c4034))
+* **tests:** bump steady to v0.19.6 ([95fdecb](https://github.com/openlayer-ai/openlayer-ts/commit/95fdecb569d262dc6ee06b64839cfb352ef6d04d))
+* **tests:** bump steady to v0.19.7 ([cda96bc](https://github.com/openlayer-ai/openlayer-ts/commit/cda96bce52be048bff1b56018fc8dc1bd329c926))
+* **tests:** bump steady to v0.20.1 ([2f69c67](https://github.com/openlayer-ai/openlayer-ts/commit/2f69c67ae99ddfb5cc985182de453623adb4ed88))
+* **tests:** bump steady to v0.20.2 ([44d1aee](https://github.com/openlayer-ai/openlayer-ts/commit/44d1aeeee764de84c51f9cda5b532527c37dd886))
+
 ## 0.25.0 (2026-03-23)
 
 Full Changelog: [v0.24.3...v0.25.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.24.3...v0.25.0)
