@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.26.1 (2026-04-10)
+
+Full Changelog: [v0.26.0...v0.26.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.0...v0.26.1)
+
+### Chores
+
+* **internal:** codegen related update ([414ebb8](https://github.com/openlayer-ai/openlayer-ts/commit/414ebb846f0ef8519c558b01d524820dca2798d1))
+
+
+### Documentation
+
+* **closes OPEN-9953:** expose endpoints to get and delete a row ([eda7a8d](https://github.com/openlayer-ai/openlayer-ts/commit/eda7a8d1dd0a2f3a8ef31f9af96bc7fdf3792de3))
+
 ## 0.26.0 (2026-04-01)
 
 Full Changelog: [v0.25.1...v0.26.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.25.1...v0.26.0)
