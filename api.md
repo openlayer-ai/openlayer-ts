@@ -134,13 +134,16 @@ Methods:
 
 Types:
 
+- <code><a href="./src/resources/inference-pipelines/rows.ts">RowRetrieveResponse</a></code>
 - <code><a href="./src/resources/inference-pipelines/rows.ts">RowUpdateResponse</a></code>
 - <code><a href="./src/resources/inference-pipelines/rows.ts">RowListResponse</a></code>
 
 Methods:
 
+- <code title="get /inference-pipelines/{inferencePipelineId}/rows/{inferenceId}">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">retrieve</a>(inferenceID, { ...params }) -> RowRetrieveResponse</code>
 - <code title="put /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">update</a>(inferencePipelineID, { ...params }) -> RowUpdateResponse</code>
 - <code title="post /inference-pipelines/{inferencePipelineId}/rows">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">list</a>(inferencePipelineID, { ...params }) -> RowListResponse</code>
+- <code title="delete /inference-pipelines/{inferencePipelineId}/rows/{inferenceId}">client.inferencePipelines.rows.<a href="./src/resources/inference-pipelines/rows.ts">delete</a>(inferenceID, { ...params }) -> void</code>
 
 ## TestResults
 

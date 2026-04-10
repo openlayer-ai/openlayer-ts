@@ -2,5 +2,72 @@
   "pkg": "openlayer",
   "githubRepo": "https://github.com/openlayer-ai/openlayer-ts",
   "clientClass": "Openlayer",
-  "methods": []
+  "methods": [
+    {
+      "base": "inferencePipelines.rows",
+      "name": "retrieve",
+      "params": [
+        {
+          "type": "param",
+          "key": "inferenceId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "inferencePipelineId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "inferenceId",
+          "location": "path"
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "inferencePipelines.rows",
+      "name": "delete",
+      "params": [
+        {
+          "type": "param",
+          "key": "inferenceId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "inferencePipelineId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "inferenceId",
+          "location": "path"
+        },
+        {
+          "type": "options"
+        }
+      ]
+    }
+  ]
 }
