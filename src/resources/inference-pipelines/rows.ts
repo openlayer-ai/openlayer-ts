@@ -2,10 +2,34 @@
 
 import { APIResource } from '../../core/resource';
 import { APIPromise } from '../../core/api-promise';
+import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
 export class Rows extends APIResource {
+  /**
+   * Fetch a single inference pipeline row by inference ID, including OTel steps.
+   *
+   * @example
+   * ```ts
+   * const row = await client.inferencePipelines.rows.retrieve(
+   *   'inferenceId',
+   *   {
+   *     inferencePipelineId:
+   *       '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   *   },
+   * );
+   * ```
+   */
+  retrieve(
+    inferenceID: string,
+    params: RowRetrieveParams,
+    options?: RequestOptions,
+  ): APIPromise<RowRetrieveResponse> {
+    const { inferencePipelineId } = params;
+    return this._client.get(path`/inference-pipelines/${inferencePipelineId}/rows/${inferenceID}`, options);
+  }
+
   /**
    * Update an inference data point in an inference pipeline.
    *
@@ -55,6 +79,32 @@ export class Rows extends APIResource {
       ...options,
     });
   }
+
+  /**
+   * Delete a single inference pipeline row by inference ID. Only project admins can
+   * perform this action.
+   *
+   * @example
+   * ```ts
+   * await client.inferencePipelines.rows.delete('inferenceId', {
+   *   inferencePipelineId:
+   *     '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * });
+   * ```
+   */
+  delete(inferenceID: string, params: RowDeleteParams, options?: RequestOptions): APIPromise<void> {
+    const { inferencePipelineId } = params;
+    return this._client.delete(path`/inference-pipelines/${inferencePipelineId}/rows/${inferenceID}`, {
+      ...options,
+      headers: buildHeaders([{ Accept: '*/*' }, options?.headers]),
+    });
+  }
+}
+
+export interface RowRetrieveResponse {
+  row?: unknown;
+
+  success?: boolean;
 }
 
 export interface RowUpdateResponse {
@@ -69,6 +119,13 @@ export namespace RowListResponse {
   export interface Item {
     openlayer_row_id: number;
   }
+}
+
+export interface RowRetrieveParams {
+  /**
+   * The inference pipeline id (a UUID).
+   */
+  inferencePipelineId: string;
 }
 
 export interface RowUpdateParams {
@@ -214,11 +271,21 @@ export namespace RowListParams {
   }
 }
 
+export interface RowDeleteParams {
+  /**
+   * The inference pipeline id (a UUID).
+   */
+  inferencePipelineId: string;
+}
+
 export declare namespace Rows {
   export {
+    type RowRetrieveResponse as RowRetrieveResponse,
     type RowUpdateResponse as RowUpdateResponse,
     type RowListResponse as RowListResponse,
+    type RowRetrieveParams as RowRetrieveParams,
     type RowUpdateParams as RowUpdateParams,
     type RowListParams as RowListParams,
+    type RowDeleteParams as RowDeleteParams,
   };
 }

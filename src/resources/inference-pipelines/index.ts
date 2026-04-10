@@ -14,9 +14,12 @@ export {
 } from './inference-pipelines';
 export {
   Rows,
+  type RowRetrieveResponse,
   type RowUpdateResponse,
   type RowListResponse,
+  type RowRetrieveParams,
   type RowUpdateParams,
   type RowListParams,
+  type RowDeleteParams,
 } from './rows';
 export { TestResults, type TestResultListResponse, type TestResultListParams } from './test-results';
