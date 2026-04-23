@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.26.2 (2026-04-23)
+
+Full Changelog: [v0.26.1...v0.26.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.1...v0.26.2)
+
+### Chores
+
+* **internal:** codegen related update ([f797121](https://github.com/openlayer-ai/openlayer-ts/commit/f797121f638c6657f54c2a0902f010129499cdad))
+* **internal:** more robust bootstrap script ([61c63c5](https://github.com/openlayer-ai/openlayer-ts/commit/61c63c56f651c421b1b66fe7ecb0f2d6c0330969))
+* **tests:** bump steady to v0.22.1 ([01b42af](https://github.com/openlayer-ai/openlayer-ts/commit/01b42af4a9d207aace6e23c1435106d6f2d789bd))
+
 ## 0.26.1 (2026-04-10)
 
 Full Changelog: [v0.26.0...v0.26.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.0...v0.26.1)
