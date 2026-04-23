@@ -63,15 +63,18 @@
     "openlayer": "bin/cli"
   },
   "overrides": {
-    "minimatch": "^9.0.5"
+    "minimatch": "^9.0.5",
+    "fast-xml-parser": "^5.3.5"
   },
   "pnpm": {
     "overrides": {
-      "minimatch": "^9.0.5"
+      "minimatch": "^9.0.5",
+      "fast-xml-parser": "^5.3.5"
     }
   },
   "resolutions": {
-    "minimatch": "^9.0.5"
+    "minimatch": "^9.0.5",
+    "fast-xml-parser": "^5.3.5"
   },
   "exports": {
     ".": {
