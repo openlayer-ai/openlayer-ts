@@ -11,5 +11,11 @@
     "@aws-sdk/client-bedrock-agent-runtime": "^3.862.0",
     "openlayer": "*",
     "tsx": "^4.0.0"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.3.5"
+  },
+  "resolutions": {
+    "fast-xml-parser": "^5.3.5"
   }
 }
