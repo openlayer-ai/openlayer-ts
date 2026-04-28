@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.27.0 (2026-04-28)
+
+Full Changelog: [v0.26.2...v0.27.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.2...v0.27.0)
+
+### Features
+
+* support setting headers via env ([9837207](https://github.com/openlayer-ai/openlayer-ts/commit/9837207ea59fece255591521c8ce8c466bb4b1c4))
+
+
+### Chores
+
+* **internal:** codegen related update ([217ea5b](https://github.com/openlayer-ai/openlayer-ts/commit/217ea5b9eabdc8d15f1799e21fa67d944fea70b3))
+
 ## 0.26.2 (2026-04-23)
 
 Full Changelog: [v0.26.1...v0.26.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.1...v0.26.2)
