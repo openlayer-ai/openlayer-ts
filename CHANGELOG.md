@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.27.1 (2026-05-06)
+
+Full Changelog: [v0.27.0...v0.27.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.0...v0.27.1)
+
+### Chores
+
+* **closes OPEN-9575:** typescript client high vulnerabilities ([138af1b](https://github.com/openlayer-ai/openlayer-ts/commit/138af1b2338a1678daa8fae4e1afc3fbac6cb8b0))
+
 ## 0.27.0 (2026-04-30)
 
 Full Changelog: [v0.26.2...v0.27.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.26.2...v0.27.0)
