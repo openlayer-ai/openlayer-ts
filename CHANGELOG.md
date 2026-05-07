@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.27.2 (2026-05-07)
+
+Full Changelog: [v0.27.1...v0.27.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.1...v0.27.2)
+
+### Chores
+
+* **closes OPEN-9575:** pin fast-xml-parser, protobufjs, yaml to fix CVEs ([67d9b00](https://github.com/openlayer-ai/openlayer-ts/commit/67d9b00968c1a3df95daaf0f8d7c308dbc87e42e))
+* **format:** apply prettier to MIGRATION.md ([0c3ce26](https://github.com/openlayer-ai/openlayer-ts/commit/0c3ce26a846ffa190b4d41e4d178e6466cbbcd1f))
+* **format:** run eslint and prettier separately ([679cec5](https://github.com/openlayer-ai/openlayer-ts/commit/679cec5e24f47f8c9734ffb926e4c748be978de1))
+* **internal:** codegen related update ([141810c](https://github.com/openlayer-ai/openlayer-ts/commit/141810c4fe21c6558cca07aca74384405c853057))
+* **internal:** version bump ([3d807a7](https://github.com/openlayer-ai/openlayer-ts/commit/3d807a7b2babc548a4f05e84181b8e6974b2dac3))
+
 ## 0.27.1 (2026-05-06)
 
 Full Changelog: [v0.27.0...v0.27.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.0...v0.27.1)
