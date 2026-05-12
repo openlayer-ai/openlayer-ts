@@ -43,6 +43,12 @@ describe('claudeAgentSdk live integration', () => {
       expect(final.subtype).toBe('success');
       // And the response must contain the word we asked for.
       expect(String(final.result ?? '').toLowerCase()).toContain('banana');
+
+      // The tracer publishes the trace via a fire-and-forget `.then()` after
+      // the root step ends. Give it a beat to flush before Jest tears down,
+      // otherwise late `console.debug` from the publish callback trips Jest's
+      // "Cannot log after tests are done" guard and the run exits non-zero.
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     },
     120_000,
   );
