@@ -409,3 +409,12 @@ export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariab
 }
 
 export default trace;
+
+// ----------------------------------------------------------------------------
+// Internal helpers re-exported under prefixed names for use by first-party
+// Openlayer integrations that need to drive a step's lifecycle manually
+// (e.g., open a step from one callback and close it from another). These are
+// NOT part of the supported public API: external callers should use the
+// `add*StepToTrace` helpers above.
+// ----------------------------------------------------------------------------
+export { createStep as _internalCreateStep, getCurrentStep as _internalGetCurrentStep };
