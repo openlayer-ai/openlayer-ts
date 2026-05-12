@@ -464,8 +464,190 @@ export async function* tracedQuery(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Test-only helper: mutate the in-process configuration. Not part of the
-// supported public API.
+// Public API: drop-in ``query`` and ``traceClaudeAgentSdk`` runtime patcher.
+// ---------------------------------------------------------------------------
+
+/**
+ * Drop-in replacement for ``@anthropic-ai/claude-agent-sdk``'s ``query``.
+ *
+ * @example
+ * ```ts
+ * import { query } from "@openlayer/sdk/integrations/claude-agent-sdk";
+ * for await (const message of query({ prompt: "Plan a trip" })) { ... }
+ * ```
+ */
+export function query(params: {
+  prompt: string | AsyncIterable<any>;
+  options?: any;
+  inferencePipelineId?: string;
+}): AsyncGenerator<any, void, unknown> {
+  return tracedQuery(params);
+}
+
+/**
+ * One-shot init for codebases that can't change their imports.
+ *
+ * Mutates the ``@anthropic-ai/claude-agent-sdk`` module's ``query`` (and
+ * ``ClaudeSDKClient.prototype.query`` / ``.receiveResponse`` once available)
+ * so every subsequent call is auto-traced. Idempotent: calling it multiple
+ * times only patches once but does refresh the tunable config.
+ *
+ * @example
+ * ```ts
+ * import { traceClaudeAgentSdk } from "@openlayer/sdk/integrations/claude-agent-sdk";
+ * import { query } from "@anthropic-ai/claude-agent-sdk";
+ *
+ * traceClaudeAgentSdk({ inferencePipelineId: "..." });
+ * for await (const m of query({ prompt: "..." })) { ... }
+ * ```
+ */
+export function traceClaudeAgentSdk(opts: Partial<ClaudeAgentSdkConfig> = {}): void {
+  // Refresh in-process config every call so users can re-tune at any time.
+  _config = { ..._config, ...opts };
+
+  let sdk: any;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    sdk = require('@anthropic-ai/claude-agent-sdk');
+  } catch {
+    throw new Error(
+      '@anthropic-ai/claude-agent-sdk is not installed. ' +
+        'Install with: npm install @anthropic-ai/claude-agent-sdk@^0.2.111',
+    );
+  }
+
+  if (typeof sdk.query !== 'function') {
+    throw new Error('@anthropic-ai/claude-agent-sdk is missing the expected `query` export');
+  }
+
+  // Already patched? Just refresh config and exit (already done above).
+  if ((sdk.query as any)._openlayerPatched) return;
+
+  const original = sdk.query;
+  const patched: any = function patchedQuery(params: any) {
+    return tracedQuery(params);
+  };
+  patched._openlayerPatched = true;
+  patched._openlayerOriginal = original;
+  try {
+    sdk.query = patched;
+  } catch (err) {
+    // ESM module bindings are read-only; fall back to defineProperty.
+    try {
+      Object.defineProperty(sdk, 'query', { value: patched, writable: true, configurable: true });
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[openlayer] failed to monkey-patch @anthropic-ai/claude-agent-sdk.query',
+        err,
+      );
+      return;
+    }
+  }
+
+  // Patch ClaudeSDKClient if present (Task B12 fills this in).
+  patchClaudeSdkClientIfPresent(sdk);
+}
+
+/**
+ * Wrap ``ClaudeSDKClient.prototype.query`` / ``.receiveResponse`` so existing
+ * client-based codepaths get traced too. Each ``client.query(...)`` is
+ * treated as one trace, with the same step shape as the standalone
+ * ``query()`` function.
+ */
+function patchClaudeSdkClientIfPresent(sdk: any): void {
+  const Client = sdk.ClaudeSDKClient;
+  if (typeof Client !== 'function' || !Client.prototype) return;
+  if ((Client.prototype as any)._openlayerPatched) return;
+
+  // ``receive_response`` (snake) is the iterator the user awaits. We
+  // intercept it to attach our trace state via AsyncLocalStorage and emit
+  // the root AGENT step around the whole streamed response. We also patch
+  // ``query`` (which sends the user prompt) so that the prompt becomes
+  // visible on the root step.
+  const originalReceive = Client.prototype.receive_response ?? Client.prototype.receiveResponse;
+  const originalQuery = Client.prototype.query;
+
+  if (typeof originalReceive === 'function') {
+    const patchedReceive = async function* patchedReceiveResponse(this: any, ...args: any[]) {
+      const promptSummary = this.__openlayerLastPrompt ?? 'ClaudeSDKClient stream';
+      const name = 'claude-agent-sdk: ' + summarizePrompt(promptSummary);
+      const [rootStep, endRootStep] = _internalCreateStep(
+        name,
+        StepType.AGENT,
+        { prompt: this.__openlayerLastPrompt },
+        undefined,
+        null,
+        null,
+        null,
+        _config.inferencePipelineId,
+      );
+      const state: TraceState = {
+        rootStep,
+        endRootStep,
+        turnCounter: 0,
+        pendingTools: new Map(),
+        toolStepById: new Map(),
+      };
+      const upstream = originalReceive.apply(this, args);
+      const asyncIter = upstream[Symbol.asyncIterator]
+        ? upstream[Symbol.asyncIterator]()
+        : upstream;
+      try {
+        while (true) {
+          const result: IteratorResult<any> = await _als.run(state, () => asyncIter.next());
+          if (result.done) break;
+          const msg = result.value;
+          try {
+            await _als.run(state, async () => observe(msg, state));
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('[openlayer] observation failed (ClaudeSDKClient):', err);
+          }
+          yield msg;
+        }
+      } finally {
+        for (const handle of state.pendingTools.values()) {
+          try {
+            handle.endStep();
+          } catch {
+            /* noop */
+          }
+        }
+        state.pendingTools.clear();
+        try {
+          endRootStep();
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[openlayer] failed to close root trace step:', err);
+        }
+      }
+    };
+    Client.prototype.receive_response = patchedReceive;
+    Client.prototype.receiveResponse = patchedReceive;
+  }
+
+  if (typeof originalQuery === 'function') {
+    const patchedClientQuery = async function patchedClientQuery(this: any, prompt: any) {
+      // Remember the prompt so receive_response can name the root step.
+      this.__openlayerLastPrompt = prompt;
+      // Also: ensure our hooks are merged into the options the client was
+      // constructed with. The client typically holds them on
+      // ``this.options``; we splice ours in once.
+      if (this.options && !this.options.__openlayerHooksInjected) {
+        this.options = injectHooks(this.options);
+        this.options.__openlayerHooksInjected = true;
+      }
+      return originalQuery.call(this, prompt);
+    };
+    Client.prototype.query = patchedClientQuery;
+  }
+
+  (Client.prototype as any)._openlayerPatched = true;
+}
+
+// ---------------------------------------------------------------------------
+// Test-only helpers. Not part of the supported public API.
 // ---------------------------------------------------------------------------
 /** @internal */
 export function _setConfigForTesting(overrides: Partial<ClaudeAgentSdkConfig>): void {

@@ -42,6 +42,12 @@ describe('claudeAgentSdk integration', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('../../src/lib/integrations/claudeAgentSdk');
     mod._resetUnderlyingQueryForTesting();
+    // Reset the (virtually-mocked) SDK's ``query`` to a fresh jest mock so
+    // any test that called ``traceClaudeAgentSdk()`` doesn't leak a patched
+    // function into subsequent tests.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sdk = require('@anthropic-ai/claude-agent-sdk');
+    sdk.query = jest.fn();
   });
 
   it('module imports cleanly even without the SDK installed', () => {
@@ -480,6 +486,33 @@ describe('claudeAgentSdk integration', () => {
     expect(servers[0].status).toBe('connected');
     expect(servers[0].transport).toBe('stdio');
     expect(servers[1].url).toBe('https://mcp.example.com');
+  });
+
+  it('traceClaudeAgentSdk patches the SDK query symbol (idempotent)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sdk = require('@anthropic-ai/claude-agent-sdk');
+    // Reset to a fresh jest mock so we test patching from scratch.
+    sdk.query = jest.fn();
+    const original = sdk.query;
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { traceClaudeAgentSdk } = require('../../src/lib/integrations/claudeAgentSdk');
+    traceClaudeAgentSdk({ inferencePipelineId: 'test-pipeline' });
+
+    expect(sdk.query).not.toBe(original);
+    expect((sdk.query as any)._openlayerPatched).toBe(true);
+    expect((sdk.query as any)._openlayerOriginal).toBe(original);
+
+    // Idempotent — second call doesn't re-wrap.
+    const firstPatched = sdk.query;
+    traceClaudeAgentSdk();
+    expect(sdk.query).toBe(firstPatched);
+  });
+
+  it('exposes `query` as a drop-in export', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: ourQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    expect(typeof ourQuery).toBe('function');
   });
 
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {
