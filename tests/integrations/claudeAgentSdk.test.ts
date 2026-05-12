@@ -204,7 +204,9 @@ describe('claudeAgentSdk integration', () => {
     expect(turn1.completionTokens).toBe(4);
     expect(turn1.tokens).toBe(16);
     expect(turn1.metadata.thinking).toContain('planning');
-    expect(turn1.metadata.tool_calls).toEqual(['tu-1']);
+    expect(turn1.metadata.tool_calls).toEqual([
+      { id: 'tu-1', name: 'Bash', input: { command: 'ls' } },
+    ]);
     expect(turn1.metadata.stop_reason).toBe('tool_use');
 
     const turn2: any = turns[1];

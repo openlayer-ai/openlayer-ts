@@ -48,6 +48,8 @@ interface TraceState {
   rootStep: any;
   endRootStep: () => void;
   sessionId?: string;
+  model?: string;
+  userPrompt?: string;
   turnCounter: number;
   /** ``tool_use_id`` -> open tool step handle. Set on PreToolUse, deleted on
    * PostToolUse/PostToolUseFailure once the step is closed. */
@@ -154,6 +156,7 @@ function redactMcpServers(servers: any): any {
 function observeSystemInit(msg: any, state: TraceState): void {
   if (msg.subtype !== 'init') return;
   state.sessionId = msg.session_id;
+  state.model = msg.model;
   state.rootStep.log({
     metadata: {
       ...(state.rootStep.metadata ?? {}),
@@ -203,8 +206,41 @@ function observeResult(msg: any, state: TraceState): void {
       permission_denials: msg.permission_denials,
       cache_read_input_tokens: usage.cache_read_input_tokens,
       cache_creation_input_tokens: usage.cache_creation_input_tokens,
+      // Surface the same fields in metadata too — the base ``Step`` toJSON()
+      // doesn't include cost/tokens for AgentStep, so downstream consumers
+      // reading metadata still get the picture.
+      cost: msg.total_cost_usd ?? null,
+      tokens: input + output,
+      promptTokens: input,
+      completionTokens: output,
+      model: state.model ?? null,
+      provider: 'anthropic',
+      // No first-class rawOutput on AgentStep; expose via metadata.
+      rawOutput: serializeResultMessage(msg),
     },
   });
+}
+
+/** Serialize a ResultMessage to a JSON-ish string for raw_output display. */
+function serializeResultMessage(msg: any): string | null {
+  try {
+    return JSON.stringify({
+      subtype: msg.subtype,
+      result: msg.result,
+      session_id: msg.session_id,
+      duration_ms: msg.duration_ms,
+      duration_api_ms: msg.duration_api_ms,
+      num_turns: msg.num_turns,
+      stop_reason: msg.stop_reason,
+      is_error: msg.is_error,
+      total_cost_usd: msg.total_cost_usd,
+      usage: msg.usage,
+      modelUsage: msg.modelUsage,
+      permission_denials: msg.permission_denials,
+    });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -219,19 +255,38 @@ function observeAssistant(msg: any, state: TraceState): void {
   const blocks: any[] = msg.message?.content ?? [];
   const textParts: string[] = [];
   const thinkingParts: string[] = [];
-  const toolUseIds: string[] = [];
+  const toolUseBlocks: Array<{ id: string; name: string; input: any }> = [];
   for (const b of blocks) {
     if (!b || typeof b !== 'object') continue;
     if (b.type === 'text') textParts.push(b.text ?? '');
     else if (b.type === 'thinking') thinkingParts.push(b.thinking ?? '');
-    else if (b.type === 'tool_use') toolUseIds.push(b.id);
+    else if (b.type === 'tool_use')
+      toolUseBlocks.push({ id: b.id, name: b.name, input: b.input });
   }
 
   const usage = msg.message?.usage ?? {};
+  const text = textParts.filter(Boolean).join('\n');
+  // Output: prefer text, fall back to tool-use summary, then thinking, then a
+  // marker so users see *something* in the UI rather than an empty step.
+  let output: string;
+  if (text) output = text;
+  else if (toolUseBlocks.length)
+    output = `[tool call: ${toolUseBlocks.map((b) => b.name).join(', ')}]`;
+  else if (thinkingParts.length && _config.captureThinking)
+    output = `[thinking]\n${thinkingParts.join('\n')}`;
+  else output = '[no content]';
+
+  // For top-level assistant turns, surface the user's original prompt as the
+  // step's input so reviewers see what triggered this turn. Subagent turns
+  // are driven by the parent's Agent tool call, not by a user prompt.
+  const isSubagentTurn = msg.parent_tool_use_id != null;
+  const stepInputs =
+    !isSubagentTurn && state.userPrompt != null ? { prompt: state.userPrompt } : undefined;
+
   const [chatStep, endChatStep] = _internalCreateStep(
     `assistant turn ${state.turnCounter}`,
     StepType.CHAT_COMPLETION,
-    undefined,
+    stepInputs,
     undefined,
     null,
   );
@@ -240,22 +295,52 @@ function observeAssistant(msg: any, state: TraceState): void {
   // is computed off the base ``Step`` type and doesn't pick up the subclass
   // fields without explicit narrowing.
   (chatStep as any).log({
-    output: textParts.join('\n'),
+    output,
     model: msg.message?.model ?? null,
     provider: 'anthropic',
     promptTokens: usage.input_tokens ?? null,
     completionTokens: usage.output_tokens ?? null,
     tokens: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0),
     metadata: {
-      thinking: _config.captureThinking && thinkingParts.length ? thinkingParts.join('\n') : null,
-      tool_calls: toolUseIds.length ? toolUseIds : null,
+      thinking:
+        _config.captureThinking && thinkingParts.length ? thinkingParts.join('\n') : null,
+      tool_calls: toolUseBlocks.length ? toolUseBlocks : null,
       stop_reason: msg.message?.stop_reason ?? null,
       parent_tool_use_id: msg.parent_tool_use_id ?? null,
+      message_id: msg.message?.id ?? msg.uuid ?? null,
       cache_read_input_tokens: usage.cache_read_input_tokens ?? null,
       cache_creation_input_tokens: usage.cache_creation_input_tokens ?? null,
+      // No first-class rawOutput field on the TS ChatCompletionStep, so we
+      // stash the full assistant message in metadata so reviewers can still
+      // inspect the unfiltered model response.
+      rawOutput: serializeAssistantMessage(msg, blocks),
     },
   });
   endChatStep();
+}
+
+/** Serialize an AssistantMessage's full content array to JSON for raw_output
+ * inspection. */
+function serializeAssistantMessage(msg: any, blocks: any[]): string | null {
+  try {
+    return JSON.stringify({
+      model: msg.message?.model ?? null,
+      stop_reason: msg.message?.stop_reason ?? null,
+      usage: msg.message?.usage ?? null,
+      parent_tool_use_id: msg.parent_tool_use_id ?? null,
+      content: blocks.map((b) => {
+        if (!b || typeof b !== 'object') return { repr: String(b) };
+        if (b.type === 'text') return { type: 'text', text: b.text };
+        if (b.type === 'thinking')
+          return { type: 'thinking', thinking: b.thinking, signature: b.signature };
+        if (b.type === 'tool_use')
+          return { type: 'tool_use', id: b.id, name: b.name, input: b.input };
+        return { type: b.type ?? 'unknown', value: b };
+      }),
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** Dispatch a single message from the SDK stream to the right observer. */
@@ -491,6 +576,7 @@ export async function* tracedQuery(params: {
     rootStep,
     endRootStep,
     turnCounter: 0,
+    userPrompt: typeof params.prompt === 'string' ? params.prompt : undefined,
     pendingTools: new Map(),
     toolStepById: new Map(),
   };
@@ -673,6 +759,8 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
         rootStep,
         endRootStep,
         turnCounter: 0,
+        userPrompt:
+          typeof this.__openlayerLastPrompt === 'string' ? this.__openlayerLastPrompt : undefined,
         pendingTools: new Map(),
         toolStepById: new Map(),
       };
