@@ -536,6 +536,52 @@ describe('claudeAgentSdk integration', () => {
     }
   });
 
+  it('traceClaudeAgentSdk patches ClaudeSDKClient.prototype when present', async () => {
+    // Build a minimal fake ClaudeSDKClient and re-attach it onto the
+    // virtually-mocked SDK module before calling ``traceClaudeAgentSdk``.
+    class FakeClient {
+      public options: any;
+      public __openlayerLastPrompt: any;
+      constructor(opts: any = {}) {
+        this.options = opts;
+      }
+      async query(prompt: any) {
+        this.__openlayerLastPrompt = prompt;
+        return undefined;
+      }
+      // The SDK exposes ``receive_response`` (snake) as the async iterator
+      // the caller awaits to get the message stream.
+      async *receive_response() {
+        yield initSystemMessage({ session_id: 'client-1' });
+        yield resultMessage({ session_id: 'client-1' });
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sdk = require('@anthropic-ai/claude-agent-sdk');
+    sdk.query = jest.fn();
+    sdk.ClaudeSDKClient = FakeClient;
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { traceClaudeAgentSdk } = require('../../src/lib/integrations/claudeAgentSdk');
+    traceClaudeAgentSdk();
+
+    expect((FakeClient.prototype as any)._openlayerPatched).toBe(true);
+
+    const client = new FakeClient({ hooks: {} });
+    await client.query('hello from client');
+    const out: any[] = [];
+    for await (const m of client.receive_response()) out.push(m);
+    expect(out).toHaveLength(2);
+
+    // The patched receive_response should have created a fresh AGENT trace.
+    const trace = getCurrentTrace();
+    const root: any = trace!.steps[trace!.steps.length - 1];
+    expect(root.stepType).toBe('agent');
+    expect(root.name).toContain('hello from client');
+    expect(root.metadata.session_id).toBe('client-1');
+  });
+
   it('passthrough invariant: wrapper neither swallows messages nor mutates them, even with tools', async () => {
     // The wrapper must be a pure observer: every yielded message is the same
     // object reference the SDK produced, in the same order. We construct a
