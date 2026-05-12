@@ -32,6 +32,11 @@ describe('claudeAgentSdk live integration', () => {
         options: {
           model: 'claude-haiku-4-5',
           allowedTools: [],
+          systemPrompt:
+            'You are a terse assistant that follows instructions exactly. ' +
+            'Never add filler words, never apologize, and never add quotes ' +
+            'around your answer.',
+          maxTurns: 2,
         },
       })) {
         messages.push(m);
