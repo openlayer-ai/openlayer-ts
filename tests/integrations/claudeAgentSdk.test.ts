@@ -434,6 +434,54 @@ describe('claudeAgentSdk integration', () => {
     expect(tool.name).toBe('Bash');
   });
 
+  it('redacts env / headers / authorization from mcp_servers in metadata', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(() =>
+      makeStream([
+        initSystemMessage({
+          mcp_servers: [
+            {
+              name: 'playwright',
+              status: 'connected',
+              transport: 'stdio',
+              env: { API_KEY: 'sk-secret', OTHER: 'also-secret' },
+              headers: { Authorization: 'Bearer secret' },
+              authorization: 'Bearer secret',
+              command: 'mcp-playwright',
+            },
+            {
+              name: 'github',
+              status: 'connected',
+              transport: 'http',
+              url: 'https://mcp.example.com',
+              env: { GITHUB_TOKEN: 'ghp_secret' },
+            },
+          ],
+        }),
+        resultMessage({}),
+      ]),
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'mcp' })) void _;
+
+    const root: any = getCurrentTrace()!.steps[0];
+    const servers = root.metadata.agent_config.mcp_servers;
+    expect(servers).toHaveLength(2);
+    for (const srv of servers) {
+      expect(srv).not.toHaveProperty('env');
+      expect(srv).not.toHaveProperty('headers');
+      expect(srv).not.toHaveProperty('authorization');
+    }
+    // Non-sensitive fields are preserved.
+    expect(servers[0].name).toBe('playwright');
+    expect(servers[0].status).toBe('connected');
+    expect(servers[0].transport).toBe('stdio');
+    expect(servers[1].url).toBe('https://mcp.example.com');
+  });
+
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {
     const messages = [
       initSystemMessage({ session_id: 'p1' }),
