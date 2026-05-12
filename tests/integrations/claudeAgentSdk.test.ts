@@ -111,6 +111,46 @@ describe('claudeAgentSdk integration', () => {
     expect(root.latency).toBe(1500);
   });
 
+  it('captures options.systemPrompt and options.agents on the root step metadata', async () => {
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(() =>
+      makeStream([initSystemMessage({ session_id: 's1' }), resultMessage({ session_id: 's1' })]),
+    );
+
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    const userOptions = {
+      systemPrompt: 'You are a banana expert.',
+      model: 'claude-haiku-4-5',
+      maxTurns: 3,
+      allowedTools: ['Read', 'Bash'],
+      agents: {
+        'code-reviewer': {
+          description: 'Reviews code for bugs',
+          prompt: 'You are a strict reviewer. Flag anti-patterns.',
+          tools: ['Read', 'Grep'],
+        },
+      },
+    };
+
+    for await (const _ of tracedQuery({ prompt: 'hi', options: userOptions })) {
+      // drain
+    }
+
+    const trace = getCurrentTrace();
+    const root: any = trace!.steps[trace!.steps.length - 1];
+    expect(root.metadata.system_prompt).toBe('You are a banana expert.');
+    expect(root.metadata.agents_defined).toBeDefined();
+    expect(root.metadata.agents_defined['code-reviewer']).toEqual({
+      description: 'Reviews code for bugs',
+      prompt: 'You are a strict reviewer. Flag anti-patterns.',
+      tools: ['Read', 'Grep'],
+      model: undefined,
+    });
+    expect(root.metadata.options.model).toBe('claude-haiku-4-5');
+    expect(root.metadata.options.maxTurns).toBe(3);
+    expect(root.metadata.options.allowedTools).toEqual(['Read', 'Bash']);
+  });
+
   it('captures each AssistantMessage as a nested CHAT_COMPLETION step', async () => {
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() =>

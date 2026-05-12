@@ -63,6 +63,78 @@ const _als = new AsyncLocalStorage<TraceState>();
 
 const ROOT_STEP_NAME = 'Claude Agent SDK query';
 
+/** Coerce ``options.systemPrompt`` (string | preset object) into a JSON-safe
+ * value, truncated to 4096 chars for string forms. */
+function serializeSystemPrompt(sp: any): any {
+  if (sp == null) return null;
+  if (typeof sp === 'string') return truncateString(sp, 4096);
+  if (typeof sp === 'object') return sp; // preset / { type, preset, append, ... }
+  return String(sp);
+}
+
+/** Capture each subagent definition's description, prompt (truncated), tools. */
+function serializeAgentDefinitions(agents: any): Record<string, any> | null {
+  if (!agents || typeof agents !== 'object') return null;
+  const out: Record<string, any> = {};
+  for (const [name, defn] of Object.entries<any>(agents)) {
+    out[name] = {
+      description: defn?.description,
+      prompt: truncateString(defn?.prompt, 4096),
+      tools: defn?.tools,
+      model: defn?.model,
+    };
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/** Snapshot user-provided options onto the root step metadata. Called once
+ * per query with the *original* (pre-hook-injection) options. */
+function captureOptionsMetadata(rootStep: any, options: any): void {
+  if (!options) return;
+  const metadata: Record<string, any> = {};
+
+  const sp = serializeSystemPrompt(options.systemPrompt);
+  if (sp !== null && sp !== undefined) metadata.system_prompt = sp;
+
+  const agents = serializeAgentDefinitions(options.agents);
+  if (agents) metadata.agents_defined = agents;
+
+  const optKeys = [
+    'model',
+    'fallbackModel',
+    'maxTurns',
+    'maxBudgetUsd',
+    'permissionMode',
+    'cwd',
+    'allowedTools',
+    'disallowedTools',
+    'continue',
+    'resume',
+    'forkSession',
+  ];
+  const optCapture: Record<string, any> = {};
+  for (const k of optKeys) {
+    const v = options[k];
+    if (v == null) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    optCapture[k] = v;
+  }
+  if (Object.keys(optCapture).length) metadata.options = optCapture;
+
+  if (Object.keys(metadata).length) {
+    rootStep.log({ metadata });
+  }
+}
+
+/** Truncate a string-or-undefined value to ``maxChars``. Used for system
+ * prompt and subagent prompt capture. Returns undefined for null/undefined input. */
+function truncateString(value: any, maxChars: number): any {
+  if (value == null) return undefined;
+  if (typeof value !== 'string') return value;
+  if (value.length <= maxChars) return value;
+  return `${value.slice(0, maxChars)}... [truncated, full length ${value.length}]`;
+}
+
 function redactMcpServers(servers: any): any {
   if (!Array.isArray(servers)) return servers;
   return servers.map((s) => {
@@ -411,6 +483,10 @@ export async function* tracedQuery(params: {
     params.inferencePipelineId ?? _config.inferencePipelineId,
   );
 
+  // Snapshot user-provided options BEFORE we inject our hooks so the captured
+  // metadata reflects what the user actually configured, not our mutations.
+  captureOptionsMetadata(rootStep, params.options);
+
   const state: TraceState = {
     rootStep,
     endRootStep,
@@ -588,6 +664,11 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
         null,
         _config.inferencePipelineId,
       );
+      // Snapshot the user's original options (stashed at construction) onto
+      // root metadata so users see the system prompt, subagent definitions,
+      // model, permission mode, etc. that drove this run.
+      captureOptionsMetadata(rootStep, this.__openlayerOriginalOptions);
+
       const state: TraceState = {
         rootStep,
         endRootStep,
@@ -633,7 +714,14 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
     const patchedClientQuery = async function patchedClientQuery(this: any, prompt: any) {
       // Remember the prompt so receive_response can name the root step.
       this.__openlayerLastPrompt = prompt;
-      // Also: ensure our hooks are merged into the options the client was
+      // Snapshot the user's original options so receive_response can capture
+      // system_prompt / agents / model / etc. onto the root step BEFORE we
+      // inject our hooks below. The clone is shallow but our injection only
+      // replaces the ``hooks`` field, leaving everything else intact.
+      if (this.options && !this.__openlayerOriginalOptions) {
+        this.__openlayerOriginalOptions = { ...this.options };
+      }
+      // Ensure our hooks are merged into the options the client was
       // constructed with. The client typically holds them on
       // ``this.options``; we splice ours in once.
       if (this.options && !this.options.__openlayerHooksInjected) {
