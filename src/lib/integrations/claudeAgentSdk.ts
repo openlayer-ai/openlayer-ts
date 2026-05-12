@@ -230,9 +230,7 @@ function truncateToolOutput(value: any, maxChars: number): string {
       s = String(value);
     }
   }
-  return s.length > maxChars
-    ? s.slice(0, maxChars) + `... [truncated, full length ${s.length}]`
-    : s;
+  return s.length > maxChars ? s.slice(0, maxChars) + `... [truncated, full length ${s.length}]` : s;
 }
 
 async function preToolUseHook(input: any, toolUseID: string | undefined, _ctx: any): Promise<any> {
@@ -246,16 +244,9 @@ async function preToolUseHook(input: any, toolUseID: string | undefined, _ctx: a
     ...parseMcpName(toolName),
   };
   try {
-    const [step, endStep] = _internalCreateStep(
-      toolName,
-      StepType.TOOL,
-      toolInput,
-      undefined,
-      meta,
-    );
+    const [step, endStep] = _internalCreateStep(toolName, StepType.TOOL, toolInput, undefined, meta);
     state.pendingTools.set(toolUseID, { step, endStep, startTime: Date.now() });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[openlayer] preToolUseHook failed:', err);
   }
   return {};
@@ -282,7 +273,6 @@ async function postToolUseHook(input: any, toolUseID: string | undefined, _ctx: 
     handle.endStep();
     state.toolStepById.set(toolUseID, handle.step);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[openlayer] postToolUseHook failed:', err);
     // Still pop the stack to avoid corrupting future steps.
     try {
@@ -294,11 +284,7 @@ async function postToolUseHook(input: any, toolUseID: string | undefined, _ctx: 
   return {};
 }
 
-async function postToolUseFailureHook(
-  input: any,
-  toolUseID: string | undefined,
-  _ctx: any,
-): Promise<any> {
+async function postToolUseFailureHook(input: any, toolUseID: string | undefined, _ctx: any): Promise<any> {
   void _ctx;
   const state = _als.getStore();
   if (!state || !toolUseID) return {};
@@ -319,7 +305,6 @@ async function postToolUseFailureHook(
     handle.endStep();
     state.toolStepById.set(toolUseID, handle.step);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[openlayer] postToolUseFailureHook failed:', err);
     try {
       handle.endStep();
@@ -368,7 +353,6 @@ async function loadUnderlyingQuery(): Promise<(opts: any) => AsyncIterable<any>>
   let mod: any = null;
   let requireErr: unknown;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     mod = require('@anthropic-ai/claude-agent-sdk');
   } catch (err) {
     requireErr = err;
@@ -393,9 +377,7 @@ async function loadUnderlyingQuery(): Promise<(opts: any) => AsyncIterable<any>>
     }
   }
   if (!mod || typeof mod.query !== 'function') {
-    throw new Error(
-      '@anthropic-ai/claude-agent-sdk module is missing the expected `query` export',
-    );
+    throw new Error('@anthropic-ai/claude-agent-sdk module is missing the expected `query` export');
   }
   _underlyingQuery = mod.query;
   return _underlyingQuery!;
@@ -449,12 +431,9 @@ export async function* tracedQuery(params: {
   // underlying async generator wrapped in ``_als.run`` for each ``next()``
   // call so all hook callbacks (which may be invoked during ``next()``) see
   // our state via ``_als.getStore()``.
-  const iter = _als.run(state, () =>
-    underlyingQuery({ prompt: params.prompt, options: optionsWithHooks }),
-  );
-  const asyncIter = (iter as any)[Symbol.asyncIterator]
-    ? (iter as any)[Symbol.asyncIterator]()
-    : (iter as any);
+  const iter = _als.run(state, () => underlyingQuery({ prompt: params.prompt, options: optionsWithHooks }));
+  const asyncIter =
+    (iter as any)[Symbol.asyncIterator] ? (iter as any)[Symbol.asyncIterator]() : (iter as any);
 
   try {
     while (true) {
@@ -465,7 +444,7 @@ export async function* tracedQuery(params: {
         await _als.run(state, async () => observe(msg, state));
       } catch (err) {
         // Never break the user's stream because of a tracing bug.
-        // eslint-disable-next-line no-console
+
         console.error('[openlayer] claude-agent-sdk observation failed:', err);
       }
       yield msg;
@@ -484,7 +463,6 @@ export async function* tracedQuery(params: {
     try {
       endRootStep();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('[openlayer] failed to close root trace step:', err);
     }
   }
@@ -539,7 +517,6 @@ export function traceClaudeAgentSdk(opts: Partial<ClaudeAgentSdkConfig> = {}): v
   let sdk: any = null;
   let cause: unknown;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     sdk = require('@anthropic-ai/claude-agent-sdk');
   } catch (err) {
     cause = err;
@@ -576,11 +553,7 @@ export function traceClaudeAgentSdk(opts: Partial<ClaudeAgentSdkConfig> = {}): v
     try {
       Object.defineProperty(sdk, 'query', { value: patched, writable: true, configurable: true });
     } catch {
-      // eslint-disable-next-line no-console
-      console.error(
-        '[openlayer] failed to monkey-patch @anthropic-ai/claude-agent-sdk.query',
-        err,
-      );
+      console.error('[openlayer] failed to monkey-patch @anthropic-ai/claude-agent-sdk.query', err);
       return;
     }
   }
@@ -630,9 +603,7 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
         toolStepById: new Map(),
       };
       const upstream = originalReceive.apply(this, args);
-      const asyncIter = upstream[Symbol.asyncIterator]
-        ? upstream[Symbol.asyncIterator]()
-        : upstream;
+      const asyncIter = upstream[Symbol.asyncIterator] ? upstream[Symbol.asyncIterator]() : upstream;
       try {
         while (true) {
           const result: IteratorResult<any> = await _als.run(state, () => asyncIter.next());
@@ -641,7 +612,6 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
           try {
             await _als.run(state, async () => observe(msg, state));
           } catch (err) {
-            // eslint-disable-next-line no-console
             console.error('[openlayer] observation failed (ClaudeSDKClient):', err);
           }
           yield msg;
@@ -658,7 +628,6 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
         try {
           endRootStep();
         } catch (err) {
-          // eslint-disable-next-line no-console
           console.error('[openlayer] failed to close root trace step:', err);
         }
       }

@@ -39,26 +39,24 @@ describe('claudeAgentSdk integration', () => {
     jest.clearAllMocks();
     // Reset the integration's cached SDK reference so each test re-resolves
     // the (potentially) re-mocked module.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     const mod = require('../../src/lib/integrations/claudeAgentSdk');
     mod._resetUnderlyingQueryForTesting();
     // Reset the (virtually-mocked) SDK's ``query`` to a fresh jest mock so
     // any test that called ``traceClaudeAgentSdk()`` doesn't leak a patched
     // function into subsequent tests.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     const sdk = require('@anthropic-ai/claude-agent-sdk');
     sdk.query = jest.fn();
   });
 
   it('module imports cleanly even without the SDK installed', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('../../src/lib/integrations/claudeAgentSdk');
     expect(mod).toBeDefined();
     expect(typeof mod.tracedQuery).toBe('function');
   });
 
   it('tracedQuery emits a root AGENT step with cost/tokens/session_id from ResultMessage', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() =>
       makeStream([
@@ -80,7 +78,6 @@ describe('claudeAgentSdk integration', () => {
       ]),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     const forwarded: any[] = [];
     for await (const m of tracedQuery({ prompt: 'hi' })) {
@@ -116,7 +113,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('captures each AssistantMessage as a nested CHAT_COMPLETION step', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() =>
       makeStream([
@@ -150,7 +146,6 @@ describe('claudeAgentSdk integration', () => {
       ]),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'do stuff' })) {
       void _;
@@ -179,7 +174,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('captures tool calls via PreToolUse/PostToolUse hooks (TOOL step with input/output/latency)', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
 
     // The mocked SDK simulates: stream init -> assistant turn with tool_use ->
@@ -191,21 +185,31 @@ describe('claudeAgentSdk integration', () => {
       const post = hooks.PostToolUse[hooks.PostToolUse.length - 1].hooks[0];
 
       yield initSystemMessage({ session_id: 's-tool' });
-      yield assistantMessage([new FakeTextBlock('Running...'), new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' })], {
-        message: {
-          content: [
-            new FakeTextBlock('Running...'),
-            new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' }),
-          ],
-          model: 'claude-opus-4-7',
-          usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
-          stop_reason: 'tool_use',
+      yield assistantMessage(
+        [new FakeTextBlock('Running...'), new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' })],
+        {
+          message: {
+            content: [
+              new FakeTextBlock('Running...'),
+              new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' }),
+            ],
+            model: 'claude-opus-4-7',
+            usage: {
+              input_tokens: 1,
+              output_tokens: 1,
+              cache_read_input_tokens: 0,
+              cache_creation_input_tokens: 0,
+            },
+            stop_reason: 'tool_use',
+          },
         },
-      });
+      );
       await pre({ tool_name: 'Bash', tool_input: { command: 'ls' } }, 'tu-bash-1', {});
       yield {
         type: 'user',
-        message: { content: [{ type: 'tool_result', tool_use_id: 'tu-bash-1', content: 'file1.txt\nfile2.txt' }] },
+        message: {
+          content: [{ type: 'tool_result', tool_use_id: 'tu-bash-1', content: 'file1.txt\nfile2.txt' }],
+        },
       };
       await post(
         {
@@ -220,7 +224,6 @@ describe('claudeAgentSdk integration', () => {
       yield resultMessage({});
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'run ls' })) {
       void _;
@@ -240,7 +243,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('records is_error=true and the error payload when PostToolUseFailure fires', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
       const hooks = opts.options.hooks;
@@ -253,7 +255,6 @@ describe('claudeAgentSdk integration', () => {
       yield resultMessage({});
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'rm /' })) void _;
 
@@ -265,7 +266,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('parses mcp__<server>__<tool> names into mcp_server / mcp_tool_name metadata', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
       const hooks = opts.options.hooks;
@@ -290,7 +290,6 @@ describe('claudeAgentSdk integration', () => {
       yield resultMessage({});
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'browse' })) void _;
 
@@ -302,7 +301,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('subagent assistant turns nest under the spawning Agent ToolStep via parent_tool_use_id', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
       const hooks = opts.options.hooks;
@@ -311,22 +309,19 @@ describe('claudeAgentSdk integration', () => {
 
       yield initSystemMessage();
       // Top-level assistant turn delegates to a subagent via the Agent tool.
-      yield assistantMessage(
-        [new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })],
-        {
-          message: {
-            content: [new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })],
-            model: 'claude-opus-4-7',
-            usage: {
-              input_tokens: 1,
-              output_tokens: 1,
-              cache_read_input_tokens: 0,
-              cache_creation_input_tokens: 0,
-            },
-            stop_reason: 'tool_use',
+      yield assistantMessage([new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })], {
+        message: {
+          content: [new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })],
+          model: 'claude-opus-4-7',
+          usage: {
+            input_tokens: 1,
+            output_tokens: 1,
+            cache_read_input_tokens: 0,
+            cache_creation_input_tokens: 0,
           },
+          stop_reason: 'tool_use',
         },
-      );
+      });
       // PreToolUse(Agent) opens the Agent tool step. Subagent's internal
       // stream now arrives with ``parent_tool_use_id`` set.
       await pre({ tool_name: 'Agent', tool_input: { description: 'review code' } }, 'agent-tu-1', {});
@@ -344,7 +339,6 @@ describe('claudeAgentSdk integration', () => {
       yield resultMessage({});
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'review' })) void _;
 
@@ -366,7 +360,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('captures error_max_turns subtype on the root step metadata', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() =>
       makeStream([
@@ -375,7 +368,6 @@ describe('claudeAgentSdk integration', () => {
       ]),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'forever' })) void _;
 
@@ -392,7 +384,6 @@ describe('claudeAgentSdk integration', () => {
       return { hookSpecificOutput: { permissionDecision: 'deny', permissionDecisionReason: 'test' } };
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
       const userMatchers = opts.options.hooks.PreToolUse;
@@ -417,7 +408,6 @@ describe('claudeAgentSdk integration', () => {
       yield resultMessage({});
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({
       prompt: 'compose',
@@ -441,7 +431,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('redacts env / headers / authorization from mcp_servers in metadata', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() =>
       makeStream([
@@ -469,7 +458,6 @@ describe('claudeAgentSdk integration', () => {
       ]),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     for await (const _ of tracedQuery({ prompt: 'mcp' })) void _;
 
@@ -489,13 +477,11 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('traceClaudeAgentSdk patches the SDK query symbol (idempotent)', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const sdk = require('@anthropic-ai/claude-agent-sdk');
     // Reset to a fresh jest mock so we test patching from scratch.
     sdk.query = jest.fn();
     const original = sdk.query;
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { traceClaudeAgentSdk } = require('../../src/lib/integrations/claudeAgentSdk');
     traceClaudeAgentSdk({ inferencePipelineId: 'test-pipeline' });
 
@@ -510,7 +496,6 @@ describe('claudeAgentSdk integration', () => {
   });
 
   it('exposes `query` as a drop-in export', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: ourQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     expect(typeof ourQuery).toBe('function');
   });
@@ -521,11 +506,10 @@ describe('claudeAgentSdk integration', () => {
       { type: 'assistant', message: { content: [new FakeTextBlock('hi')] } },
       resultMessage({ session_id: 'p1' }),
     ];
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(() => makeStream(messages));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     const out: any[] = [];
     for await (const m of tracedQuery({ prompt: 'hi' })) out.push(m);
@@ -557,12 +541,10 @@ describe('claudeAgentSdk integration', () => {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const sdk = require('@anthropic-ai/claude-agent-sdk');
     sdk.query = jest.fn();
     sdk.ClaudeSDKClient = FakeClient;
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { traceClaudeAgentSdk } = require('../../src/lib/integrations/claudeAgentSdk');
     traceClaudeAgentSdk();
 
@@ -588,8 +570,13 @@ describe('claudeAgentSdk integration', () => {
     // realistic mixed stream (system + assistant with tool_use + user
     // tool_result + final assistant + result) and check identity for each.
     const initMsg = initSystemMessage({ session_id: 'passthru' });
-    const turn1Content = [new FakeTextBlock('thinking'), new FakeToolUseBlock('tu-passthru', 'Bash', { cmd: 'pwd' })];
-    const assistantTurn1 = assistantMessage(turn1Content, { message: { content: turn1Content, model: 'm', usage: {} } });
+    const turn1Content = [
+      new FakeTextBlock('thinking'),
+      new FakeToolUseBlock('tu-passthru', 'Bash', { cmd: 'pwd' }),
+    ];
+    const assistantTurn1 = assistantMessage(turn1Content, {
+      message: { content: turn1Content, model: 'm', usage: {} },
+    });
     const toolResultMsg = {
       type: 'user',
       message: { content: [{ type: 'tool_result', tool_use_id: 'tu-passthru', content: '/tmp' }] },
@@ -600,7 +587,6 @@ describe('claudeAgentSdk integration', () => {
 
     const all = [initMsg, assistantTurn1, toolResultMsg, assistantTurn2, finalMsg];
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
     (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
       const hooks = opts.options.hooks;
@@ -615,7 +601,6 @@ describe('claudeAgentSdk integration', () => {
       yield finalMsg;
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
     const seen: any[] = [];
     for await (const m of tracedQuery({ prompt: 'passthru' })) seen.push(m);

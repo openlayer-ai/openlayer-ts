@@ -35,7 +35,8 @@ import { query } from 'openlayer/lib/integrations/claudeAgentSdk';
 async function simpleQuery() {
   console.log('\n=== Scenario 1: code search with built-in tools ===\n');
   for await (const message of query({
-    prompt: "What does the function summarizePrompt do in src/lib/integrations/claudeAgentSdk.ts? Answer in one sentence.",
+    prompt:
+      'What does the function summarizePrompt do in src/lib/integrations/claudeAgentSdk.ts? Answer in one sentence.',
     options: {
       model: 'claude-haiku-4-5',
       allowedTools: ['Read', 'Glob', 'Grep'],
@@ -60,7 +61,8 @@ async function subagentExample() {
   // nests them under the spawning Agent ``ToolStep`` automatically (via
   // ``parent_tool_use_id``).
   for await (const message of query({
-    prompt: "Dispatch the code-reviewer subagent to review src/lib/integrations/claudeAgentSdk.ts and report back in one sentence.",
+    prompt:
+      'Dispatch the code-reviewer subagent to review src/lib/integrations/claudeAgentSdk.ts and report back in one sentence.',
     options: {
       model: 'claude-haiku-4-5',
       allowedTools: ['Read', 'Agent'],
@@ -87,9 +89,7 @@ async function main() {
     process.exit(1);
   }
   if (!process.env['OPENLAYER_INFERENCE_PIPELINE_ID']) {
-    console.warn(
-      'OPENLAYER_INFERENCE_PIPELINE_ID is not set — the trace will be built but not published.',
-    );
+    console.warn('OPENLAYER_INFERENCE_PIPELINE_ID is not set — the trace will be built but not published.');
   }
 
   await simpleQuery();
