@@ -356,20 +356,46 @@ function injectHooks(options: any): any {
 
 let _underlyingQuery: ((opts: any) => AsyncIterable<any>) | null = null;
 
-function loadUnderlyingQuery(): (opts: any) => AsyncIterable<any> {
+/**
+ * Resolve the SDK's ``query`` export. The SDK ships ESM-only, but it's
+ * common to consume Openlayer from CommonJS contexts (Jest with the default
+ * preset, etc.). Try ``require()`` first (works on Node 22.12+ for ESM, and
+ * always works for the virtual jest mock used in unit tests), then fall
+ * back to dynamic ``import()`` for older Node and pure-CJS Jest workers.
+ */
+async function loadUnderlyingQuery(): Promise<(opts: any) => AsyncIterable<any>> {
   if (_underlyingQuery) return _underlyingQuery;
-  let mod: any;
+  let mod: any = null;
+  let requireErr: unknown;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     mod = require('@anthropic-ai/claude-agent-sdk');
-  } catch {
-    throw new Error(
-      '@anthropic-ai/claude-agent-sdk is not installed. ' +
-        'Install with: npm install @anthropic-ai/claude-agent-sdk@^0.2.111',
-    );
+  } catch (err) {
+    requireErr = err;
+    mod = null;
   }
-  if (typeof mod.query !== 'function') {
-    throw new Error('@anthropic-ai/claude-agent-sdk module is missing the expected `query` export');
+  if (!mod || typeof mod.query !== 'function') {
+    try {
+      mod = await import('@anthropic-ai/claude-agent-sdk');
+      // ``import()`` of a CJS module wraps named exports under ``default``
+      // on some runtimes; unwrap if needed.
+      if (mod && typeof mod.query !== 'function' && mod.default && typeof mod.default.query === 'function') {
+        mod = mod.default;
+      }
+    } catch (err2) {
+      const r = requireErr instanceof Error ? requireErr.message : '';
+      const i = err2 instanceof Error ? err2.message : String(err2);
+      throw new Error(
+        '@anthropic-ai/claude-agent-sdk is not installed or could not be loaded' +
+          ` (require: ${r || 'no error'}; import: ${i}). ` +
+          'Install with: npm install @anthropic-ai/claude-agent-sdk@^0.2.111',
+      );
+    }
+  }
+  if (!mod || typeof mod.query !== 'function') {
+    throw new Error(
+      '@anthropic-ai/claude-agent-sdk module is missing the expected `query` export',
+    );
   }
   _underlyingQuery = mod.query;
   return _underlyingQuery!;
@@ -395,7 +421,7 @@ export async function* tracedQuery(params: {
   options?: any;
   inferencePipelineId?: string;
 }): AsyncGenerator<any, void, unknown> {
-  const underlyingQuery = loadUnderlyingQuery();
+  const underlyingQuery = await loadUnderlyingQuery();
 
   const name = 'claude-agent-sdk: ' + summarizePrompt(params.prompt);
   const [rootStep, endRootStep] = _internalCreateStep(
@@ -506,13 +532,26 @@ export function traceClaudeAgentSdk(opts: Partial<ClaudeAgentSdkConfig> = {}): v
   // Refresh in-process config every call so users can re-tune at any time.
   _config = { ..._config, ...opts };
 
-  let sdk: any;
+  // We need a SYNCHRONOUS module reference here to mutate ``sdk.query``.
+  // Pure-ESM modules only work via ``import()`` (async) on older Node.
+  // ``require()`` does work on Node 22.12+ for ESM, and is the fast path
+  // for the jest virtual mock and CJS consumers.
+  let sdk: any = null;
+  let cause: unknown;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     sdk = require('@anthropic-ai/claude-agent-sdk');
-  } catch {
+  } catch (err) {
+    cause = err;
+    sdk = null;
+  }
+  if (!sdk) {
+    const detail = cause instanceof Error ? ` (cause: ${cause.message})` : '';
     throw new Error(
-      '@anthropic-ai/claude-agent-sdk is not installed. ' +
+      '@anthropic-ai/claude-agent-sdk is not installed or could not be loaded' +
+        detail +
+        '. On Node <22.12 with pure-ESM SDK builds, use the drop-in `query` ' +
+        'export from this module instead (which lazy-loads via dynamic import). ' +
         'Install with: npm install @anthropic-ai/claude-agent-sdk@^0.2.111',
     );
   }
