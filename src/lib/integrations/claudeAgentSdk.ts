@@ -20,6 +20,8 @@
  *
  * See ``docs/superpowers/specs/2026-05-12-claude-agent-sdk-integration-design.md``.
  */
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 import { StepType } from '../tracing/steps';
 import { _internalCreateStep } from '../tracing/tracer';
 
@@ -48,7 +50,17 @@ interface TraceState {
   endRootStep: () => void;
   sessionId?: string;
   turnCounter: number;
+  /** ``tool_use_id`` -> open tool step handle. Set on PreToolUse, deleted on
+   * PostToolUse/PostToolUseFailure once the step is closed. */
+  pendingTools: Map<string, { step: any; endStep: () => void; startTime: number }>;
+  /** ``tool_use_id`` -> closed tool step (kept around so subagent messages
+   * can resolve their ``parent_tool_use_id`` to the right step if needed). */
+  toolStepById: Map<string, any>;
 }
+
+/** Per-query() AsyncLocalStorage context so concurrent invocations don't
+ * trample each other's pending-tool bookkeeping. */
+const _als = new AsyncLocalStorage<TraceState>();
 
 function summarizePrompt(prompt: any): string {
   if (typeof prompt === 'string') {
@@ -188,6 +200,159 @@ function observe(msg: any, state: TraceState): void {
   // user / tool observers added in later tasks
 }
 
+// ---------------------------------------------------------------------------
+// Hook callbacks — installed via ``injectHooks`` into the user's options so
+// the SDK calls them around each tool invocation. They never mutate the
+// agent flow: they always resolve to ``{}`` (an empty hook response) so the
+// user's own hooks retain full influence over deny / defer / allow / etc.
+// ---------------------------------------------------------------------------
+
+/** Parse an MCP-namespaced tool name (``mcp__<server>__<tool>``) into parts.
+ * Returns an empty object for non-MCP tool names. */
+function parseMcpName(name: string): { mcp_server?: string; mcp_tool_name?: string } {
+  if (typeof name !== 'string' || !name.startsWith('mcp__')) return {};
+  // Names use double-underscore as separator. Split into at most three parts:
+  // ``mcp``, ``<server>``, ``<tool_with_underscores>``.
+  const after = name.slice('mcp__'.length);
+  const sep = after.indexOf('__');
+  if (sep < 0) return {};
+  return { mcp_server: after.slice(0, sep), mcp_tool_name: after.slice(sep + 2) };
+}
+
+function truncateToolOutput(value: any, maxChars: number): string {
+  let s: string;
+  if (typeof value === 'string') s = value;
+  else {
+    try {
+      s = JSON.stringify(value);
+    } catch {
+      s = String(value);
+    }
+  }
+  return s.length > maxChars
+    ? s.slice(0, maxChars) + `... [truncated, full length ${s.length}]`
+    : s;
+}
+
+async function preToolUseHook(input: any, toolUseID: string | undefined, _ctx: any): Promise<any> {
+  void _ctx;
+  const state = _als.getStore();
+  if (!state || !toolUseID) return {};
+  const toolName: string = input?.tool_name ?? 'unknown';
+  const toolInput = input?.tool_input ?? {};
+  const meta: Record<string, any> = {
+    tool_use_id: toolUseID,
+    ...parseMcpName(toolName),
+  };
+  try {
+    const [step, endStep] = _internalCreateStep(
+      toolName,
+      StepType.TOOL,
+      toolInput,
+      undefined,
+      meta,
+    );
+    state.pendingTools.set(toolUseID, { step, endStep, startTime: Date.now() });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[openlayer] preToolUseHook failed:', err);
+  }
+  return {};
+}
+
+async function postToolUseHook(input: any, toolUseID: string | undefined, _ctx: any): Promise<any> {
+  void _ctx;
+  const state = _als.getStore();
+  if (!state || !toolUseID) return {};
+  const handle = state.pendingTools.get(toolUseID);
+  if (!handle) return {};
+  state.pendingTools.delete(toolUseID);
+  try {
+    const raw = input?.tool_response ?? input?.tool_output ?? input?.output;
+    const output = truncateToolOutput(raw, _config.truncateToolOutputChars);
+    handle.step.log({
+      output,
+      metadata: {
+        ...(handle.step.metadata ?? {}),
+        is_error: false,
+        latency_ms: Date.now() - handle.startTime,
+      },
+    });
+    handle.endStep();
+    state.toolStepById.set(toolUseID, handle.step);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[openlayer] postToolUseHook failed:', err);
+    // Still pop the stack to avoid corrupting future steps.
+    try {
+      handle.endStep();
+    } catch {
+      /* noop */
+    }
+  }
+  return {};
+}
+
+async function postToolUseFailureHook(
+  input: any,
+  toolUseID: string | undefined,
+  _ctx: any,
+): Promise<any> {
+  void _ctx;
+  const state = _als.getStore();
+  if (!state || !toolUseID) return {};
+  const handle = state.pendingTools.get(toolUseID);
+  if (!handle) return {};
+  state.pendingTools.delete(toolUseID);
+  try {
+    const errPayload = input?.error ?? input?.tool_response ?? input;
+    const output = truncateToolOutput(errPayload, _config.truncateToolOutputChars);
+    handle.step.log({
+      output,
+      metadata: {
+        ...(handle.step.metadata ?? {}),
+        is_error: true,
+        latency_ms: Date.now() - handle.startTime,
+      },
+    });
+    handle.endStep();
+    state.toolStepById.set(toolUseID, handle.step);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[openlayer] postToolUseFailureHook failed:', err);
+    try {
+      handle.endStep();
+    } catch {
+      /* noop */
+    }
+  }
+  return {};
+}
+
+/**
+ * Merge our internal observation hooks into the user's ``options.hooks``
+ * map without replacing any existing user matchers.
+ *
+ * The SDK's hook structure is::
+ *
+ *   { hooks: { PreToolUse: [{ matcher?: string, hooks: [fn, ...] }], ... } }
+ *
+ * We append a new matcher entry per event so user matchers fire first and
+ * our internal observers fire alongside them.
+ */
+function injectHooks(options: any): any {
+  const opts = options ? { ...options } : {};
+  const userHooks: Record<string, any[]> = { ...((opts.hooks as Record<string, any[]>) ?? {}) };
+  const append = (event: string, fn: any) => {
+    userHooks[event] = [...(userHooks[event] ?? []), { hooks: [fn] }];
+  };
+  append('PreToolUse', preToolUseHook);
+  append('PostToolUse', postToolUseHook);
+  append('PostToolUseFailure', postToolUseFailureHook);
+  opts.hooks = userHooks;
+  return opts;
+}
+
 let _underlyingQuery: ((opts: any) => AsyncIterable<any>) | null = null;
 
 function loadUnderlyingQuery(): (opts: any) => AsyncIterable<any> {
@@ -243,12 +408,34 @@ export async function* tracedQuery(params: {
     params.inferencePipelineId ?? _config.inferencePipelineId,
   );
 
-  const state: TraceState = { rootStep, endRootStep, turnCounter: 0 };
+  const state: TraceState = {
+    rootStep,
+    endRootStep,
+    turnCounter: 0,
+    pendingTools: new Map(),
+    toolStepById: new Map(),
+  };
+  const optionsWithHooks = injectHooks(params.options);
+
+  // ``yield`` cannot live inside ``_als.run(() => ...)`` directly (the
+  // callback can't be a generator). Instead, we manually iterate the
+  // underlying async generator wrapped in ``_als.run`` for each ``next()``
+  // call so all hook callbacks (which may be invoked during ``next()``) see
+  // our state via ``_als.getStore()``.
+  const iter = _als.run(state, () =>
+    underlyingQuery({ prompt: params.prompt, options: optionsWithHooks }),
+  );
+  const asyncIter = (iter as any)[Symbol.asyncIterator]
+    ? (iter as any)[Symbol.asyncIterator]()
+    : (iter as any);
 
   try {
-    for await (const msg of underlyingQuery({ prompt: params.prompt, options: params.options })) {
+    while (true) {
+      const result: IteratorResult<any> = await _als.run(state, () => asyncIter.next());
+      if (result.done) break;
+      const msg = result.value;
       try {
-        observe(msg, state);
+        await _als.run(state, async () => observe(msg, state));
       } catch (err) {
         // Never break the user's stream because of a tracing bug.
         // eslint-disable-next-line no-console
@@ -257,6 +444,16 @@ export async function* tracedQuery(params: {
       yield msg;
     }
   } finally {
+    // Close any tool steps that never received a PostToolUse (defensive —
+    // the SDK contract is that every Pre is followed by a Post or Failure).
+    for (const handle of state.pendingTools.values()) {
+      try {
+        handle.endStep();
+      } catch {
+        /* noop */
+      }
+    }
+    state.pendingTools.clear();
     try {
       endRootStep();
     } catch (err) {

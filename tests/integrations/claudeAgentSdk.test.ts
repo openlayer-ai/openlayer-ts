@@ -172,6 +172,92 @@ describe('claudeAgentSdk integration', () => {
     expect(turn2.output).toBe('done');
   });
 
+  it('captures tool calls via PreToolUse/PostToolUse hooks (TOOL step with input/output/latency)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+
+    // The mocked SDK simulates: stream init -> assistant turn with tool_use ->
+    // fire PreToolUse(Bash) -> stream UserMessage(tool_result) -> fire
+    // PostToolUse(Bash) -> stream final assistant turn -> ResultMessage.
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const hooks = opts.options.hooks;
+      const pre = hooks.PreToolUse[hooks.PreToolUse.length - 1].hooks[0];
+      const post = hooks.PostToolUse[hooks.PostToolUse.length - 1].hooks[0];
+
+      yield initSystemMessage({ session_id: 's-tool' });
+      yield assistantMessage([new FakeTextBlock('Running...'), new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' })], {
+        message: {
+          content: [
+            new FakeTextBlock('Running...'),
+            new FakeToolUseBlock('tu-bash-1', 'Bash', { command: 'ls' }),
+          ],
+          model: 'claude-opus-4-7',
+          usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+          stop_reason: 'tool_use',
+        },
+      });
+      await pre({ tool_name: 'Bash', tool_input: { command: 'ls' } }, 'tu-bash-1', {});
+      yield {
+        type: 'user',
+        message: { content: [{ type: 'tool_result', tool_use_id: 'tu-bash-1', content: 'file1.txt\nfile2.txt' }] },
+      };
+      await post(
+        {
+          tool_name: 'Bash',
+          tool_input: { command: 'ls' },
+          tool_response: 'file1.txt\nfile2.txt',
+        },
+        'tu-bash-1',
+        {},
+      );
+      yield assistantMessage([new FakeTextBlock('Done')]);
+      yield resultMessage({});
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'run ls' })) {
+      void _;
+    }
+
+    const trace = getCurrentTrace();
+    const root: any = trace!.steps[0];
+    const tools = root.steps.filter((s: any) => s.stepType === 'tool');
+    expect(tools).toHaveLength(1);
+    const tool: any = tools[0];
+    expect(tool.name).toBe('Bash');
+    expect(tool.inputs).toEqual({ command: 'ls' });
+    expect(tool.output).toBe('file1.txt\nfile2.txt');
+    expect(tool.metadata.tool_use_id).toBe('tu-bash-1');
+    expect(tool.metadata.is_error).toBe(false);
+    expect(typeof tool.metadata.latency_ms).toBe('number');
+  });
+
+  it('records is_error=true and the error payload when PostToolUseFailure fires', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const hooks = opts.options.hooks;
+      const pre = hooks.PreToolUse[hooks.PreToolUse.length - 1].hooks[0];
+      const fail = hooks.PostToolUseFailure[hooks.PostToolUseFailure.length - 1].hooks[0];
+
+      yield initSystemMessage();
+      await pre({ tool_name: 'Bash', tool_input: { command: 'rm /' } }, 'tu-err-1', {});
+      await fail({ tool_name: 'Bash', error: 'permission denied' }, 'tu-err-1', {});
+      yield resultMessage({});
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'rm /' })) void _;
+
+    const root: any = getCurrentTrace()!.steps[0];
+    const tools = root.steps.filter((s: any) => s.stepType === 'tool');
+    expect(tools).toHaveLength(1);
+    expect(tools[0].metadata.is_error).toBe(true);
+    expect(tools[0].output).toBe('permission denied');
+  });
+
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {
     const messages = [
       initSystemMessage({ session_id: 'p1' }),
