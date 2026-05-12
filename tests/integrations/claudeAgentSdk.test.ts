@@ -258,6 +258,126 @@ describe('claudeAgentSdk integration', () => {
     expect(tools[0].output).toBe('permission denied');
   });
 
+  it('parses mcp__<server>__<tool> names into mcp_server / mcp_tool_name metadata', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const hooks = opts.options.hooks;
+      const pre = hooks.PreToolUse[hooks.PreToolUse.length - 1].hooks[0];
+      const post = hooks.PostToolUse[hooks.PostToolUse.length - 1].hooks[0];
+
+      yield initSystemMessage();
+      await pre(
+        { tool_name: 'mcp__playwright__browser_navigate', tool_input: { url: 'https://example.com' } },
+        'tu-mcp-1',
+        {},
+      );
+      await post(
+        {
+          tool_name: 'mcp__playwright__browser_navigate',
+          tool_input: { url: 'https://example.com' },
+          tool_response: 'navigated',
+        },
+        'tu-mcp-1',
+        {},
+      );
+      yield resultMessage({});
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'browse' })) void _;
+
+    const root: any = getCurrentTrace()!.steps[0];
+    const tool = root.steps.find((s: any) => s.stepType === 'tool');
+    expect(tool.name).toBe('mcp__playwright__browser_navigate');
+    expect(tool.metadata.mcp_server).toBe('playwright');
+    expect(tool.metadata.mcp_tool_name).toBe('browser_navigate');
+  });
+
+  it('subagent assistant turns nest under the spawning Agent ToolStep via parent_tool_use_id', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const hooks = opts.options.hooks;
+      const pre = hooks.PreToolUse[hooks.PreToolUse.length - 1].hooks[0];
+      const post = hooks.PostToolUse[hooks.PostToolUse.length - 1].hooks[0];
+
+      yield initSystemMessage();
+      // Top-level assistant turn delegates to a subagent via the Agent tool.
+      yield assistantMessage(
+        [new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })],
+        {
+          message: {
+            content: [new FakeToolUseBlock('agent-tu-1', 'Agent', { description: 'review code' })],
+            model: 'claude-opus-4-7',
+            usage: {
+              input_tokens: 1,
+              output_tokens: 1,
+              cache_read_input_tokens: 0,
+              cache_creation_input_tokens: 0,
+            },
+            stop_reason: 'tool_use',
+          },
+        },
+      );
+      // PreToolUse(Agent) opens the Agent tool step. Subagent's internal
+      // stream now arrives with ``parent_tool_use_id`` set.
+      await pre({ tool_name: 'Agent', tool_input: { description: 'review code' } }, 'agent-tu-1', {});
+      yield assistantMessage([new FakeTextBlock('subagent thinking')], {
+        parent_tool_use_id: 'agent-tu-1',
+      });
+      yield assistantMessage([new FakeTextBlock('subagent done')], {
+        parent_tool_use_id: 'agent-tu-1',
+      });
+      await post(
+        { tool_name: 'Agent', tool_input: { description: 'review code' }, tool_response: 'subagent done' },
+        'agent-tu-1',
+        {},
+      );
+      yield resultMessage({});
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'review' })) void _;
+
+    const root: any = getCurrentTrace()!.steps[0];
+    // root should have: assistant turn 1, Agent tool step
+    const agentTool = root.steps.find((s: any) => s.stepType === 'tool' && s.name === 'Agent');
+    expect(agentTool).toBeDefined();
+    // Subagent assistant turns should be nested under the Agent tool step.
+    const nestedChats = agentTool.steps.filter((s: any) => s.stepType === 'chat_completion');
+    expect(nestedChats).toHaveLength(2);
+    expect(nestedChats[0].metadata.parent_tool_use_id).toBe('agent-tu-1');
+    expect(nestedChats[1].metadata.parent_tool_use_id).toBe('agent-tu-1');
+    // And those subagent turns should NOT also appear under root.
+    const rootChatNames = root.steps
+      .filter((s: any) => s.stepType === 'chat_completion')
+      .map((s: any) => s.name);
+    // Root has just the initial assistant turn 1.
+    expect(rootChatNames).toEqual(['assistant turn 1']);
+  });
+
+  it('captures error_max_turns subtype on the root step metadata', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(() =>
+      makeStream([
+        initSystemMessage(),
+        resultMessage({ subtype: 'error_max_turns', is_error: true, result: null }),
+      ]),
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'forever' })) void _;
+
+    const root: any = getCurrentTrace()!.steps[0];
+    expect(root.metadata.subtype).toBe('error_max_turns');
+    expect(root.metadata.is_error).toBe(true);
+  });
+
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {
     const messages = [
       initSystemMessage({ session_id: 'p1' }),
