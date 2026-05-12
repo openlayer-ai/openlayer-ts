@@ -378,6 +378,62 @@ describe('claudeAgentSdk integration', () => {
     expect(root.metadata.is_error).toBe(true);
   });
 
+  it('composes with user-provided hooks rather than replacing them', async () => {
+    const userPreCalls: Array<{ input: any; toolUseID: string | undefined }> = [];
+    const userPreHook = jest.fn(async (input: any, toolUseID: string | undefined) => {
+      userPreCalls.push({ input, toolUseID });
+      // User hook returns a deny decision — confirms we never clobber it.
+      return { hookSpecificOutput: { permissionDecision: 'deny', permissionDecisionReason: 'test' } };
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const userMatchers = opts.options.hooks.PreToolUse;
+      // Run every matcher's hook(s) — that's what the SDK does in practice.
+      for (const matcher of userMatchers) {
+        for (const fn of matcher.hooks) {
+          await fn({ tool_name: 'Bash', tool_input: { command: 'ls' } }, 'tu-comp-1', {});
+        }
+      }
+      // PostToolUse: only run our internal one (user didn't provide one).
+      const postMatchers = opts.options.hooks.PostToolUse;
+      for (const matcher of postMatchers) {
+        for (const fn of matcher.hooks) {
+          await fn(
+            { tool_name: 'Bash', tool_input: { command: 'ls' }, tool_response: 'ok' },
+            'tu-comp-1',
+            {},
+          );
+        }
+      }
+      yield initSystemMessage();
+      yield resultMessage({});
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({
+      prompt: 'compose',
+      options: {
+        hooks: {
+          PreToolUse: [{ hooks: [userPreHook] }],
+        },
+      },
+    })) {
+      void _;
+    }
+
+    // The user's PreToolUse hook still fired.
+    expect(userPreHook).toHaveBeenCalledTimes(1);
+    expect(userPreCalls).toHaveLength(1);
+    // And the Openlayer tool step was captured alongside it.
+    const root: any = getCurrentTrace()!.steps[0];
+    const tool = root.steps.find((s: any) => s.stepType === 'tool');
+    expect(tool).toBeDefined();
+    expect(tool.name).toBe('Bash');
+  });
+
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {
     const messages = [
       initSystemMessage({ session_id: 'p1' }),
