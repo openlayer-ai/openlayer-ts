@@ -96,8 +96,7 @@ describe('claudeAgentSdk integration', () => {
     expect(trace!.steps).toHaveLength(1);
     const root: any = trace!.steps[0];
     expect(root.stepType).toBe('agent');
-    expect(root.name).toContain('claude-agent-sdk:');
-    expect(root.name).toContain('hi');
+    expect(root.name).toBe('Claude Agent SDK query');
     expect(root.inputs).toEqual({ prompt: 'hi' });
     expect(root.output).toBe('Hello back');
     expect(root.metadata.session_id).toBe('s1');
@@ -560,7 +559,7 @@ describe('claudeAgentSdk integration', () => {
     const trace = getCurrentTrace();
     const root: any = trace!.steps[trace!.steps.length - 1];
     expect(root.stepType).toBe('agent');
-    expect(root.name).toContain('hello from client');
+    expect(root.name).toBe('Claude Agent SDK query');
     expect(root.metadata.session_id).toBe('client-1');
   });
 

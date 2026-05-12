@@ -8,7 +8,7 @@
  * Trace shape (one trace per ``query()`` call):
  *
  * ```
- * AGENT  "claude-agent-sdk: <prompt summary>"
+ * AGENT  "Claude Agent SDK query"
  *  |-- CHAT_COMPLETION  "assistant turn 1"     (text + thinking + tokens)
  *  |-- TOOL             "<tool name>"           (input/output, latency)
  *  |-- CHAT_COMPLETION  "assistant turn 2"
@@ -61,13 +61,7 @@ interface TraceState {
  * trample each other's pending-tool bookkeeping. */
 const _als = new AsyncLocalStorage<TraceState>();
 
-function summarizePrompt(prompt: any): string {
-  if (typeof prompt === 'string') {
-    const s = prompt.trim().replace(/\n/g, ' ');
-    return s.length > 80 ? s.slice(0, 80) + '...' : s;
-  }
-  return 'claude-agent-sdk query';
-}
+const ROOT_STEP_NAME = 'Claude Agent SDK query';
 
 function redactMcpServers(servers: any): any {
   if (!Array.isArray(servers)) return servers;
@@ -405,7 +399,7 @@ export async function* tracedQuery(params: {
 }): AsyncGenerator<any, void, unknown> {
   const underlyingQuery = await loadUnderlyingQuery();
 
-  const name = 'claude-agent-sdk: ' + summarizePrompt(params.prompt);
+  const name = ROOT_STEP_NAME;
   const [rootStep, endRootStep] = _internalCreateStep(
     name,
     StepType.AGENT,
@@ -583,8 +577,7 @@ function patchClaudeSdkClientIfPresent(sdk: any): void {
 
   if (typeof originalReceive === 'function') {
     const patchedReceive = async function* patchedReceiveResponse(this: any, ...args: any[]) {
-      const promptSummary = this.__openlayerLastPrompt ?? 'ClaudeSDKClient stream';
-      const name = 'claude-agent-sdk: ' + summarizePrompt(promptSummary);
+      const name = ROOT_STEP_NAME;
       const [rootStep, endRootStep] = _internalCreateStep(
         name,
         StepType.AGENT,
