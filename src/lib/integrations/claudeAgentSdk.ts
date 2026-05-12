@@ -38,7 +38,6 @@ export interface ClaudeAgentSdkConfig {
 }
 
 let _config: ClaudeAgentSdkConfig = {
-  inferencePipelineId: undefined,
   truncateToolOutputChars: 8192,
   captureThinking: true,
   redactMcpEnv: true,
@@ -170,9 +169,11 @@ function observeAssistant(msg: any, state: TraceState): void {
     undefined,
     null,
   );
-  // ChatCompletionStep has first-class fields for these; ``.log`` will pick
-  // them up because they exist on the prototype.
-  chatStep.log({
+  // ChatCompletionStep has first-class fields for these; cast to ``any`` so
+  // ``.log`` accepts them — its ``Partial<Record<keyof this, any>>`` signature
+  // is computed off the base ``Step`` type and doesn't pick up the subclass
+  // fields without explicit narrowing.
+  (chatStep as any).log({
     output: textParts.join('\n'),
     model: msg.message?.model ?? null,
     provider: 'anthropic',
