@@ -535,4 +535,49 @@ describe('claudeAgentSdk integration', () => {
       expect(out[i]).toBe(messages[i]);
     }
   });
+
+  it('passthrough invariant: wrapper neither swallows messages nor mutates them, even with tools', async () => {
+    // The wrapper must be a pure observer: every yielded message is the same
+    // object reference the SDK produced, in the same order. We construct a
+    // realistic mixed stream (system + assistant with tool_use + user
+    // tool_result + final assistant + result) and check identity for each.
+    const initMsg = initSystemMessage({ session_id: 'passthru' });
+    const turn1Content = [new FakeTextBlock('thinking'), new FakeToolUseBlock('tu-passthru', 'Bash', { cmd: 'pwd' })];
+    const assistantTurn1 = assistantMessage(turn1Content, { message: { content: turn1Content, model: 'm', usage: {} } });
+    const toolResultMsg = {
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: 'tu-passthru', content: '/tmp' }] },
+      parent_tool_use_id: null,
+    };
+    const assistantTurn2 = assistantMessage([new FakeTextBlock('done')]);
+    const finalMsg = resultMessage({ session_id: 'passthru' });
+
+    const all = [initMsg, assistantTurn1, toolResultMsg, assistantTurn2, finalMsg];
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(async function* (opts: any) {
+      const hooks = opts.options.hooks;
+      const pre = hooks.PreToolUse[hooks.PreToolUse.length - 1].hooks[0];
+      const post = hooks.PostToolUse[hooks.PostToolUse.length - 1].hooks[0];
+      yield initMsg;
+      yield assistantTurn1;
+      await pre({ tool_name: 'Bash', tool_input: { cmd: 'pwd' } }, 'tu-passthru', {});
+      yield toolResultMsg;
+      await post({ tool_name: 'Bash', tool_response: '/tmp' }, 'tu-passthru', {});
+      yield assistantTurn2;
+      yield finalMsg;
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    const seen: any[] = [];
+    for await (const m of tracedQuery({ prompt: 'passthru' })) seen.push(m);
+
+    expect(seen).toHaveLength(all.length);
+    for (let i = 0; i < all.length; i++) {
+      // Identity, not just equality.
+      expect(seen[i]).toBe(all[i]);
+    }
+  });
 });
