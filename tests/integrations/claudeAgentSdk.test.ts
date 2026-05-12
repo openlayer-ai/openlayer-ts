@@ -12,6 +12,9 @@
 import { getCurrentTrace } from '../../src/lib/tracing/tracer';
 import {
   FakeTextBlock,
+  FakeThinkingBlock,
+  FakeToolUseBlock,
+  assistantMessage,
   initSystemMessage,
   makeStream,
   resultMessage,
@@ -104,6 +107,69 @@ describe('claudeAgentSdk integration', () => {
     expect((root as any).cost).toBeCloseTo(0.0042);
     expect((root as any).tokens).toBe(15);
     expect(root.latency).toBe(1500);
+  });
+
+  it('captures each AssistantMessage as a nested CHAT_COMPLETION step', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { query: mockedQuery } = require('@anthropic-ai/claude-agent-sdk');
+    (mockedQuery as jest.Mock).mockImplementation(() =>
+      makeStream([
+        initSystemMessage(),
+        assistantMessage(
+          [
+            new FakeThinkingBlock('planning...'),
+            new FakeTextBlock('answer turn 1'),
+            new FakeToolUseBlock('tu-1', 'Bash', { command: 'ls' }),
+          ],
+          {
+            message: {
+              content: [
+                new FakeThinkingBlock('planning...'),
+                new FakeTextBlock('answer turn 1'),
+                new FakeToolUseBlock('tu-1', 'Bash', { command: 'ls' }),
+              ],
+              model: 'claude-opus-4-7',
+              usage: {
+                input_tokens: 12,
+                output_tokens: 4,
+                cache_read_input_tokens: 0,
+                cache_creation_input_tokens: 0,
+              },
+              stop_reason: 'tool_use',
+            },
+          },
+        ),
+        assistantMessage([new FakeTextBlock('done')]),
+        resultMessage({}),
+      ]),
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { tracedQuery } = require('../../src/lib/integrations/claudeAgentSdk');
+    for await (const _ of tracedQuery({ prompt: 'do stuff' })) {
+      void _;
+    }
+
+    const trace = getCurrentTrace();
+    const root: any = trace!.steps[0];
+    const turns = root.steps.filter((s: any) => s.stepType === 'chat_completion');
+    expect(turns).toHaveLength(2);
+
+    const turn1: any = turns[0];
+    expect(turn1.name).toBe('assistant turn 1');
+    expect(turn1.output).toContain('answer turn 1');
+    expect(turn1.provider).toBe('anthropic');
+    expect(turn1.model).toBe('claude-opus-4-7');
+    expect(turn1.promptTokens).toBe(12);
+    expect(turn1.completionTokens).toBe(4);
+    expect(turn1.tokens).toBe(16);
+    expect(turn1.metadata.thinking).toContain('planning');
+    expect(turn1.metadata.tool_calls).toEqual(['tu-1']);
+    expect(turn1.metadata.stop_reason).toBe('tool_use');
+
+    const turn2: any = turns[1];
+    expect(turn2.name).toBe('assistant turn 2');
+    expect(turn2.output).toBe('done');
   });
 
   it('forwards every SDK message unchanged and in order (passthrough invariant)', async () => {

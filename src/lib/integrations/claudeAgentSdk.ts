@@ -47,6 +47,7 @@ interface TraceState {
   rootStep: any;
   endRootStep: () => void;
   sessionId?: string;
+  turnCounter: number;
 }
 
 function summarizePrompt(prompt: any): string {
@@ -129,12 +130,62 @@ function observeResult(msg: any, state: TraceState): void {
   });
 }
 
+/**
+ * Capture an ``AssistantMessage`` as a nested ``CHAT_COMPLETION`` step under
+ * whichever step is currently top-of-stack. For top-level assistant turns
+ * that is the root ``AGENT`` step; for subagent turns it is the spawning
+ * Agent ``ToolStep`` (kept open across the subagent's stream by the
+ * PreToolUse/PostToolUse hook pair — see Task B5).
+ */
+function observeAssistant(msg: any, state: TraceState): void {
+  state.turnCounter += 1;
+  const blocks: any[] = msg.message?.content ?? [];
+  const textParts: string[] = [];
+  const thinkingParts: string[] = [];
+  const toolUseIds: string[] = [];
+  for (const b of blocks) {
+    if (!b || typeof b !== 'object') continue;
+    if (b.type === 'text') textParts.push(b.text ?? '');
+    else if (b.type === 'thinking') thinkingParts.push(b.thinking ?? '');
+    else if (b.type === 'tool_use') toolUseIds.push(b.id);
+  }
+
+  const usage = msg.message?.usage ?? {};
+  const [chatStep, endChatStep] = _internalCreateStep(
+    `assistant turn ${state.turnCounter}`,
+    StepType.CHAT_COMPLETION,
+    undefined,
+    undefined,
+    null,
+  );
+  // ChatCompletionStep has first-class fields for these; ``.log`` will pick
+  // them up because they exist on the prototype.
+  chatStep.log({
+    output: textParts.join('\n'),
+    model: msg.message?.model ?? null,
+    provider: 'anthropic',
+    promptTokens: usage.input_tokens ?? null,
+    completionTokens: usage.output_tokens ?? null,
+    tokens: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0),
+    metadata: {
+      thinking: _config.captureThinking && thinkingParts.length ? thinkingParts.join('\n') : null,
+      tool_calls: toolUseIds.length ? toolUseIds : null,
+      stop_reason: msg.message?.stop_reason ?? null,
+      parent_tool_use_id: msg.parent_tool_use_id ?? null,
+      cache_read_input_tokens: usage.cache_read_input_tokens ?? null,
+      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? null,
+    },
+  });
+  endChatStep();
+}
+
 /** Dispatch a single message from the SDK stream to the right observer. */
 function observe(msg: any, state: TraceState): void {
   if (!msg || typeof msg !== 'object') return;
   if (msg.type === 'system') observeSystemInit(msg, state);
+  else if (msg.type === 'assistant') observeAssistant(msg, state);
   else if (msg.type === 'result') observeResult(msg, state);
-  // assistant / user observers added in later tasks
+  // user / tool observers added in later tasks
 }
 
 let _underlyingQuery: ((opts: any) => AsyncIterable<any>) | null = null;
@@ -192,7 +243,7 @@ export async function* tracedQuery(params: {
     params.inferencePipelineId ?? _config.inferencePipelineId,
   );
 
-  const state: TraceState = { rootStep, endRootStep };
+  const state: TraceState = { rootStep, endRootStep, turnCounter: 0 };
 
   try {
     for await (const msg of underlyingQuery({ prompt: params.prompt, options: params.options })) {
