@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.27.3 (2026-05-19)
+
+Full Changelog: [v0.27.2...v0.27.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.2...v0.27.3)
+
+### Bug Fixes
+
+* **typescript:** upgrade tsc-multi so that it works with Node 26 ([aa572a7](https://github.com/openlayer-ai/openlayer-ts/commit/aa572a703b443fafda279943de557e7deeef0925))
+
+
+### Chores
+
+* redact api-key headers in debug logs ([ebba045](https://github.com/openlayer-ai/openlayer-ts/commit/ebba045dd921afc4b72e43e0bfb876ceb5a1b3eb))
+* **tests:** remove redundant File import ([e44e6e8](https://github.com/openlayer-ai/openlayer-ts/commit/e44e6e809634df5cc744dd60d4f216dcba806fad))
+
 ## 0.27.2 (2026-05-07)
 
 Full Changelog: [v0.27.1...v0.27.2](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.1...v0.27.2)
