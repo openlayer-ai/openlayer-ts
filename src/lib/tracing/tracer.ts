@@ -7,6 +7,8 @@ import {
   AgentStep,
   RetrieverStep,
   FunctionCallStep,
+  HandoffStep,
+  GuardrailStep,
   StepType,
   stepFactory,
 } from './steps';
@@ -93,56 +95,11 @@ function createStep(
     if (isRootStep) {
       console.debug('Ending the trace...');
       const traceData = getCurrentTrace();
-      // Post process trace and get the input variable names
-      const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(traceData!);
 
-      const openlayerClient = getOpenlayerClient();
-      if (openlayerClient && inferencePipelineId) {
-        console.debug('Uploading trace to Openlayer...');
-
-        openlayerClient.inferencePipelines.data
-          .stream(inferencePipelineId, {
-            config: {
-              outputColumnName: 'output',
-              inputVariableNames: inputVariableNames,
-              groundTruthColumnName: 'groundTruth',
-              latencyColumnName: 'latency',
-              costColumnName: 'cost',
-              timestampColumnName: 'inferenceTimestamp',
-              inferenceIdColumnName: 'inferenceId',
-              numOfTokenColumnName: 'tokens',
-            },
-            rows: [processedTraceData],
-          })
-          .then(() => {
-            console.debug('Trace uploaded successfully to Openlayer');
-          })
-          .catch((error) => {
-            console.error('Failed to upload trace to Openlayer:', error);
-            console.error(
-              'Trace data that failed to upload:',
-              JSON.stringify(
-                {
-                  pipelineId: inferencePipelineId,
-                  inputVariableNames,
-                  processedTraceData,
-                },
-                null,
-                2,
-              ),
-            );
-          });
-      } else {
-        if (!openlayerClient) {
-          console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true or missing API key)');
-        } else if (!inferencePipelineId) {
-          console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
-        }
-      }
-
-      // // Reset the entire trace state
-      // setCurrentTrace(null);
-      // stepStack.length = 0; // Clear the step stack
+      // NOTE: currentTrace is intentionally NOT reset here — integrations and
+      // tests inspect the completed trace via getCurrentTrace() after the root
+      // step ends. The next root step replaces it.
+      processAndUploadTrace(traceData!, inferencePipelineId);
     } else {
       console.debug(`Ending step ${name}`);
     }
@@ -151,9 +108,60 @@ function createStep(
   return [newStep, endStep];
 }
 
-function getCurrentStep(): Step | null | undefined {
+export function getCurrentStep(): Step | null | undefined {
   const currentStep = stepStack.length > 0 ? stepStack[stepStack.length - 1] : null;
   return currentStep;
+}
+
+/**
+ * Post-processes and uploads a completed trace to Openlayer. Used by the root
+ * step's endStep and by integrations (e.g. the LangChain callback handler) that
+ * assemble traces themselves.
+ */
+export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId?: string): void {
+  const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(trace);
+
+  const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
+  const openlayerClient = getOpenlayerClient();
+
+  if (openlayerClient && inferencePipelineId) {
+    console.debug('Uploading trace to Openlayer...');
+
+    openlayerClient.inferencePipelines.data
+      .stream(inferencePipelineId, {
+        config: {
+          outputColumnName: 'output',
+          inputVariableNames: inputVariableNames,
+          groundTruthColumnName: 'groundTruth',
+          latencyColumnName: 'latency',
+          costColumnName: 'cost',
+          timestampColumnName: 'inferenceTimestamp',
+          inferenceIdColumnName: 'inferenceId',
+          numOfTokenColumnName: 'tokens',
+        },
+        rows: [processedTraceData],
+      })
+      .then(() => {
+        console.debug('Trace uploaded successfully to Openlayer');
+      })
+      .catch((error) => {
+        // Compact failure log (mirrors the Python SDK) — never dump the full
+        // trace, which can be multiple MBs.
+        console.error('Failed to upload trace to Openlayer:', error);
+        console.error(
+          `Failed trace summary: pipelineId=${inferencePipelineId} ` +
+            `inferenceId=${processedTraceData?.['inferenceId']} ` +
+            `payloadBytes=${JSON.stringify(processedTraceData).length} ` +
+            `inputVariableNames=${JSON.stringify(inputVariableNames)}`,
+        );
+      });
+  } else {
+    if (!openlayerClient) {
+      console.debug('Trace upload disabled (OPENLAYER_DISABLE_PUBLISH=true or missing API key)');
+    } else if (!inferencePipelineId) {
+      console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
+    }
+  }
 }
 
 function getParamNames(func: Function): string[] {
@@ -370,14 +378,54 @@ export function addHandoffStepToTrace(params: {
   handoffData: any;
   metadata?: Record<string, any>;
 }) {
-  const stepName = `Handoffs: ${params.fromComponent} → ${params.toComponent}`;
-  const [step, endStep] = createStep(stepName, StepType.CHAIN, params.handoffData, undefined, {
-    ...params.metadata,
-    handoffType: 'component_transition',
-    fromComponent: params.fromComponent,
-    toComponent: params.toComponent,
-    timestamp: new Date().toISOString(),
-  });
+  const stepName = `Handoff: ${params.fromComponent} → ${params.toComponent}`;
+  const [step, endStep] = createStep(
+    stepName,
+    StepType.HANDOFF,
+    params.handoffData,
+    undefined,
+    params.metadata ?? {},
+  );
+  if (step instanceof HandoffStep) {
+    step.fromComponent = params.fromComponent;
+    step.toComponent = params.toComponent;
+    step.handoffData = params.handoffData;
+  }
+  return { step, endStep };
+}
+
+// Guardrail step for tracking input/output validation and content filtering
+export function addGuardrailStepToTrace(params: {
+  name: string;
+  inputs: any;
+  output?: any;
+  metadata?: Record<string, any>;
+  action?: string;
+  reason?: string;
+  blockedEntities?: string[];
+  detectedEntities?: string[];
+  redactedEntities?: string[];
+  confidenceThreshold?: number;
+  blockStrategy?: string;
+  dataType?: string;
+}) {
+  const [step, endStep] = createStep(
+    params.name,
+    StepType.GUARDRAIL,
+    params.inputs,
+    params.output,
+    params.metadata,
+  );
+  if (step instanceof GuardrailStep) {
+    step.action = params.action ?? null;
+    step.reason = params.reason ?? null;
+    step.blockedEntities = params.blockedEntities ?? null;
+    step.detectedEntities = params.detectedEntities ?? null;
+    step.redactedEntities = params.redactedEntities ?? null;
+    step.confidenceThreshold = params.confidenceThreshold ?? null;
+    step.blockStrategy = params.blockStrategy ?? null;
+    step.dataType = params.dataType ?? null;
+  }
   return { step, endStep };
 }
 
