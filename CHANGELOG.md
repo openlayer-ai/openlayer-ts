@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.27.4 (2026-06-11)
+
+Full Changelog: [v0.27.3...v0.27.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.3...v0.27.4)
+
+### Bug Fixes
+
+* **langchain:** align LangChain/LangGraph tracing with the Python SDK ([11d1039](https://github.com/openlayer-ai/openlayer-ts/commit/11d103986778f567c54227dc1721513668142083))
+
 ## 0.27.3 (2026-05-28)
 
 Full Changelog: [v0.27.2...v0.27.3](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.2...v0.27.3)
