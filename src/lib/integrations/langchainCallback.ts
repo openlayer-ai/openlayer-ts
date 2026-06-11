@@ -17,13 +17,9 @@ import {
 } from '@langchain/core/messages';
 import type { Generation, LLMResult } from '@langchain/core/outputs';
 import type { ChainValues } from '@langchain/core/utils/types';
-import {
-  addChatCompletionStepToTrace,
-  addChainStepToTrace,
-  addAgentStepToTrace,
-  addToolStepToTrace,
-  addRetrieverStepToTrace,
-} from '../tracing/tracer';
+import { getCurrentStep, processAndUploadTrace } from '../tracing/tracer';
+import { AgentStep, ChatCompletionStep, HandoffStep, Step, StepType, stepFactory } from '../tracing/steps';
+import { Trace } from '../tracing/traces';
 
 const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
   openai: 'OpenAI',
@@ -110,7 +106,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
   private completionStartTimes: Record<string, Date> = {};
   private promptToParentRunMap: Map<string, OpenlayerPrompt> = new Map();
-  private runMap: Map<string, { step: any; endStep: () => void }> = new Map();
+
+  // Steps are assembled per LangChain run (keyed by runId, nested via
+  // parentRunId) so concurrent graph executions never share a trace.
+  private steps: Map<string, Step> = new Map();
+  private rootRuns: Set<string> = new Set();
+  private tracesByRoot: Map<string, Trace> = new Map();
+  private skippedRuns: Set<string> = new Set();
 
   constructor(params?: ConstructorParams) {
     super();
@@ -240,18 +242,15 @@ export class OpenlayerHandler extends BaseCallbackHandler {
           : lastResponse.text || ''
         : '';
 
-      // Extract raw output (complete response object for debugging/analysis)
+      // Extract raw output (response object for debugging/analysis). Kept compact
+      // (no pretty-printing, no duplicated fullResponse) so traces stay within the
+      // platform's request size limit.
       const rawOutput =
         lastResponse ?
-          JSON.stringify(
-            {
-              generation: lastResponse,
-              llmOutput: output.llmOutput,
-              fullResponse: output,
-            },
-            null,
-            2,
-          )
+          JSON.stringify({
+            generation: lastResponse,
+            llmOutput: output.llmOutput,
+          })
         : null;
 
       this.handleStepEnd({
@@ -303,13 +302,23 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Chain start with ID: ${runId}`);
 
+      // Skip chains marked as hidden (e.g., internal LangGraph plumbing such as
+      // ChannelWrite and branch runnables) — they carry the full graph state and
+      // bloat the trace without adding information.
+      if (tags && tags.includes(LANGSMITH_HIDDEN_TAG)) {
+        this.skippedRuns.add(runId);
+        return;
+      }
+
       const runName = name ?? chain.id.at(-1)?.toString() ?? 'Langchain Chain';
 
       this.registerOpenlayerPrompt(parentRunId, metadata);
 
       // Process inputs to handle different formats
       let finalInput: string | ChainValues = inputs;
-      if (
+      if (runName === 'LangGraph' && typeof inputs === 'object' && inputs?.['messages']) {
+        finalInput = { prompt: inputs['messages'] };
+      } else if (
         typeof inputs === 'object' &&
         'input' in inputs &&
         Array.isArray(inputs['input']) &&
@@ -320,13 +329,14 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         finalInput = inputs['content'];
       }
 
-      const { step, endStep } = addChainStepToTrace({
+      this.startStep({
+        runId,
+        parentRunId,
+        stepType: StepType.USER_CALL,
         name: runName,
         inputs: finalInput,
         metadata: this.joinTagsAndMetaData(tags, metadata) || {},
       });
-
-      this.runMap.set(runId, { step, endStep });
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
@@ -336,8 +346,21 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Chain end with ID: ${runId}`);
 
-      let finalOutput: ChainValues | string = outputs;
-      if (typeof outputs === 'object' && 'output' in outputs && typeof outputs['output'] === 'string') {
+      const step = this.steps.get(runId);
+      const lastMessage =
+        Array.isArray(outputs?.['messages']) ?
+          outputs['messages'][outputs['messages'].length - 1]
+        : undefined;
+
+      let finalOutput: ChainValues | string | MessageContent = outputs;
+      if (step?.name === 'LangGraph' && lastMessage instanceof BaseMessage) {
+        // Surface the final assistant message as the trace output
+        finalOutput = lastMessage.content;
+      } else if (
+        typeof outputs === 'object' &&
+        'output' in outputs &&
+        typeof outputs['output'] === 'string'
+      ) {
         finalOutput = outputs['output'];
       }
 
@@ -375,14 +398,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Agent action ${action.tool} with ID: ${runId}`);
 
-      const { step, endStep } = addAgentStepToTrace({
-        name: action.tool,
-        inputs: action,
-        tool: action.tool,
-        action: action,
+      const step = this.startStep({
+        runId,
+        parentRunId,
+        stepType: StepType.AGENT,
+        name: `Agent Tool: ${action.tool}`,
+        inputs: { tool: action.tool, tool_input: action.toolInput, log: action.log },
       });
 
-      this.runMap.set(runId, { step, endStep });
+      if (step instanceof AgentStep) {
+        step.tool = action.tool;
+        step.action = action;
+      }
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
@@ -417,13 +444,37 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Tool start with ID: ${runId}`);
 
-      const { step, endStep } = addToolStepToTrace({
-        name: name ?? tool.id.at(-1)?.toString() ?? 'Tool execution',
+      const toolName = name ?? tool.id.at(-1)?.toString() ?? 'Tool execution';
+
+      // Handoff tools (LangGraph multi-agent convention: transfer_to_<agent>,
+      // transfer_back_to_<agent>) become HANDOFF steps instead of TOOL steps.
+      const handoffTarget = this.extractHandoffTarget(toolName);
+      if (handoffTarget) {
+        const fromComponent = (metadata?.['langgraph_node'] as string) ?? 'Unknown Agent';
+        const step = this.startStep({
+          runId,
+          parentRunId,
+          stepType: StepType.HANDOFF,
+          name: `Handoff: ${fromComponent} → ${handoffTarget}`,
+          inputs: input,
+          metadata: this.joinTagsAndMetaData(tags, metadata) || {},
+        });
+        if (step instanceof HandoffStep) {
+          step.fromComponent = fromComponent;
+          step.toComponent = handoffTarget;
+          step.handoffData = input;
+        }
+        return;
+      }
+
+      this.startStep({
+        runId,
+        parentRunId,
+        stepType: StepType.TOOL,
+        name: toolName,
         inputs: input,
         metadata: this.joinTagsAndMetaData(tags, metadata) || {},
       });
-
-      this.runMap.set(runId, { step, endStep });
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
@@ -471,13 +522,14 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     try {
       console.debug(`Retriever start with ID: ${runId}`);
 
-      const { step, endStep } = addRetrieverStepToTrace({
+      this.startStep({
+        runId,
+        parentRunId,
+        stepType: StepType.RETRIEVER,
         name: name ?? retriever.id.at(-1)?.toString() ?? 'Retriever',
-        inputs: query,
+        inputs: { query },
         metadata: this.joinTagsAndMetaData(tags, metadata) || {},
       });
-
-      this.runMap.set(runId, { step, endStep });
     } catch (e) {
       console.debug(e instanceof Error ? e.message : String(e));
     }
@@ -516,6 +568,55 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
+
+  /**
+   * Starts a step for a LangChain run, nesting it under its parent run when one
+   * exists. Root runs either join an ambient Openlayer trace (e.g. when the
+   * LangChain invocation happens inside a trace()-wrapped function) or start a
+   * standalone trace owned by this handler.
+   */
+  private startStep(params: {
+    runId: string;
+    parentRunId?: string | undefined;
+    stepType: StepType;
+    name: string;
+    inputs: any;
+    metadata?: Record<string, unknown> | undefined;
+  }): Step {
+    const { runId, parentRunId, stepType, name, inputs, metadata } = params;
+
+    const existing = this.steps.get(runId);
+    if (existing) {
+      return existing;
+    }
+
+    const step = stepFactory(stepType, name, inputs, null, (metadata as Record<string, any>) ?? {});
+
+    const parentStep = parentRunId ? this.steps.get(parentRunId) : undefined;
+    if (parentStep) {
+      parentStep.addNestedStep(step);
+    } else {
+      // Only an OPEN step counts as ambient context: the global currentTrace is
+      // not reset after a trace completes, so it may point at a stale trace.
+      const ambientStep = getCurrentStep();
+      if (ambientStep) {
+        // We're inside an existing step context (e.g. a trace()-wrapped
+        // function) - add as nested and let the outer trace own the upload
+        ambientStep.addNestedStep(step);
+      } else {
+        // No existing context - create a standalone trace owned by this run
+        const trace = new Trace();
+        trace.addStep(step);
+        this.tracesByRoot.set(runId, trace);
+      }
+      if (!parentRunId) {
+        this.rootRuns.add(runId);
+      }
+    }
+
+    this.steps.set(runId, step);
+    return step;
+  }
 
   private async handleGenerationStart(
     llm: Serialized,
@@ -632,19 +733,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         PROVIDER_TO_STEP_NAME[mappedProvider]
       : runName;
 
-    // For generations, we need to track the start time and other data to use in handleLLMEnd
-    const startTime = performance.now();
+    // Extra params other than invocation_params (which is fully captured by
+    // modelParameters and would otherwise be serialized multiple times per step)
+    const { invocation_params: _invocationParams, ...extraParamsRest } = extraParams ?? {};
 
-    // Enhanced metadata collection
+    // Enhanced metadata collection. Invocation params/tool schemas are kept ONLY in
+    // the step's modelParameters to avoid duplicating them in the trace payload.
     const enhancedMetadata = this.joinTagsAndMetaData(tags, metadata, {
       // LangChain specific metadata
       langchain_provider: provider,
       langchain_model: extractedModelName,
       langchain_run_id: runId,
       langchain_parent_run_id: parentRunId,
-
-      // Invocation details
-      invocation_params: invocationParams,
 
       // Timing
       start_time: new Date().toISOString(),
@@ -658,23 +758,23 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         : 'unknown',
 
       // Additional context
-      ...(Object.keys(modelParameters).length > 0 && { model_parameters: modelParameters }),
-      ...(extraParams && { extra_params: extraParams }),
+      ...(Object.keys(extraParamsRest).length > 0 && { extra_params: extraParamsRest }),
     });
 
-    this.runMap.set(runId, {
-      step: {
-        name: stepName,
-        inputs: { prompt: messages },
-        startTime,
-        provider: mappedProvider,
-        model: extractedModelName,
-        modelParameters,
-        metadata: enhancedMetadata,
-        prompt: registeredPrompt,
-      },
-      endStep: () => {}, // Will be replaced in handleLLMEnd
+    const step = this.startStep({
+      runId,
+      parentRunId,
+      stepType: StepType.CHAT_COMPLETION,
+      name: stepName,
+      inputs: { prompt: messages },
+      metadata: enhancedMetadata,
     });
+
+    if (step instanceof ChatCompletionStep) {
+      step.provider = mappedProvider ?? 'Unknown';
+      step.model = extractedModelName ?? null;
+      step.modelParameters = modelParameters;
+    }
   }
 
   private handleStepEnd(params: {
@@ -686,51 +786,125 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     usageDetails?: Record<string, any>;
     completionStartTime?: Date | undefined;
   }): void {
-    const { runId, output, rawOutput, error, modelName, usageDetails, completionStartTime } = params;
+    const { runId, output, rawOutput, error, modelName, usageDetails } = params;
 
-    const runData = this.runMap.get(runId);
-    if (!runData) {
-      console.warn('Step not found in runMap. Skipping operation');
+    if (this.skippedRuns.delete(runId)) {
       return;
     }
 
-    const { step } = runData;
+    const step = this.steps.get(runId);
+    if (!step) {
+      console.warn('Step not found for run. Skipping operation');
+      return;
+    }
+    this.steps.delete(runId);
+    const isRoot = this.rootRuns.delete(runId);
 
-    // Handle LLM/Generation steps specially
-    if (step.provider) {
-      const endTime = performance.now();
-      const latency = endTime - step.startTime;
+    step.endTime = Date.now();
+    if (step.latency === null) {
+      step.latency = step.endTime - step.startTime;
+    }
 
-      addChatCompletionStepToTrace({
-        name: step.name || 'Unknown Generation',
-        inputs: step.inputs || {},
-        output: output || '',
-        latency,
-        tokens: usageDetails?.['total'] || null,
-        promptTokens: usageDetails?.['input'] || null,
-        completionTokens: usageDetails?.['output'] || null,
-        model: modelName || step.model || null,
-        modelParameters: step.modelParameters || null,
-        metadata:
-          error ?
-            { ...step.metadata, error, rawOutput: rawOutput || null }
-          : { rawOutput: rawOutput || null, ...step.metadata },
-        provider: step.provider || 'Unknown',
-      });
+    if (step instanceof ChatCompletionStep) {
+      step.output = output || '';
+      step.tokens = usageDetails?.['total'] || null;
+      step.promptTokens = usageDetails?.['input'] || null;
+      step.completionTokens = usageDetails?.['output'] || null;
+      step.model = modelName || step.model || null;
+      step.metadata =
+        error ?
+          { ...step.metadata, error, rawOutput: rawOutput || null }
+        : { rawOutput: rawOutput || null, ...step.metadata };
     } else {
-      // For other step types, update and end the existing step
-      if (step.log) {
-        step.log({
-          output: output,
-          metadata: error ? { ...step.metadata, error } : step.metadata,
-        });
+      if (output !== undefined) {
+        step.output = output;
       }
-      if (runData.endStep) {
-        runData.endStep();
+      if (error) {
+        step.metadata = { ...step.metadata, error };
       }
     }
 
-    this.runMap.delete(runId);
+    if (isRoot) {
+      const trace = this.tracesByRoot.get(runId);
+      this.tracesByRoot.delete(runId);
+      // Only upload standalone traces — when nested in an ambient trace, the
+      // ambient root step's end triggers the upload instead.
+      if (trace && !getCurrentStep()) {
+        // Convert all LangChain objects in the trace once at the end
+        for (const traceStep of trace.steps) {
+          this.convertStepObjectsRecursively(traceStep);
+        }
+        processAndUploadTrace(trace);
+      }
+    }
+  }
+
+  /**
+   * Returns the target agent name when the tool follows the LangGraph
+   * multi-agent handoff naming convention (transfer_to_<agent> or
+   * transfer_back_to_<agent>), or null for regular tools.
+   */
+  private extractHandoffTarget(toolName: string): string | null {
+    const match = toolName.match(/^transfer_(?:back_)?to_(.+)$/);
+    return match?.[1] ?? null;
+  }
+
+  /** Converts all LangChain objects in a step and its nested steps. */
+  private convertStepObjectsRecursively(step: Step): void {
+    if (step.inputs !== null && step.inputs !== undefined) {
+      step.inputs = this.convertLangchainObjects(step.inputs);
+    }
+    if (step.output !== null && step.output !== undefined) {
+      step.output = this.convertLangchainObjects(step.output);
+    }
+    if (step.metadata) {
+      step.metadata = this.convertLangchainObjects(step.metadata) as Record<string, any>;
+    }
+    for (const nestedStep of step.steps) {
+      this.convertStepObjectsRecursively(nestedStep);
+    }
+  }
+
+  /** Recursively converts LangChain objects to a JSON-friendly format. */
+  private convertLangchainObjects(obj: any): any {
+    if (obj instanceof BaseMessage) {
+      return this.messageToDict(obj);
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.convertLangchainObjects(item));
+    }
+
+    if (obj !== null && typeof obj === 'object') {
+      const proto = Object.getPrototypeOf(obj);
+      if (proto === Object.prototype || proto === null) {
+        return Object.fromEntries(
+          Object.entries(obj).map(([key, value]) => [key, this.convertLangchainObjects(value)]),
+        );
+      }
+
+      // Class instances (e.g. ChatPromptValue) that wrap a list of messages
+      if (Array.isArray((obj as any).messages)) {
+        return (obj as any).messages.map((m: any) => this.convertLangchainObjects(m));
+      }
+      if ('content' in obj) {
+        return (obj as any).content;
+      }
+    }
+
+    return obj;
+  }
+
+  /** Converts a LangChain message to a `{role, content}` dictionary. */
+  private messageToDict(message: BaseMessage): { role: string; content: MessageContent } {
+    const messageType = typeof message._getType === 'function' ? message._getType() : 'human';
+
+    const role =
+      messageType === 'human' ? 'user'
+      : messageType === 'ai' ? 'assistant'
+      : messageType;
+
+    return { role, content: message.content };
   }
 
   private registerOpenlayerPrompt(parentRunId?: string, metadata?: Record<string, unknown>): void {

@@ -17,6 +17,8 @@ export enum StepType {
   TOOL = 'tool',
   RETRIEVER = 'retriever',
   FUNCTION_CALL = 'function_call',
+  HANDOFF = 'handoff',
+  GUARDRAIL = 'guardrail',
 }
 
 // ============================= INTERFACES ============================= //
@@ -43,6 +45,23 @@ export interface ChatCompletionStepData extends StepData {
   cost: number | null;
   model: string | null;
   modelParameters: Record<string, any> | null;
+}
+
+export interface HandoffStepData extends StepData {
+  fromComponent: string | null;
+  toComponent: string | null;
+  handoffData: any;
+}
+
+export interface GuardrailStepData extends StepData {
+  action: string | null;
+  blockedEntities: string[] | null;
+  confidenceThreshold: number | null;
+  reason: string | null;
+  detectedEntities: string[] | null;
+  redactedEntities: string[] | null;
+  blockStrategy: string | null;
+  dataType: string | null;
 }
 
 // ============================= STEP CLASSES ============================= //
@@ -225,6 +244,64 @@ export class RetrieverStep extends Step {
 }
 
 /**
+ * Handoff step represents a transition between components (e.g. agent-to-agent
+ * handoffs in multi-agent systems).
+ */
+export class HandoffStep extends Step {
+  fromComponent: string | null = null;
+  toComponent: string | null = null;
+  handoffData: any = null;
+
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.HANDOFF;
+  }
+
+  override toJSON(): HandoffStepData {
+    return {
+      ...super.toJSON(),
+      fromComponent: this.fromComponent,
+      toComponent: this.toComponent,
+      handoffData: this.handoffData,
+    };
+  }
+}
+
+/**
+ * Guardrail step tracks guardrail executions (input/output validation,
+ * content filtering, etc.).
+ */
+export class GuardrailStep extends Step {
+  action: string | null = null;
+  blockedEntities: string[] | null = null;
+  confidenceThreshold: number | null = null;
+  reason: string | null = null;
+  detectedEntities: string[] | null = null;
+  redactedEntities: string[] | null = null;
+  blockStrategy: string | null = null;
+  dataType: string | null = null;
+
+  constructor(name: string, inputs: any = null, output: any = null, metadata: Record<string, any> = {}) {
+    super(name, inputs, output, metadata);
+    this.stepType = StepType.GUARDRAIL;
+  }
+
+  override toJSON(): GuardrailStepData {
+    return {
+      ...super.toJSON(),
+      action: this.action,
+      blockedEntities: this.blockedEntities,
+      confidenceThreshold: this.confidenceThreshold,
+      reason: this.reason,
+      detectedEntities: this.detectedEntities,
+      redactedEntities: this.redactedEntities,
+      blockStrategy: this.blockStrategy,
+      dataType: this.dataType,
+    };
+  }
+}
+
+/**
  * Function call step tracks specific function calls with detailed execution metadata.
  */
 export class FunctionCallStep extends Step {
@@ -272,6 +349,10 @@ export function stepFactory(
       return new RetrieverStep(name, inputs, output, metadata);
     case StepType.FUNCTION_CALL:
       return new FunctionCallStep(name, inputs, output, metadata);
+    case StepType.HANDOFF:
+      return new HandoffStep(name, inputs, output, metadata);
+    case StepType.GUARDRAIL:
+      return new GuardrailStep(name, inputs, output, metadata);
     default:
       throw new Error(`Step type ${stepType} not recognized.`);
   }
