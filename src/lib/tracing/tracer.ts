@@ -12,13 +12,88 @@ import {
   StepType,
   stepFactory,
 } from './steps';
-import Openlayer from '../../index';
+import Openlayer, { type ClientOptions } from '../../index';
+import { OfflineBuffer } from './offlineBuffer';
 
 let currentTrace: Trace | null = null;
 
 // Lazy-initialized Openlayer client to ensure environment variables are loaded
 let client: Openlayer | null = null;
 let clientInitialized = false;
+
+// ----------------------------------------------------------------------------
+// Offline buffering & failure-resilience types and configuration
+//
+// Ports the Python SDK's data-loss-prevention features (offline buffer,
+// onFlushFailure callback, configure(), and manual replay).
+// ----------------------------------------------------------------------------
+
+/** Invoked when a trace fails to flush to Openlayer. */
+export type OnFlushFailureCallback = (
+  traceData: Record<string, any>,
+  config: Record<string, any>,
+  error: unknown,
+) => void;
+
+/** Invoked when a buffered trace is successfully replayed. */
+export type OnReplaySuccessCallback = (traceData: Record<string, any>, config: Record<string, any>) => void;
+
+/** Invoked when a buffered trace fails to replay after all retries. */
+export type OnReplayFailureCallback = (
+  traceData: Record<string, any>,
+  config: Record<string, any>,
+  error: unknown,
+) => void;
+
+export interface ConfigureOptions {
+  apiKey?: string;
+  inferencePipelineId?: string;
+  baseURL?: string;
+  /** Request timeout in milliseconds. */
+  timeout?: number;
+  maxRetries?: number;
+  /** Callback invoked on every failed flush (before buffering). */
+  onFlushFailure?: OnFlushFailureCallback;
+  /** Persist failed traces to disk for later replay. Defaults to false. */
+  offlineBufferEnabled?: boolean;
+  /** Directory for buffered traces. Defaults to ~/.openlayer/buffer. */
+  offlineBufferPath?: string;
+  /** Maximum number of buffered trace files. Defaults to 1000. */
+  maxBufferSize?: number;
+}
+
+export interface BufferStatus {
+  enabled: boolean;
+  bufferPath?: string;
+  totalTraces?: number;
+  maxBufferSize?: number;
+  totalSizeBytes?: number;
+  oldestTrace?: string | null;
+  newestTrace?: string | null;
+  error?: string;
+}
+
+export interface ReplayResult {
+  totalTraces: number;
+  successCount: number;
+  failureCount: number;
+  failedTraces?: Array<{ traceId: string; error: string; filePath: string }>;
+  error?: string;
+}
+
+// Programmatic configuration (set via configure()). Environment variables remain
+// the fallback for every field, so existing env-only setups keep working.
+let configuredApiKey: string | undefined;
+let configuredPipelineId: string | undefined;
+let configuredBaseURL: string | undefined;
+let configuredTimeout: number | undefined;
+let configuredMaxRetries: number | undefined;
+let configuredOnFlushFailure: OnFlushFailureCallback | undefined;
+let configuredOfflineBufferEnabled = false;
+let configuredOfflineBufferPath: string | undefined;
+let configuredMaxBufferSize: number | undefined;
+
+let offlineBuffer: OfflineBuffer | null = null;
 
 function getOpenlayerClient(): Openlayer | null {
   if (clientInitialized) {
@@ -29,7 +104,14 @@ function getOpenlayerClient(): Openlayer | null {
   const publish = process.env['OPENLAYER_DISABLE_PUBLISH'] !== 'true';
   if (publish) {
     console.debug('Publishing is enabled');
-    client = new Openlayer();
+    // Build from configured values; the Openlayer constructor falls back to
+    // environment variables for any option left unset.
+    const options: ClientOptions = {};
+    if (configuredApiKey !== undefined) options.apiKey = configuredApiKey;
+    if (configuredBaseURL !== undefined) options.baseURL = configuredBaseURL;
+    if (configuredTimeout !== undefined) options.timeout = configuredTimeout;
+    if (configuredMaxRetries !== undefined) options.maxRetries = configuredMaxRetries;
+    client = new Openlayer(options);
   }
   return client;
 }
@@ -58,7 +140,8 @@ function createStep(
   metadata = metadata || {};
   const newStep = stepFactory(stepType, name, inputs, output, metadata, startTime, endTime);
 
-  const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
+  const inferencePipelineId =
+    openlayerInferencePipelineId || configuredPipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
 
   const parentStep = getCurrentStep();
   const isRootStep = parentStep === null;
@@ -118,33 +201,34 @@ export function getCurrentStep(): Step | null | undefined {
  * step's endStep and by integrations (e.g. the LangChain callback handler) that
  * assemble traces themselves.
  */
-export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId?: string): void {
+export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId?: string): Promise<void> {
   const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(trace);
 
-  const inferencePipelineId = openlayerInferencePipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
+  const inferencePipelineId =
+    openlayerInferencePipelineId || configuredPipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
   const openlayerClient = getOpenlayerClient();
 
   if (openlayerClient && inferencePipelineId) {
     console.debug('Uploading trace to Openlayer...');
 
-    openlayerClient.inferencePipelines.data
-      .stream(inferencePipelineId, {
-        config: {
-          outputColumnName: 'output',
-          inputVariableNames: inputVariableNames,
-          groundTruthColumnName: 'groundTruth',
-          latencyColumnName: 'latency',
-          costColumnName: 'cost',
-          timestampColumnName: 'inferenceTimestamp',
-          inferenceIdColumnName: 'inferenceId',
-          numOfTokenColumnName: 'tokens',
-        },
-        rows: [processedTraceData],
-      })
+    // Lifted to a const so the failure handler can buffer it for later replay.
+    const config = {
+      outputColumnName: 'output',
+      inputVariableNames: inputVariableNames,
+      groundTruthColumnName: 'groundTruth',
+      latencyColumnName: 'latency',
+      costColumnName: 'cost',
+      timestampColumnName: 'inferenceTimestamp',
+      inferenceIdColumnName: 'inferenceId',
+      numOfTokenColumnName: 'tokens',
+    };
+
+    return openlayerClient.inferencePipelines.data
+      .stream(inferencePipelineId, { config, rows: [processedTraceData] })
       .then(() => {
         console.debug('Trace uploaded successfully to Openlayer');
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         // Compact failure log (mirrors the Python SDK) — never dump the full
         // trace, which can be multiple MBs.
         console.error('Failed to upload trace to Openlayer:', error);
@@ -154,6 +238,9 @@ export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId
             `payloadBytes=${JSON.stringify(processedTraceData).length} ` +
             `inputVariableNames=${JSON.stringify(inputVariableNames)}`,
         );
+        // Invoke the failure callback and persist to the offline buffer so the
+        // data is not lost.
+        handleStreamingFailure(processedTraceData, config, inferencePipelineId, error);
       });
   } else {
     if (!openlayerClient) {
@@ -161,7 +248,185 @@ export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId
     } else if (!inferencePipelineId) {
       console.warn('Trace upload skipped: OPENLAYER_INFERENCE_PIPELINE_ID environment variable not set');
     }
+    return Promise.resolve();
   }
+}
+
+// ----------------------------------------------------------------------------
+// Public configuration & offline-buffer management API
+// ----------------------------------------------------------------------------
+
+/**
+ * Configure the Openlayer tracer programmatically.
+ *
+ * Only the fields you pass are updated; any field left unset keeps its
+ * previously configured value (and falls back to the corresponding environment
+ * variable if it was never set). This makes it safe to call configure() more
+ * than once — e.g. to rotate the API key without clearing a previously
+ * registered onFlushFailure callback or disabling the offline buffer. Calling
+ * configure() resets the lazily created client and offline buffer so they pick
+ * up the new settings.
+ */
+export function configure(options: ConfigureOptions): void {
+  if (options.apiKey !== undefined) configuredApiKey = options.apiKey;
+  if (options.inferencePipelineId !== undefined) configuredPipelineId = options.inferencePipelineId;
+  if (options.baseURL !== undefined) configuredBaseURL = options.baseURL;
+  if (options.timeout !== undefined) configuredTimeout = options.timeout;
+  if (options.maxRetries !== undefined) configuredMaxRetries = options.maxRetries;
+  if (options.onFlushFailure !== undefined) configuredOnFlushFailure = options.onFlushFailure;
+  if (options.offlineBufferEnabled !== undefined)
+    configuredOfflineBufferEnabled = options.offlineBufferEnabled;
+  if (options.offlineBufferPath !== undefined) configuredOfflineBufferPath = options.offlineBufferPath;
+  if (options.maxBufferSize !== undefined) configuredMaxBufferSize = options.maxBufferSize;
+
+  // Reset so they are recreated with the new configuration.
+  client = null;
+  clientInitialized = false;
+  offlineBuffer = null;
+}
+
+/** Get or lazily create the offline buffer, or null when buffering is disabled. */
+function getOfflineBuffer(): OfflineBuffer | null {
+  if (!configuredOfflineBufferEnabled) {
+    return null;
+  }
+  if (offlineBuffer === null) {
+    offlineBuffer = new OfflineBuffer(configuredOfflineBufferPath, configuredMaxBufferSize);
+  }
+  return offlineBuffer;
+}
+
+/**
+ * Handle a streaming failure: invoke the configured failure callback and persist
+ * the trace to the offline buffer when enabled.
+ */
+function handleStreamingFailure(
+  traceData: Record<string, any>,
+  config: Record<string, any>,
+  inferencePipelineId: string,
+  error: unknown,
+): void {
+  try {
+    if (configuredOnFlushFailure) {
+      try {
+        configuredOnFlushFailure(traceData, config, error);
+      } catch (callbackErr) {
+        console.error('Error in onFlushFailure callback:', callbackErr);
+      }
+    }
+
+    const buffer = getOfflineBuffer();
+    if (buffer) {
+      const ok = buffer.storeTrace(traceData, config, inferencePipelineId);
+      if (ok) {
+        console.info('Stored failed trace to offline buffer for later replay');
+      } else {
+        // storeTrace logs its own error on a real write failure; this branch
+        // also covers an intentionally disabled buffer (maxBufferSize <= 0).
+        console.debug('Trace not stored to offline buffer');
+      }
+    }
+  } catch (handlerErr) {
+    console.error('Error handling streaming failure:', handlerErr);
+  }
+}
+
+/**
+ * Replay all buffered traces to Openlayer. Each trace is attempted up to
+ * `maxRetries` times (always at least once); successfully sent traces are
+ * removed from the buffer.
+ */
+export async function replayBufferedTraces(
+  options: {
+    maxRetries?: number;
+    onReplaySuccess?: OnReplaySuccessCallback;
+    onReplayFailure?: OnReplayFailureCallback;
+  } = {},
+): Promise<ReplayResult> {
+  const { maxRetries = 3, onReplaySuccess, onReplayFailure } = options;
+  // Always make at least one attempt, even if a caller passes 0 or a negative.
+  const attempts = Math.max(1, maxRetries);
+
+  const buffer = getOfflineBuffer();
+  if (!buffer) {
+    console.warn('Offline buffer not enabled - nothing to replay');
+    return { totalTraces: 0, successCount: 0, failureCount: 0, error: 'Offline buffer not enabled' };
+  }
+
+  const openlayerClient = getOpenlayerClient();
+  if (!openlayerClient) {
+    console.error('No Openlayer client available for replay');
+    return { totalTraces: 0, successCount: 0, failureCount: 0, error: 'No Openlayer client available' };
+  }
+
+  const buffered = buffer.getBufferedTraces();
+  const totalTraces = buffered.length;
+  let successCount = 0;
+  let failureCount = 0;
+  const failedTraces: Array<{ traceId: string; error: string; filePath: string }> = [];
+
+  console.info(`Starting replay of ${totalTraces} buffered traces`);
+
+  for (const payload of buffered) {
+    const { traceData, config, inferencePipelineId, filePath } = payload;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        await openlayerClient.inferencePipelines.data.stream(inferencePipelineId, {
+          config,
+          rows: [traceData],
+        });
+
+        buffer.removeTrace(filePath);
+        successCount++;
+        if (onReplaySuccess) {
+          try {
+            onReplaySuccess(traceData, config);
+          } catch (cbErr) {
+            console.error('Error in replay success callback:', cbErr);
+          }
+        }
+        break;
+      } catch (err) {
+        if (attempt === attempts - 1) {
+          failureCount++;
+          failedTraces.push({
+            traceId: String(traceData?.['inferenceId'] ?? 'unknown'),
+            error: String(err),
+            filePath,
+          });
+          if (onReplayFailure) {
+            try {
+              onReplayFailure(traceData, config, err);
+            } catch (cbErr) {
+              console.error('Error in replay failure callback:', cbErr);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  console.info(`Replay completed: ${successCount}/${totalTraces} traces successfully sent`);
+  return { totalTraces, successCount, failureCount, failedTraces };
+}
+
+/** Current status of the offline buffer. */
+export function getBufferStatus(): BufferStatus {
+  const buffer = getOfflineBuffer();
+  if (!buffer) {
+    return { enabled: false, error: 'Offline buffer not enabled' };
+  }
+  return { enabled: true, ...buffer.getBufferStatus() };
+}
+
+/** Permanently remove all buffered traces from disk. */
+export function clearOfflineBuffer(): { tracesRemoved: number; error?: string } {
+  const buffer = getOfflineBuffer();
+  if (!buffer) {
+    return { tracesRemoved: 0, error: 'Offline buffer not enabled' };
+  }
+  return { tracesRemoved: buffer.clearBuffer() };
 }
 
 function getParamNames(func: Function): string[] {
