@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.0 (2026-06-16)
+
+Full Changelog: [v0.28.0...v0.29.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.28.0...v0.29.0)
+
+### Features
+
+* **tracing:** promote session_id/user_id to first-class stream columns ([a7a2a19](https://github.com/openlayer-ai/openlayer-ts/commit/a7a2a19651fbcba62b32d4f274b4e1ea4ee2f2a7))
+
 ## 0.28.0 (2026-06-16)
 
 Full Changelog: [v0.27.4...v0.28.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.4...v0.28.0)
