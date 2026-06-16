@@ -13,6 +13,7 @@ import {
   stepFactory,
 } from './steps';
 import Openlayer, { type ClientOptions } from '../../index';
+import type { DataStreamParams } from '../../resources/inference-pipelines/data';
 import { OfflineBuffer } from './offlineBuffer';
 
 let currentTrace: Trace | null = null;
@@ -212,16 +213,7 @@ export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId
     console.debug('Uploading trace to Openlayer...');
 
     // Lifted to a const so the failure handler can buffer it for later replay.
-    const config = {
-      outputColumnName: 'output',
-      inputVariableNames: inputVariableNames,
-      groundTruthColumnName: 'groundTruth',
-      latencyColumnName: 'latency',
-      costColumnName: 'cost',
-      timestampColumnName: 'inferenceTimestamp',
-      inferenceIdColumnName: 'inferenceId',
-      numOfTokenColumnName: 'tokens',
-    };
+    const config = buildStreamConfig(processedTraceData, inputVariableNames);
 
     return openlayerClient.inferencePipelines.data
       .stream(inferencePipelineId, { config, rows: [processedTraceData] })
@@ -718,7 +710,49 @@ export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariab
     Object.assign(traceData, input_variables);
   }
 
+  // Surface session_id / user_id from the root step's metadata as top-level
+  // columns so the stream config can map them to a first-class session/user
+  // (mirrors the Python SDK). An explicit input variable of the same name wins.
+  const rootMetadata = (rootStep!.metadata ?? {}) as Record<string, any>;
+  for (const key of ['session_id', 'user_id'] as const) {
+    if (rootMetadata[key] != null && !(key in traceData)) {
+      (traceData as Record<string, any>)[key] = rootMetadata[key];
+    }
+  }
+
   return { traceData, inputVariableNames };
+}
+
+/**
+ * Builds the inference-pipeline stream config for a processed trace row.
+ *
+ * The session/user column names are only included when the row actually carries
+ * a `session_id` / `user_id`, so the Openlayer platform records a first-class
+ * session/user for the trace. This mirrors the Python SDK's `post_process_trace`.
+ */
+export function buildStreamConfig(
+  traceData: Record<string, any>,
+  inputVariableNames: string[],
+): DataStreamParams.LlmData {
+  const config: DataStreamParams.LlmData = {
+    outputColumnName: 'output',
+    inputVariableNames: inputVariableNames,
+    groundTruthColumnName: 'groundTruth',
+    latencyColumnName: 'latency',
+    costColumnName: 'cost',
+    timestampColumnName: 'inferenceTimestamp',
+    inferenceIdColumnName: 'inferenceId',
+    numOfTokenColumnName: 'tokens',
+  };
+
+  if (traceData['session_id'] != null) {
+    config.sessionIdColumnName = 'session_id';
+  }
+  if (traceData['user_id'] != null) {
+    config.userIdColumnName = 'user_id';
+  }
+
+  return config;
 }
 
 export default trace;
