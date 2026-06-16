@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.28.0 (2026-06-16)
+
+Full Changelog: [v0.27.4...v0.28.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.4...v0.28.0)
+
+### Features
+
+* **tracing:** offline buffering & failure-resilient tracing ([de5365f](https://github.com/openlayer-ai/openlayer-ts/commit/de5365fe1331b61651014e4385d55c4cf04bc300))
+
 ## 0.27.4 (2026-06-11)
 
 Full Changelog: [v0.27.3...v0.27.4](https://github.com/openlayer-ai/openlayer-ts/compare/v0.27.3...v0.27.4)
