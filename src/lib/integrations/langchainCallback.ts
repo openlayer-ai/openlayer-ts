@@ -2,19 +2,7 @@ import type { AgentAction, AgentFinish } from '@langchain/core/agents';
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import type { Document } from '@langchain/core/documents';
 import type { Serialized } from '@langchain/core/load/serializable';
-import {
-  AIMessage,
-  AIMessageChunk,
-  BaseMessage,
-  ChatMessage,
-  FunctionMessage,
-  HumanMessage,
-  SystemMessage,
-  ToolMessage,
-  type UsageMetadata,
-  type BaseMessageFields,
-  type MessageContent,
-} from '@langchain/core/messages';
+import type { BaseMessage, UsageMetadata, BaseMessageFields, MessageContent } from '@langchain/core/messages';
 import type { Generation, LLMResult } from '@langchain/core/outputs';
 import type { ChainValues } from '@langchain/core/utils/types';
 import { getCurrentStep, processAndUploadTrace } from '../tracing/tracer';
@@ -44,6 +32,91 @@ const PROVIDER_TO_STEP_NAME: Record<string, string> = {
 
 const LANGSMITH_HIDDEN_TAG = 'langsmith:hidden';
 
+/**
+ * The message-type discriminator returned by LangChain `BaseMessage` instances.
+ *
+ * @see https://github.com/langchain-ai/langchainjs
+ */
+type LangChainMessageType = 'human' | 'ai' | 'system' | 'tool' | 'function' | 'chat' | 'generic';
+
+/**
+ * Duck-typed view of a LangChain message.
+ *
+ * We deliberately avoid `instanceof` against `@langchain/core` classes. When a
+ * user application depends on a different major of `@langchain/core` than the
+ * one resolved for this package, npm/yarn installs two physical copies of the
+ * library. `instanceof` compares against the class identity of *this* copy, so
+ * message objects created by the application's copy fail every check and their
+ * content/usage silently falls into generic/empty branches (OPEN-11316).
+ *
+ * Instead we read the public `getType()` / internal `_getType()` discriminator
+ * and probe for well-known fields. These are stable across 0.3.x and 1.x and
+ * are immune to duplicate-copy identity mismatches.
+ */
+type DuckMessage = {
+  content?: BaseMessageFields['content'];
+  name?: string | undefined;
+  role?: string | undefined;
+  additional_kwargs?: BaseMessageFields['additional_kwargs'];
+  tool_calls?: unknown[] | undefined;
+  usage_metadata?: UsageMetadata | undefined;
+  response_metadata?: Record<string, any> | undefined;
+  getType?: () => string;
+  _getType?: () => string;
+};
+
+/**
+ * Returns true when `value` looks like a LangChain message regardless of which
+ * `@langchain/core` copy produced it. A message is anything exposing the
+ * `getType()` / `_getType()` discriminator.
+ */
+function isLangChainMessage(value: unknown): value is DuckMessage {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as DuckMessage;
+  return typeof candidate.getType === 'function' || typeof candidate._getType === 'function';
+}
+
+/**
+ * Resolves the duck-typed message type string ('human' | 'ai' | ...). Prefers
+ * the public `getType()` and falls back to the internal `_getType()`.
+ */
+function getMessageType(message: DuckMessage): LangChainMessageType {
+  let type: string | undefined;
+  if (typeof message.getType === 'function') {
+    type = message.getType();
+  } else if (typeof message._getType === 'function') {
+    type = message._getType();
+  }
+  switch (type) {
+    case 'human':
+    case 'ai':
+    case 'system':
+    case 'tool':
+    case 'function':
+    case 'chat':
+      return type;
+    default:
+      return 'generic';
+  }
+}
+
+/**
+ * Detects an AI/assistant message by its duck-typed surface: either it reports
+ * type 'ai', or it carries assistant-only fields (`usage_metadata`/`tool_calls`).
+ * This stays correct across duplicate `@langchain/core` copies.
+ */
+function isAIMessageLike(message: unknown): message is DuckMessage {
+  if (!isLangChainMessage(message)) {
+    return false;
+  }
+  if (getMessageType(message) === 'ai') {
+    return true;
+  }
+  return 'usage_metadata' in message || 'tool_calls' in message;
+}
+
 type OpenlayerPrompt = {
   name: string;
   version: number;
@@ -67,6 +140,13 @@ type ConstructorParams = {
   tags?: string[] | undefined;
   version?: string | undefined;
   traceMetadata?: Record<string, unknown> | undefined;
+  /**
+   * When true (the default), LangGraph's injected `metadata.thread_id` is mapped
+   * to the trace session whenever no explicit {@link ConstructorParams.sessionId}
+   * was provided, so LangGraph apps get sessions for free. An explicitly provided
+   * `sessionId` always wins and is never clobbered. Set to `false` to opt out.
+   */
+  mapThreadIdToSession?: boolean | undefined;
 };
 
 /**
@@ -78,6 +158,16 @@ type ConstructorParams = {
  * - Agents and Tools
  * - Retrievers
  * - Error handling and hierarchical tracking
+ *
+ * @remarks
+ * LangChain JS dispatches callbacks in the background and does **not** block on
+ * them by default. In serverless environments (AWS Lambda, Vercel, Cloudflare
+ * Workers) the function can return and the runtime freeze/terminate before the
+ * Openlayer trace finishes uploading, silently dropping traces. Always flush
+ * pending callbacks before the handler returns, e.g. by `await`-ing
+ * `awaitAllCallbacks()` from `@langchain/core/callbacks/promises` (and fully
+ * awaiting your chain's `.invoke()`). See the README "LangChain integration"
+ * section for an example. Note `@langchain/core` v1 requires Node.js 20+.
  *
  * @example
  * ```typescript
@@ -103,6 +193,9 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   private sessionId?: string | undefined;
   private tags: string[];
   private traceMetadata?: Record<string, unknown> | undefined;
+  private readonly mapThreadIdToSession: boolean;
+  /** Whether `sessionId` was provided explicitly (so it must not be clobbered). */
+  private readonly hasExplicitSessionId: boolean;
 
   private completionStartTimes: Record<string, Date> = {};
   private promptToParentRunMap: Map<string, OpenlayerPrompt> = new Map();
@@ -118,10 +211,12 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     super();
 
     this.sessionId = params?.sessionId;
+    this.hasExplicitSessionId = params?.sessionId != null;
     this.userId = params?.userId;
     this.tags = params?.tags ?? [];
     this.traceMetadata = params?.traceMetadata;
     this.version = params?.version;
+    this.mapThreadIdToSession = params?.mapThreadIdToSession ?? true;
   }
 
   // ============================================================================
@@ -234,11 +329,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         }
       }
 
-      // Extract clean output for dashboard display
+      // Extract clean output for dashboard display. Use duck typing instead of
+      // `instanceof BaseMessage` so the message content is read even when the
+      // message comes from a different `@langchain/core` copy (OPEN-11316).
       const extractedOutput =
         lastResponse ?
-          'message' in lastResponse && lastResponse['message'] instanceof BaseMessage ?
-            lastResponse['message'].content // Just the content, not the full message object
+          'message' in lastResponse && isLangChainMessage((lastResponse as any)['message']) ?
+            (lastResponse as any)['message'].content // Just the content, not the full message object
           : lastResponse.text || ''
         : '';
 
@@ -310,7 +407,11 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         return;
       }
 
-      const runName = name ?? chain.id.at(-1)?.toString() ?? 'Langchain Chain';
+      // Prefer an explicit name, then LangGraph's injected `metadata.langgraph_node`
+      // so graph nodes are identifiable instead of showing a generic chain name.
+      const langgraphNode =
+        typeof metadata?.['langgraph_node'] === 'string' ? (metadata['langgraph_node'] as string) : undefined;
+      const runName = name ?? langgraphNode ?? chain.id.at(-1)?.toString() ?? 'Langchain Chain';
 
       this.registerOpenlayerPrompt(parentRunId, metadata);
 
@@ -322,9 +423,9 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         typeof inputs === 'object' &&
         'input' in inputs &&
         Array.isArray(inputs['input']) &&
-        inputs['input'].every((m) => m instanceof BaseMessage)
+        inputs['input'].every((m) => isLangChainMessage(m))
       ) {
-        finalInput = inputs['input'].map((m) => this.extractChatMessageContent(m));
+        finalInput = inputs['input'].map((m) => this.extractChatMessageContent(m as BaseMessage));
       } else if (typeof inputs === 'object' && 'content' in inputs && typeof inputs['content'] === 'string') {
         finalInput = inputs['content'];
       }
@@ -353,9 +454,11 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         : undefined;
 
       let finalOutput: ChainValues | string | MessageContent = outputs;
-      if (step?.name === 'LangGraph' && lastMessage instanceof BaseMessage) {
-        // Surface the final assistant message as the trace output
-        finalOutput = lastMessage.content;
+      if (step?.name === 'LangGraph' && isLangChainMessage(lastMessage)) {
+        // Surface the final assistant message as the trace output. Duck-typed
+        // instead of `instanceof BaseMessage` so it works across duplicate
+        // `@langchain/core` copies (OPEN-11316).
+        finalOutput = lastMessage.content as MessageContent;
       } else if (
         typeof outputs === 'object' &&
         'output' in outputs &&
@@ -867,7 +970,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
   /** Recursively converts LangChain objects to a JSON-friendly format. */
   private convertLangchainObjects(obj: any): any {
-    if (obj instanceof BaseMessage) {
+    // Duck-typed message detection instead of `instanceof BaseMessage` so
+    // messages from a different `@langchain/core` copy are still converted
+    // (OPEN-11316).
+    if (isLangChainMessage(obj)) {
       return this.messageToDict(obj);
     }
 
@@ -896,15 +1002,19 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   }
 
   /** Converts a LangChain message to a `{role, content}` dictionary. */
-  private messageToDict(message: BaseMessage): { role: string; content: MessageContent } {
-    const messageType = typeof message._getType === 'function' ? message._getType() : 'human';
+  private messageToDict(message: DuckMessage): { role: string; content: MessageContent } {
+    // Duck-typed discriminator (see getMessageType) instead of a direct
+    // `_getType()` call so the role resolves across duplicate `@langchain/core`
+    // copies (OPEN-11316).
+    const messageType = getMessageType(message);
 
     const role =
       messageType === 'human' ? 'user'
       : messageType === 'ai' ? 'assistant'
+      : messageType === 'generic' ? 'user'
       : messageType;
 
-    return { role, content: message.content };
+    return { role, content: (message.content ?? '') as MessageContent };
   }
 
   private registerOpenlayerPrompt(parentRunId?: string, metadata?: Record<string, unknown>): void {
@@ -927,6 +1037,24 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     return azureRefusalError;
   }
 
+  /**
+   * Resolves the session id to attach to a step from the handler config and the
+   * LangChain callback `metadata`.
+   *
+   * An explicitly provided `sessionId` always wins. Otherwise, when
+   * {@link mapThreadIdToSession} is enabled, LangGraph's injected
+   * `metadata.thread_id` is used so LangGraph apps get sessions for free.
+   */
+  private resolveSessionId(metadata?: Record<string, unknown>): string | undefined {
+    if (this.hasExplicitSessionId) {
+      return this.sessionId;
+    }
+    if (this.mapThreadIdToSession && metadata && typeof metadata['thread_id'] === 'string') {
+      return metadata['thread_id'] as string;
+    }
+    return this.sessionId;
+  }
+
   private joinTagsAndMetaData(
     tags?: string[],
     metadata1?: Record<string, unknown>,
@@ -942,6 +1070,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     if (metadata2) {
       Object.assign(finalDict, metadata2);
     }
+
+    // Attach session/user context so it propagates to the uploaded trace. The
+    // session may come from an explicit `sessionId` or be auto-mapped from
+    // LangGraph's `metadata.thread_id` (see resolveSessionId).
+    const sessionId = this.resolveSessionId(metadata1);
+    if (sessionId != null && !('session_id' in finalDict)) {
+      finalDict['session_id'] = sessionId;
+    }
+    if (this.userId != null && !('user_id' in finalDict)) {
+      finalDict['user_id'] = this.userId;
+    }
+
     return this.stripOpenlayerKeysFromMetadata(finalDict);
   }
 
@@ -959,15 +1099,11 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
   private extractUsageMetadata(generation: Generation): UsageMetadata | undefined {
     try {
-      const usageMetadata =
-        (
-          'message' in generation &&
-          (generation['message'] instanceof AIMessage || generation['message'] instanceof AIMessageChunk)
-        ) ?
-          generation['message'].usage_metadata
-        : undefined;
-
-      return usageMetadata;
+      // Detect the AI message via duck typing (presence of `usage_metadata` /
+      // `tool_calls` or a 'ai' discriminator) rather than `instanceof`, so usage
+      // is captured even across duplicate `@langchain/core` copies (OPEN-11316).
+      const message = 'message' in generation ? (generation as any)['message'] : undefined;
+      return isAIMessageLike(message) ? message.usage_metadata : undefined;
     } catch (err) {
       console.debug(`Error extracting usage metadata: ${err}`);
       return;
@@ -976,12 +1112,8 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
   private extractModelNameFromMetadata(generation: any): string | undefined {
     try {
-      return (
-          'message' in generation &&
-            (generation['message'] instanceof AIMessage || generation['message'] instanceof AIMessageChunk)
-        ) ?
-          generation['message'].response_metadata?.['model_name']
-        : undefined;
+      const message = 'message' in generation ? generation['message'] : undefined;
+      return isAIMessageLike(message) ? message.response_metadata?.['model_name'] : undefined;
     } catch {
       return undefined;
     }
@@ -990,29 +1122,34 @@ export class OpenlayerHandler extends BaseCallbackHandler {
   private extractChatMessageContent(message: BaseMessage): LlmMessage | AnonymousLlmMessage | MessageContent {
     let response: any = undefined;
 
-    if (message instanceof HumanMessage) {
+    // Duck-typed discriminator (see getMessageType) instead of `instanceof` so
+    // classification works across duplicate `@langchain/core` copies.
+    const duck = message as unknown as DuckMessage;
+    const messageType = getMessageType(duck);
+
+    if (messageType === 'human') {
       response = { content: message.content, role: 'user' };
-    } else if (message instanceof ChatMessage) {
-      response = { content: message.content, role: message.role };
-    } else if (message instanceof AIMessage) {
+    } else if (messageType === 'chat') {
+      response = { content: message.content, role: duck.role };
+    } else if (messageType === 'ai') {
       response = { content: message.content, role: 'assistant' };
 
-      if ('tool_calls' in message && (message.tool_calls?.length ?? 0) > 0) {
-        response['tool_calls'] = message['tool_calls'];
+      if ((duck.tool_calls?.length ?? 0) > 0) {
+        response['tool_calls'] = duck.tool_calls;
       }
-    } else if (message instanceof SystemMessage) {
+    } else if (messageType === 'system') {
       response = { content: message.content, role: 'system' };
-    } else if (message instanceof FunctionMessage) {
+    } else if (messageType === 'function') {
       response = {
         content: message.content,
         additional_kwargs: message.additional_kwargs,
-        role: message.name,
+        role: duck.name,
       };
-    } else if (message instanceof ToolMessage) {
+    } else if (messageType === 'tool') {
       response = {
         content: message.content,
         additional_kwargs: message.additional_kwargs,
-        role: message.name,
+        role: duck.name,
       };
     } else if (!message.name) {
       response = { content: message.content };
