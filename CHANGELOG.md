@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.29.1 (2026-06-17)
+
+Full Changelog: [v0.29.0...v0.29.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.29.0...v0.29.1)
+
+### Bug Fixes
+
+* **client:** send content-type header for requests with an omitted optional body ([71fadef](https://github.com/openlayer-ai/openlayer-ts/commit/71fadefad05a5dd8e71ffc4b1347f917050ec718))
+* **closes OPEN-11316:** support @langchain/core v1 + LangGraph metadata mapping ([dda6be0](https://github.com/openlayer-ai/openlayer-ts/commit/dda6be0347534d36713cb854142854c3c9251f12))
+
 ## 0.29.0 (2026-06-16)
 
 Full Changelog: [v0.28.0...v0.29.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.28.0...v0.29.0)
