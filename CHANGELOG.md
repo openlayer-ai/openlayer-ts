@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.30.0 (2026-07-01)
+
+Full Changelog: [v0.29.1...v0.30.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.29.1...v0.30.0)
+
+### Features
+
+* **api:** manual updates ([b962e62](https://github.com/openlayer-ai/openlayer-ts/commit/b962e62df8139ad9eb58eb19613e2a3d9fc0db0d))
+
 ## 0.29.1 (2026-06-17)
 
 Full Changelog: [v0.29.0...v0.29.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.29.0...v0.29.1)
