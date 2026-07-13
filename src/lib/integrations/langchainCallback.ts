@@ -18,6 +18,15 @@ const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
   'azure-openai': 'Azure OpenAI',
   cohere: 'Cohere',
   huggingface: 'Hugging Face',
+  // Google / Gemini. ChatGoogleGenerativeAI reports ls_provider "google_genai"
+  // (and _llm_type "chat-google-generative-ai"); the inference fallback below
+  // yields "google"/"gemini". Map them all to the canonical "Google" so cost
+  // estimation resolves instead of returning $0 (OPEN-11695).
+  google: 'Google',
+  google_genai: 'Google',
+  google_vertexai: 'Google',
+  gemini: 'Google',
+  'chat-google-generative-ai': 'Google',
 };
 
 const PROVIDER_TO_STEP_NAME: Record<string, string> = {
@@ -304,30 +313,14 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         output.llmOutput?.['tokenUsage'];
       const modelName = lastResponse ? this.extractModelNameFromMetadata(lastResponse) : undefined;
 
-      const usageDetails: Record<string, any> = {
-        input: llmUsage?.input_tokens ?? llmUsage?.promptTokens,
-        output: llmUsage?.output_tokens ?? llmUsage?.completionTokens,
-        total: llmUsage?.total_tokens ?? llmUsage?.totalTokens,
-      };
+      // Scalar totals reported as-is (full input/output, cached tokens included).
+      const promptTokens = llmUsage?.input_tokens ?? (llmUsage as any)?.promptTokens ?? null;
+      const completionTokens = llmUsage?.output_tokens ?? (llmUsage as any)?.completionTokens ?? null;
+      const totalTokens = llmUsage?.total_tokens ?? (llmUsage as any)?.totalTokens ?? null;
 
-      // Handle detailed token usage if available
-      if (llmUsage && 'input_token_details' in llmUsage) {
-        for (const [key, val] of Object.entries(llmUsage['input_token_details'] ?? {})) {
-          usageDetails[`input_${key}`] = val;
-          if ('input' in usageDetails && typeof val === 'number') {
-            usageDetails['input'] = Math.max(0, usageDetails['input'] - val);
-          }
-        }
-      }
-
-      if (llmUsage && 'output_token_details' in llmUsage) {
-        for (const [key, val] of Object.entries(llmUsage['output_token_details'] ?? {})) {
-          usageDetails[`output_${key}`] = val;
-          if ('output' in usageDetails && typeof val === 'number') {
-            usageDetails['output'] = Math.max(0, usageDetails['output'] - val);
-          }
-        }
-      }
+      // Priced, non-overlapping per-category map keyed for the cost table so the
+      // backend can populate costDetails (OPEN-11695).
+      const usageDetails = this.buildUsageDetails(llmUsage);
 
       // Extract clean output for dashboard display. Use duck typing instead of
       // `instanceof BaseMessage` so the message content is read even when the
@@ -355,7 +348,10 @@ export class OpenlayerHandler extends BaseCallbackHandler {
         output: extractedOutput,
         rawOutput,
         ...(modelName && { modelName }),
-        usageDetails,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        ...(usageDetails && { usageDetails }),
         ...(runId in this.completionStartTimes && { completionStartTime: this.completionStartTimes[runId] }),
       });
 
@@ -875,7 +871,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
     if (step instanceof ChatCompletionStep) {
       step.provider = mappedProvider ?? 'Unknown';
-      step.model = extractedModelName ?? null;
+      step.model = this.stripModelsPrefix(extractedModelName) ?? null;
       step.modelParameters = modelParameters;
     }
   }
@@ -886,10 +882,23 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     rawOutput?: string | null;
     error?: string;
     modelName?: string | undefined;
-    usageDetails?: Record<string, any>;
+    promptTokens?: number | null;
+    completionTokens?: number | null;
+    totalTokens?: number | null;
+    usageDetails?: Record<string, number>;
     completionStartTime?: Date | undefined;
   }): void {
-    const { runId, output, rawOutput, error, modelName, usageDetails } = params;
+    const {
+      runId,
+      output,
+      rawOutput,
+      error,
+      modelName,
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      usageDetails,
+    } = params;
 
     if (this.skippedRuns.delete(runId)) {
       return;
@@ -910,10 +919,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
 
     if (step instanceof ChatCompletionStep) {
       step.output = output || '';
-      step.tokens = usageDetails?.['total'] || null;
-      step.promptTokens = usageDetails?.['input'] || null;
-      step.completionTokens = usageDetails?.['output'] || null;
-      step.model = modelName || step.model || null;
+      step.tokens = totalTokens ?? null;
+      step.promptTokens = promptTokens ?? null;
+      step.completionTokens = completionTokens ?? null;
+      if (usageDetails) {
+        step.usageDetails = usageDetails;
+      }
+      step.model = this.stripModelsPrefix(modelName) || step.model || null;
       step.metadata =
         error ?
           { ...step.metadata, error, rawOutput: rawOutput || null }
@@ -1095,6 +1107,66 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     const openlayerKeys = ['openlayerPrompt', 'openlayerUserId', 'openlayerSessionId'];
 
     return Object.fromEntries(Object.entries(metadata).filter(([key, _]) => !openlayerKeys.includes(key)));
+  }
+
+  /**
+   * Strip the Google Gemini Developer API "models/" prefix
+   * (e.g. "models/gemini-3.5-flash" -> "gemini-3.5-flash"). The cost table
+   * stores bare Gemini names and no provider is named "models", so this is safe.
+   */
+  private stripModelsPrefix<T extends string | null | undefined>(model: T): T {
+    if (typeof model === 'string' && model.startsWith('models/')) {
+      return model.slice('models/'.length) as T;
+    }
+    return model;
+  }
+
+  /**
+   * Build the per-category token map the cost backend prices by exact key.
+   *
+   * The backend prices a NON-OVERLAPPING partition (it sums a price for each key
+   * it recognizes). LangChain reports the granular categories (cache_read,
+   * cache_creation, audio) as SUBSETS of the input/output totals, so each is
+   * broken out under the cost table's key and subtracted from the input/output
+   * base, keeping the partition non-overlapping and its sum equal to the total.
+   *
+   *   input  cache_read     -> cached_tokens
+   *   input  cache_creation -> cache_creation_tokens
+   *   input  audio          -> audio_input_tokens
+   *   output audio          -> audio_output_tokens
+   *
+   * reasoning is left folded into output_tokens (billed at the output rate; no
+   * separate price). Returns undefined when there are no tokens.
+   */
+  private buildUsageDetails(llmUsage: any): Record<string, number> | undefined {
+    if (!llmUsage) return undefined;
+
+    const promptTokens = Number(llmUsage.input_tokens ?? llmUsage.promptTokens ?? 0) || 0;
+    const completionTokens = Number(llmUsage.output_tokens ?? llmUsage.completionTokens ?? 0) || 0;
+    const inputDetails = llmUsage.input_token_details ?? {};
+    const outputDetails = llmUsage.output_token_details ?? {};
+
+    const cacheRead = Number(inputDetails.cache_read ?? 0) || 0;
+    const cacheCreation = Number(inputDetails.cache_creation ?? 0) || 0;
+    const audioInput = Number(inputDetails.audio ?? 0) || 0;
+    const audioOutput = Number(outputDetails.audio ?? 0) || 0;
+
+    const entries: Array<[string, number]> = [
+      ['input_tokens', promptTokens - cacheRead - cacheCreation - audioInput],
+      ['output_tokens', completionTokens - audioOutput],
+      ['cached_tokens', cacheRead],
+      ['cache_creation_tokens', cacheCreation],
+      ['audio_input_tokens', audioInput],
+      ['audio_output_tokens', audioOutput],
+    ];
+
+    const usageDetails: Record<string, number> = {};
+    for (const [key, value] of entries) {
+      if (value && value > 0) {
+        usageDetails[key] = value;
+      }
+    }
+    return Object.keys(usageDetails).length > 0 ? usageDetails : undefined;
   }
 
   private extractUsageMetadata(generation: Generation): UsageMetadata | undefined {

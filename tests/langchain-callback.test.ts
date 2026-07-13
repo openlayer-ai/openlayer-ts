@@ -157,3 +157,77 @@ describe('OpenlayerHandler - LangGraph metadata', () => {
     expect(step.metadata.session_id).toBe('explicit-session');
   });
 });
+
+describe('OpenlayerHandler - OPEN-11695 Gemini provider/model + usageDetails', () => {
+  async function geminiRun(
+    model: string,
+    usage: UsageMetadata,
+    metadata: Record<string, unknown> = { ls_provider: 'google_genai' },
+  ) {
+    const handler = new OpenlayerHandler();
+    const runId = `gem-${Math.round(performance.now())}-${Math.random()}`;
+    await handler.handleChatModelStart(
+      llmSerialized,
+      [[new HumanMessage('q')]],
+      runId,
+      undefined,
+      { invocation_params: { model } },
+      [],
+      metadata,
+    );
+    await handler.handleLLMEnd(makeLLMResult(makeAIMessage('a', usage), 'a'), runId);
+    return lastTrace().steps[0];
+  }
+
+  const basicUsage: UsageMetadata = { input_tokens: 5, output_tokens: 3, total_tokens: 8 };
+
+  it('maps ls_provider=google_genai to Google', async () => {
+    const step = await geminiRun('models/gemini-3.5-flash', basicUsage);
+    expect(step.provider).toBe('Google');
+  });
+
+  it('strips the Gemini models/ prefix from the model name', async () => {
+    const step = await geminiRun('models/gemini-3.5-flash', basicUsage);
+    expect(step.model).toBe('gemini-3.5-flash');
+  });
+
+  it('emits an input/output usageDetails partition when no token details', async () => {
+    const step = await geminiRun('gemini-2.5-flash', {
+      input_tokens: 100,
+      output_tokens: 50,
+      total_tokens: 150,
+    });
+    expect(step.usageDetails).toEqual({ input_tokens: 100, output_tokens: 50 });
+    expect(step.toJSON().usageDetails).toEqual({ input_tokens: 100, output_tokens: 50 });
+  });
+
+  it('partitions cached tokens into non-overlapping backend keys; scalar tokens stay full', async () => {
+    const usage = {
+      input_tokens: 27131,
+      output_tokens: 17739,
+      total_tokens: 44870,
+      input_token_details: { cache_read: 10000 },
+    } as unknown as UsageMetadata;
+    const step = await geminiRun('gemini-3.5-flash', usage);
+    expect(step.usageDetails).toEqual({ input_tokens: 17131, cached_tokens: 10000, output_tokens: 17739 });
+    expect(step.promptTokens).toBe(27131);
+    expect(step.completionTokens).toBe(17739);
+  });
+
+  it('breaks out audio and folds reasoning into output', async () => {
+    const usage = {
+      input_tokens: 300,
+      output_tokens: 120,
+      total_tokens: 420,
+      input_token_details: { audio: 30 },
+      output_token_details: { audio: 20, reasoning: 50 },
+    } as unknown as UsageMetadata;
+    const step = await geminiRun('gemini-2.5-flash', usage);
+    expect(step.usageDetails).toEqual({
+      input_tokens: 270,
+      output_tokens: 100,
+      audio_input_tokens: 30,
+      audio_output_tokens: 20,
+    });
+  });
+});
