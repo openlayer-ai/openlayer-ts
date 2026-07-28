@@ -9,35 +9,191 @@ import { getCurrentStep, processAndUploadTrace } from '../tracing/tracer';
 import { AgentStep, ChatCompletionStep, HandoffStep, Step, StepType, stepFactory } from '../tracing/steps';
 import { Trace } from '../tracing/traces';
 
-const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
-  openai: 'OpenAI',
-  'openai-chat': 'OpenAI',
-  'chat-ollama': 'Ollama',
-  vertexai: 'Google',
-  anthropic: 'Anthropic',
-  'azure-openai': 'Azure OpenAI',
-  cohere: 'Cohere',
-  huggingface: 'Hugging Face',
-  // Google / Gemini. ChatGoogleGenerativeAI reports ls_provider "google_genai"
-  // (and _llm_type "chat-google-generative-ai"); the inference fallback below
-  // yields "google"/"gemini". Map them all to the canonical "Google" so cost
-  // estimation resolves instead of returning $0 (OPEN-11695).
-  google: 'Google',
-  google_genai: 'Google',
-  google_vertexai: 'Google',
-  gemini: 'Google',
-  'chat-google-generative-ai': 'Google',
+/**
+ * Canonical Openlayer provider name -> the cost-table provider slug it must
+ * lowercase to.
+ *
+ * INVARIANT: a chat-completion step is priced by an exact, case-insensitive
+ * match on the provider name it reports, with no aliasing or fuzzy matching. A
+ * canonical name that reads well but is not a real slug therefore prices every
+ * step at $0 — the shared root cause of OPEN-9928, OPEN-11695 and OPEN-11901.
+ * `null` means no pricing data exists upstream for that vendor at all, so the
+ * name is display-only and no choice of string here can resolve a cost.
+ *
+ * Slugs verified against https://llm-costs.openlayer.com/v1/costs, whose
+ * vocabulary is LiteLLM's `litellm_provider` plus OpenRouter vendor slugs.
+ */
+export const PROVIDER_COST_SLUG: Record<string, string | null> = {
+  OpenAI: 'openai',
+  Azure: 'azure',
+  Anthropic: 'anthropic',
+  Google: 'google',
+  Bedrock: 'bedrock',
+  Cohere: 'cohere',
+  Ollama: 'ollama',
+  Mistral: 'mistral',
+  Groq: 'groq',
+  xAI: 'xai',
+  Cerebras: 'cerebras',
+  Watsonx: 'watsonx',
+  'Hugging Face': null,
 };
 
+/**
+ * Normalize a LangChain provider string into a lookup key: case-fold and drop
+ * separators.
+ *
+ * `ls_provider` arrives in three different shapes, and a case-sensitive literal
+ * lookup only ever matched the first:
+ *
+ *   1. Vendor literals, from packages that override `getLsParams()` —
+ *      "google_vertexai" (@langchain/google-common), "amazon_bedrock"
+ *      (@langchain/aws), "ollama", "watsonx", "mistral".
+ *   2. PascalCase class names, from `@langchain/core`'s BaseChatModel default
+ *      `getName().replace('Chat', '')` — any model that does not override
+ *      `getLsParams()` emits e.g. "VertexAI" or "MistralAI".
+ *   3. Legacy LangChain **Python** `_llm_type` values ("chat-ollama",
+ *      "openai-chat"), which this map used to be keyed on.
+ *
+ * Folding all three into one key space lets a single table cover them, and makes
+ * the old Python-flavoured keys work as free aliases.
+ */
+function normalizeProviderKey(provider: string): string {
+  return provider.toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+/**
+ * Normalized LangChain provider key -> canonical Openlayer provider.
+ *
+ * Keys MUST be `normalizeProviderKey()` output (lowercase, no separators), so
+ * each entry covers the vendor literal, the PascalCase class-name default and
+ * every separator spelling at once.
+ *
+ * Values MUST be keys of {@link PROVIDER_COST_SLUG} — a provider is only worth
+ * adding here if its canonical name actually resolves a price; otherwise the
+ * step gets a nicer label and still costs $0. The test suite asserts both rules.
+ */
+export const LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP: Record<string, string> = {
+  // OpenAI. @langchain/openai emits "openai"; the rest are Python `_llm_type`s.
+  openai: 'OpenAI',
+  openaichat: 'OpenAI',
+  textcompletionopenai: 'OpenAI',
+
+  // Azure. AzureChatOpenAI emits "azure". The canonical name is "Azure" rather
+  // than "Azure OpenAI" because only "azure" exists in the cost table — the old
+  // value lowercased to "azure openai" and silently priced at $0 — and because
+  // the Python SDK already emits "Azure". The step name keeps the fuller
+  // "Azure OpenAI Chat Completion" label.
+  azure: 'Azure',
+  azureopenai: 'Azure',
+  azureopenaichat: 'Azure',
+
+  anthropic: 'Anthropic',
+
+  // Google. Vertex AI (@langchain/google-common) emits "google_vertexai"; the
+  // Gemini Developer API (@langchain/google-genai) emits "google_genai". Both
+  // price under the single "google" slug (OPEN-11695).
+  google: 'Google',
+  googlegenai: 'Google',
+  googlevertexai: 'Google',
+  googlegenerativeai: 'Google',
+  chatgooglegenerativeai: 'Google',
+  vertexai: 'Google',
+  gemini: 'Google',
+
+  // Bedrock. @langchain/aws emits "amazon_bedrock"; legacy @langchain/community
+  // emits "bedrock".
+  //
+  // CAVEAT: upstream splits Bedrock pricing across two slugs by model family —
+  // `meta.*`/`amazon.*` ids price under "bedrock", but `anthropic.*` ids only
+  // exist under "bedrock_converse", and region-prefixed ids ("us.anthropic.*")
+  // match neither. Claude-on-Bedrock therefore still resolves to $0 until price
+  // resolution falls back across both slugs. That fallback belongs server-side:
+  // the SDK should not encode pricing topology.
+  bedrock: 'Bedrock',
+  amazonbedrock: 'Bedrock',
+  bedrockconverse: 'Bedrock',
+  amazonbedrockconversechat: 'Bedrock',
+
+  cohere: 'Cohere',
+  coherechat: 'Cohere',
+  ollama: 'Ollama',
+  chatollama: 'Ollama',
+  mistral: 'Mistral',
+  mistralai: 'Mistral',
+  groq: 'Groq',
+  xai: 'xAI',
+  cerebras: 'Cerebras',
+  watsonx: 'Watsonx',
+
+  // Display-only: the cost table has no `hugging*` provider at all, so no
+  // canonical name can resolve a Hugging Face price. Kept so the step is still
+  // labelled correctly rather than falling through to "Unknown".
+  huggingface: 'Hugging Face',
+};
+
+/**
+ * Canonical provider -> step name.
+ *
+ * MUST have an entry for every value in
+ * {@link LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP}; a missing entry silently degrades
+ * the step name to the raw LangChain run name (OPEN-11901). Asserted by tests.
+ */
 const PROVIDER_TO_STEP_NAME: Record<string, string> = {
   OpenAI: 'OpenAI Chat Completion',
-  Ollama: 'Ollama Chat Completion',
-  Google: 'Google Vertex AI Chat Completion',
+  Azure: 'Azure OpenAI Chat Completion',
   Anthropic: 'Anthropic Chat Completion',
-  'Azure OpenAI': 'Azure OpenAI Chat Completion',
+  Google: 'Google Chat Completion',
+  Bedrock: 'Amazon Bedrock Chat Completion',
   Cohere: 'Cohere Chat Completion',
+  Ollama: 'Ollama Chat Completion',
+  Mistral: 'Mistral Chat Completion',
+  Groq: 'Groq Chat Completion',
+  xAI: 'xAI Chat Completion',
+  Cerebras: 'Cerebras Chat Completion',
+  Watsonx: 'watsonx.ai Chat Completion',
   'Hugging Face': 'Hugging Face Chat Completion',
 };
+
+/**
+ * Step-name overrides keyed on the *normalized LangChain* provider, consulted
+ * before the provider-derived name.
+ *
+ * Vertex AI and the Gemini Developer API both price as "Google", so the
+ * canonical provider alone cannot tell them apart; without this a Gemini API
+ * call would be labelled "Vertex AI".
+ */
+const LANGCHAIN_PROVIDER_TO_STEP_NAME: Record<string, string> = {
+  googlevertexai: 'Google Vertex AI Chat Completion',
+  vertexai: 'Google Vertex AI Chat Completion',
+  googlegenai: 'Google Gemini Chat Completion',
+  googlegenerativeai: 'Google Gemini Chat Completion',
+  chatgooglegenerativeai: 'Google Gemini Chat Completion',
+  gemini: 'Google Gemini Chat Completion',
+};
+
+/** Provider strings already warned about, so the warning fires once per process. */
+const warnedUnmappedProviders = new Set<string>();
+
+/**
+ * Warn once per unrecognized provider string.
+ *
+ * The silent fall-through to "Unknown" is what kept this vocabulary drift
+ * invisible across two review cycles (OPEN-11314, OPEN-11316), and "Unknown"
+ * never matches the cost table, so the step is priced at $0.
+ */
+function warnUnmappedProvider(rawProvider: string): void {
+  const key = normalizeProviderKey(rawProvider);
+  if (warnedUnmappedProviders.has(key)) {
+    return;
+  }
+  warnedUnmappedProviders.add(key);
+  console.warn(
+    `[openlayer] Unrecognized LangChain provider "${rawProvider}" — recording provider "Unknown". ` +
+      'Cost estimation cannot resolve a price for this step. Please report it at ' +
+      'https://github.com/openlayer-ai/openlayer-ts/issues so the provider can be mapped.',
+  );
+}
 
 const LANGSMITH_HIDDEN_TAG = 'langsmith:hidden';
 
@@ -797,9 +953,11 @@ export class OpenlayerHandler extends BaseCallbackHandler {
           provider = 'anthropic';
         } else if (extractedModelName.includes('gemini') || extractedModelName.includes('google')) {
           provider = 'google';
-        } else if (extractedModelName.includes('llama') || extractedModelName.includes('meta')) {
-          provider = 'meta';
         }
+        // Deliberately no 'llama'/'meta' branch: Llama models are served by
+        // Groq, Bedrock, Together and others, so the model name does not
+        // identify a vendor, and "meta" is not a cost-table slug either way.
+        // An honest "Unknown" plus a warning beats a confidently wrong provider.
       }
 
       // Try to detect from LLM class name
@@ -815,10 +973,18 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       }
     }
 
-    const mappedProvider =
-      provider && LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider] ?
-        LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[provider]
-      : 'Unknown';
+    // Normalize before lookup so vendor literals, `@langchain/core`'s PascalCase
+    // getLsParams() default and legacy Python `_llm_type` values all resolve.
+    const providerKey = provider ? normalizeProviderKey(provider) : '';
+    const mappedProvider = providerKey ? LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP[providerKey] : undefined;
+
+    // Only warn when LangChain reported a provider we failed to recognize. A run
+    // that reports no provider at all is a separate, pre-existing condition and
+    // would be noise here.
+    if (provider && !mappedProvider) {
+      warnUnmappedProvider(provider);
+    }
+    const openlayerProvider = mappedProvider ?? 'Unknown';
 
     // Get registered prompt if available
     const registeredPrompt = this.promptToParentRunMap.get(parentRunId ?? 'root');
@@ -826,11 +992,13 @@ export class OpenlayerHandler extends BaseCallbackHandler {
       this.deregisterOpenlayerPrompt(parentRunId);
     }
 
-    // Create step but don't end it yet - we'll update it in handleLLMEnd
+    // Create step but don't end it yet - we'll update it in handleLLMEnd.
+    // The LangChain-keyed override wins so Vertex AI and the Gemini Developer
+    // API stay distinguishable even though both price as "Google".
     const stepName =
-      mappedProvider && PROVIDER_TO_STEP_NAME[mappedProvider] ?
-        PROVIDER_TO_STEP_NAME[mappedProvider]
-      : runName;
+      LANGCHAIN_PROVIDER_TO_STEP_NAME[providerKey] ??
+      (mappedProvider ? PROVIDER_TO_STEP_NAME[mappedProvider] : undefined) ??
+      runName;
 
     // Extra params other than invocation_params (which is fully captured by
     // modelParameters and would otherwise be serialized multiple times per step)
@@ -870,7 +1038,7 @@ export class OpenlayerHandler extends BaseCallbackHandler {
     });
 
     if (step instanceof ChatCompletionStep) {
-      step.provider = mappedProvider ?? 'Unknown';
+      step.provider = openlayerProvider;
       step.model = this.stripModelsPrefix(extractedModelName) ?? null;
       step.modelParameters = modelParameters;
     }

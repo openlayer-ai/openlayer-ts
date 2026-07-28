@@ -2,7 +2,11 @@ import { AIMessage, HumanMessage } from '@langchain/core/messages';
 import type { UsageMetadata } from '@langchain/core/messages';
 import type { LLMResult } from '@langchain/core/outputs';
 import type { Serialized } from '@langchain/core/load/serializable';
-import { OpenlayerHandler } from '../src/lib/integrations/langchainCallback';
+import {
+  OpenlayerHandler,
+  LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP,
+  PROVIDER_COST_SLUG,
+} from '../src/lib/integrations/langchainCallback';
 import { processAndUploadTrace, getCurrentStep } from '../src/lib/tracing/tracer';
 
 // The handler imports only these two symbols from the tracer; mock them so we
@@ -228,6 +232,205 @@ describe('OpenlayerHandler - OPEN-11695 Gemini provider/model + usageDetails', (
       output_tokens: 100,
       audio_input_tokens: 30,
       audio_output_tokens: 20,
+    });
+  });
+});
+
+describe('OpenlayerHandler - OPEN-11901 ls_provider vocabulary', () => {
+  /** Drive one chat-model run and return the recorded step. */
+  async function run(metadata: Record<string, unknown>, model = 'some-model') {
+    const handler = new OpenlayerHandler();
+    const runId = `p-${Math.round(performance.now())}-${Math.random()}`;
+    await handler.handleChatModelStart(
+      llmSerialized,
+      [[new HumanMessage('q')]],
+      runId,
+      undefined,
+      { invocation_params: { model } },
+      [],
+      metadata,
+    );
+    await handler.handleLLMEnd(makeLLMResult(makeAIMessage('a'), 'a'), runId);
+    return lastTrace().steps[0];
+  }
+
+  /**
+   * `ls_provider` values emitted by LangChain JS, verified by grepping the
+   * installed packages rather than inferred from Python's `_llm_type`.
+   */
+  const GROUND_TRUTH: [lsProvider: string, expected: string, pkg: string][] = [
+    ['openai', 'OpenAI', '@langchain/openai'],
+    ['azure', 'Azure', '@langchain/openai AzureChatOpenAI'],
+    ['anthropic', 'Anthropic', '@langchain/anthropic'],
+    ['cohere', 'Cohere', '@langchain/cohere'],
+    ['google_vertexai', 'Google', '@langchain/google-common'],
+    ['google_genai', 'Google', '@langchain/google-genai'],
+    ['ollama', 'Ollama', '@langchain/ollama'],
+    ['amazon_bedrock', 'Bedrock', '@langchain/aws'],
+    ['bedrock', 'Bedrock', '@langchain/community'],
+    ['watsonx', 'Watsonx', '@langchain/community'],
+    ['mistral', 'Mistral', '@langchain/mistralai'],
+    ['groq', 'Groq', '@langchain/groq'],
+    ['xai', 'xAI', '@langchain/xai'],
+    ['cerebras', 'Cerebras', '@langchain/cerebras'],
+  ];
+
+  it.each(GROUND_TRUTH)('maps ls_provider=%s to %s (%s)', async (lsProvider, expected) => {
+    const step = await run({ ls_provider: lsProvider });
+    expect(step.provider).toBe(expected);
+  });
+
+  /**
+   * `@langchain/core`'s BaseChatModel.getLsParams() default is
+   * `getName().replace('Chat','')`, so any model not overriding it emits a
+   * PascalCase class name. A case-sensitive lookup can never match those.
+   */
+  it.each([
+    ['Ollama', 'Ollama'],
+    ['VertexAI', 'Google'],
+    ['MistralAI', 'Mistral'],
+    ['OpenAI', 'OpenAI'],
+  ])('normalizes the PascalCase getLsParams() default %s to %s', async (lsProvider, expected) => {
+    const step = await run({ ls_provider: lsProvider });
+    expect(step.provider).toBe(expected);
+  });
+
+  // Legacy Python `_llm_type` keys the map used to be built from. They must keep
+  // resolving so nothing that works today regresses.
+  it.each([
+    ['openai-chat', 'OpenAI'],
+    ['chat-ollama', 'Ollama'],
+    ['vertexai', 'Google'],
+    ['azure-openai', 'Azure'],
+    ['huggingface', 'Hugging Face'],
+  ])('still resolves the legacy _llm_type key %s to %s', async (lsProvider, expected) => {
+    const step = await run({ ls_provider: lsProvider });
+    expect(step.provider).toBe(expected);
+  });
+
+  it('names a Vertex step distinctly from a Gemini Developer API step', async () => {
+    expect((await run({ ls_provider: 'google_vertexai' })).name).toBe('Google Vertex AI Chat Completion');
+    expect((await run({ ls_provider: 'google_genai' })).name).toBe('Google Gemini Chat Completion');
+  });
+
+  it('keeps the Azure OpenAI step name while recording provider Azure', async () => {
+    const step = await run({ ls_provider: 'azure' });
+    expect(step.provider).toBe('Azure');
+    expect(step.name).toBe('Azure OpenAI Chat Completion');
+  });
+
+  it('records the Gemini model under the exact key the cost table stores', async () => {
+    // ("google","models/gemini-2.5-flash") misses; ("google","gemini-2.5-flash") hits.
+    const step = await run({ ls_provider: 'google_vertexai' }, 'models/gemini-2.5-flash');
+    expect(step.model).toBe('gemini-2.5-flash');
+  });
+
+  describe('unmapped providers', () => {
+    it('records Unknown and warns, so the miss is not silent', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const step = await run({ ls_provider: 'totally-made-up-vendor' });
+
+      expect(step.provider).toBe('Unknown');
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toContain('totally-made-up-vendor');
+    });
+
+    it('warns only once for a repeated unmapped provider', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      await run({ ls_provider: 'another-made-up-vendor' });
+      await run({ ls_provider: 'another-made-up-vendor' });
+
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('heuristic fallback when ls_provider is absent', () => {
+    it('infers OpenAI from a gpt model name', async () => {
+      expect((await run({}, 'gpt-4o')).provider).toBe('OpenAI');
+    });
+
+    it('infers Anthropic from a claude model name', async () => {
+      expect((await run({}, 'claude-sonnet-4-5')).provider).toBe('Anthropic');
+    });
+
+    it('infers Google from a gemini model name', async () => {
+      expect((await run({}, 'gemini-2.5-flash')).provider).toBe('Google');
+    });
+
+    it('does not guess a vendor from a llama model name', async () => {
+      // Llama is served by Groq, Bedrock, Together and others; the old code
+      // guessed 'meta', which is not a cost-table slug and priced at $0 anyway.
+      expect((await run({}, 'llama-3.3-70b-versatile')).provider).toBe('Unknown');
+    });
+  });
+
+  /**
+   * These are the regression tests OPEN-11901 asks for. The one-off corrections
+   * above fix today's vocabulary; these constrain the tables so the next
+   * provider added cannot reintroduce the same class of bug.
+   */
+  describe('table invariants', () => {
+    /**
+     * Provider slugs confirmed present in https://llm-costs.openlayer.com/v1/costs
+     * on 2026-07-27. The backend lowercases the SDK's provider and does an exact
+     * match with no aliasing, so a canonical name outside this set prices at $0.
+     */
+    const VERIFIED_COST_SLUGS = new Set([
+      'openai',
+      'azure',
+      'anthropic',
+      'google',
+      'bedrock',
+      'cohere',
+      'ollama',
+      'mistral',
+      'groq',
+      'xai',
+      'cerebras',
+      'watsonx',
+    ]);
+
+    const canonicalProviders = [...new Set(Object.values(LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP))];
+
+    it('declares a cost slug for every canonical provider', () => {
+      const undeclared = canonicalProviders.filter((p) => !(p in PROVIDER_COST_SLUG));
+      expect(undeclared).toEqual([]);
+    });
+
+    it('only uses canonical names that lowercase to their declared cost slug', () => {
+      const mismatched = canonicalProviders.filter((p) => {
+        const slug = PROVIDER_COST_SLUG[p];
+        return slug !== null && slug !== undefined && p.toLowerCase() !== slug;
+      });
+      expect(mismatched).toEqual([]);
+    });
+
+    it('only declares cost slugs that exist in the cost table', () => {
+      const unverified = Object.values(PROVIDER_COST_SLUG).filter(
+        (slug) => slug !== null && !VERIFIED_COST_SLUGS.has(slug),
+      );
+      expect(unverified).toEqual([]);
+    });
+
+    it('keys the map on normalized lookup keys only', () => {
+      // A key containing an uppercase letter, space, hyphen or underscore can
+      // never be produced by the normalizer, so it would be dead on arrival.
+      const unreachable = Object.keys(LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP).filter(
+        (key) => !/^[a-z0-9.]+$/.test(key),
+      );
+      expect(unreachable).toEqual([]);
+    });
+
+    it('gives every mapped provider a real step name, never the raw run name', async () => {
+      const entries = Object.keys(LANGCHAIN_TO_OPENLAYER_PROVIDER_MAP);
+      const degraded: string[] = [];
+      for (const lsProvider of entries) {
+        const step = await run({ ls_provider: lsProvider });
+        if (step.name === 'ChatOpenAI' || !/Chat Completion$/.test(step.name)) {
+          degraded.push(`${lsProvider} -> ${step.name}`);
+        }
+      }
+      expect(degraded).toEqual([]);
     });
   });
 });
