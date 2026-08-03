@@ -41,6 +41,8 @@ import {
   ProjectCreateResponse,
   ProjectListParams,
   ProjectListResponse,
+  ProjectUpdateParams,
+  ProjectUpdateResponse,
   Projects,
 } from './resources/projects/projects';
 import { Storage } from './resources/storage/storage';
@@ -794,8 +796,10 @@ export declare namespace Openlayer {
   export {
     Projects as Projects,
     type ProjectCreateResponse as ProjectCreateResponse,
+    type ProjectUpdateResponse as ProjectUpdateResponse,
     type ProjectListResponse as ProjectListResponse,
     type ProjectCreateParams as ProjectCreateParams,
+    type ProjectUpdateParams as ProjectUpdateParams,
     type ProjectListParams as ProjectListParams,
   };
 

@@ -55,6 +55,24 @@ export class Projects extends APIResource {
   }
 
   /**
+   * Update a project's metadata.
+   *
+   * @example
+   * ```ts
+   * const project = await client.projects.update(
+   *   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+   * );
+   * ```
+   */
+  update(
+    projectID: string,
+    body: ProjectUpdateParams | null | undefined = {},
+    options?: RequestOptions,
+  ): APIPromise<ProjectUpdateResponse> {
+    return this._client.patch(path`/projects/${projectID}`, { body, ...options });
+  }
+
+  /**
    * List your workspace's projects.
    *
    * @example
@@ -159,14 +177,170 @@ export interface ProjectCreateResponse {
   workspaceId: string | null;
 
   /**
+   * Number of days to retain monitoring data for this project. Null means data is
+   * retained indefinitely.
+   */
+  dataRetentionDays?: number | null;
+
+  /**
    * The project description.
    */
   description?: string | null;
 
   gitRepo?: ProjectCreateResponse.GitRepo | null;
+
+  /**
+   * Who developed the model used in this project.
+   */
+  modelDeveloper?: string | null;
+
+  /**
+   * The kinds of model used in this project.
+   */
+  modelTypes?: Array<string> | null;
+
+  /**
+   * What the system in this project is intended to do.
+   */
+  purpose?: string | null;
 }
 
 export namespace ProjectCreateResponse {
+  /**
+   * Links to the project.
+   */
+  export interface Links {
+    app: string;
+  }
+
+  export interface GitRepo {
+    id: string;
+
+    dateConnected: string;
+
+    dateUpdated: string;
+
+    gitAccountId: string;
+
+    gitId: number;
+
+    name: string;
+
+    private: boolean;
+
+    projectId: string;
+
+    slug: string;
+
+    url: string;
+
+    branch?: string;
+
+    rootDir?: string;
+  }
+}
+
+export interface ProjectUpdateResponse {
+  /**
+   * The project id.
+   */
+  id: string;
+
+  /**
+   * The project creator id.
+   */
+  creatorId: string | null;
+
+  /**
+   * The project creation date.
+   */
+  dateCreated: string;
+
+  /**
+   * The project last updated date.
+   */
+  dateUpdated: string;
+
+  /**
+   * The number of tests in the development mode of the project.
+   */
+  developmentGoalCount: number;
+
+  /**
+   * The total number of tests in the project.
+   */
+  goalCount: number;
+
+  /**
+   * The number of inference pipelines in the project.
+   */
+  inferencePipelineCount: number;
+
+  /**
+   * Links to the project.
+   */
+  links: ProjectUpdateResponse.Links;
+
+  /**
+   * The number of tests in the monitoring mode of the project.
+   */
+  monitoringGoalCount: number;
+
+  /**
+   * The project name.
+   */
+  name: string;
+
+  /**
+   * The source of the project.
+   */
+  source: 'web' | 'api' | 'null' | null;
+
+  /**
+   * The task type of the project.
+   */
+  taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
+
+  /**
+   * The number of versions (commits) in the project.
+   */
+  versionCount: number;
+
+  /**
+   * The workspace id.
+   */
+  workspaceId: string | null;
+
+  /**
+   * Number of days to retain monitoring data for this project. Null means data is
+   * retained indefinitely.
+   */
+  dataRetentionDays?: number | null;
+
+  /**
+   * The project description.
+   */
+  description?: string | null;
+
+  gitRepo?: ProjectUpdateResponse.GitRepo | null;
+
+  /**
+   * Who developed the model used in this project.
+   */
+  modelDeveloper?: string | null;
+
+  /**
+   * The kinds of model used in this project.
+   */
+  modelTypes?: Array<string> | null;
+
+  /**
+   * What the system in this project is intended to do.
+   */
+  purpose?: string | null;
+}
+
+export namespace ProjectUpdateResponse {
   /**
    * Links to the project.
    */
@@ -278,11 +452,32 @@ export namespace ProjectListResponse {
     workspaceId: string | null;
 
     /**
+     * Number of days to retain monitoring data for this project. Null means data is
+     * retained indefinitely.
+     */
+    dataRetentionDays?: number | null;
+
+    /**
      * The project description.
      */
     description?: string | null;
 
     gitRepo?: Item.GitRepo | null;
+
+    /**
+     * Who developed the model used in this project.
+     */
+    modelDeveloper?: string | null;
+
+    /**
+     * The kinds of model used in this project.
+     */
+    modelTypes?: Array<string> | null;
+
+    /**
+     * What the system in this project is intended to do.
+     */
+    purpose?: string | null;
   }
 
   export namespace Item {
@@ -333,9 +528,63 @@ export interface ProjectCreateParams {
   taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
 
   /**
+   * Number of days to retain monitoring data for this project. Null means data is
+   * retained indefinitely.
+   */
+  dataRetentionDays?: number | null;
+
+  /**
    * The project description.
    */
   description?: string | null;
+
+  /**
+   * Who developed the model used in this project.
+   */
+  modelDeveloper?: string | null;
+
+  /**
+   * The kinds of model used in this project.
+   */
+  modelTypes?: Array<string> | null;
+
+  /**
+   * What the system in this project is intended to do.
+   */
+  purpose?: string | null;
+}
+
+export interface ProjectUpdateParams {
+  /**
+   * Number of days to retain monitoring data for this project. Null means data is
+   * retained indefinitely.
+   */
+  dataRetentionDays?: number | null;
+
+  /**
+   * The project description.
+   */
+  description?: string | null;
+
+  /**
+   * Who developed the model used in this project.
+   */
+  modelDeveloper?: string | null;
+
+  /**
+   * The kinds of model used in this project.
+   */
+  modelTypes?: Array<string> | null;
+
+  /**
+   * The project name.
+   */
+  name?: string;
+
+  /**
+   * What the system in this project is intended to do.
+   */
+  purpose?: string | null;
 }
 
 export interface ProjectListParams {
@@ -367,8 +616,10 @@ Projects.Tests = Tests;
 export declare namespace Projects {
   export {
     type ProjectCreateResponse as ProjectCreateResponse,
+    type ProjectUpdateResponse as ProjectUpdateResponse,
     type ProjectListResponse as ProjectListResponse,
     type ProjectCreateParams as ProjectCreateParams,
+    type ProjectUpdateParams as ProjectUpdateParams,
     type ProjectListParams as ProjectListParams,
   };
 

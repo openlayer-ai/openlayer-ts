@@ -17,8 +17,10 @@ export {
 export {
   Projects,
   type ProjectCreateResponse,
+  type ProjectUpdateResponse,
   type ProjectListResponse,
   type ProjectCreateParams,
+  type ProjectUpdateParams,
   type ProjectListParams,
 } from './projects';
 export {

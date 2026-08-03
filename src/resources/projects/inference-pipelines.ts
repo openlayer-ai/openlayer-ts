@@ -288,11 +288,32 @@ export namespace InferencePipelineCreateResponse {
     workspaceId: string | null;
 
     /**
+     * Number of days to retain monitoring data for this project. Null means data is
+     * retained indefinitely.
+     */
+    dataRetentionDays?: number | null;
+
+    /**
      * The project description.
      */
     description?: string | null;
 
     gitRepo?: Project.GitRepo | null;
+
+    /**
+     * Who developed the model used in this project.
+     */
+    modelDeveloper?: string | null;
+
+    /**
+     * The kinds of model used in this project.
+     */
+    modelTypes?: Array<string> | null;
+
+    /**
+     * What the system in this project is intended to do.
+     */
+    purpose?: string | null;
   }
 
   export namespace Project {
@@ -661,11 +682,32 @@ export namespace InferencePipelineListResponse {
       workspaceId: string | null;
 
       /**
+       * Number of days to retain monitoring data for this project. Null means data is
+       * retained indefinitely.
+       */
+      dataRetentionDays?: number | null;
+
+      /**
        * The project description.
        */
       description?: string | null;
 
       gitRepo?: Project.GitRepo | null;
+
+      /**
+       * Who developed the model used in this project.
+       */
+      modelDeveloper?: string | null;
+
+      /**
+       * The kinds of model used in this project.
+       */
+      modelTypes?: Array<string> | null;
+
+      /**
+       * What the system in this project is intended to do.
+       */
+      purpose?: string | null;
     }
 
     export namespace Project {
@@ -1059,9 +1101,30 @@ export namespace InferencePipelineCreateParams {
     taskType: 'llm-base' | 'tabular-classification' | 'tabular-regression' | 'text-classification';
 
     /**
+     * Number of days to retain monitoring data for this project. Null means data is
+     * retained indefinitely.
+     */
+    dataRetentionDays?: number | null;
+
+    /**
      * The project description.
      */
     description?: string | null;
+
+    /**
+     * Who developed the model used in this project.
+     */
+    modelDeveloper?: string | null;
+
+    /**
+     * The kinds of model used in this project.
+     */
+    modelTypes?: Array<string> | null;
+
+    /**
+     * What the system in this project is intended to do.
+     */
+    purpose?: string | null;
   }
 
   export interface Workspace {
