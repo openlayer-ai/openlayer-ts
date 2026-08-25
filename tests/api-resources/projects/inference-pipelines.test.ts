@@ -44,7 +44,11 @@ describe('resource inferencePipelines', () => {
       project: {
         name: 'My Project',
         taskType: 'llm-base',
+        dataRetentionDays: 30,
         description: 'My project description.',
+        modelDeveloper: 'Acme AI',
+        modelTypes: ['llm'],
+        purpose: 'Answer customer billing questions.',
       },
       workspace: {
         name: 'Openlayer',

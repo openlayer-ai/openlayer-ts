@@ -86,6 +86,7 @@ client.example.list(undefined, { headers: { ... } });
 
 This affects the following methods:
 
+- `client.projects.update()`
 - `client.projects.list()`
 - `client.projects.commits.list()`
 - `client.projects.inferencePipelines.list()`

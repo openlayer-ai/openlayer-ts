@@ -378,11 +378,32 @@ export namespace InferencePipelineRetrieveResponse {
     workspaceId: string | null;
 
     /**
+     * Number of days to retain monitoring data for this project. Null means data is
+     * retained indefinitely.
+     */
+    dataRetentionDays?: number | null;
+
+    /**
      * The project description.
      */
     description?: string | null;
 
     gitRepo?: Project.GitRepo | null;
+
+    /**
+     * Who developed the model used in this project.
+     */
+    modelDeveloper?: string | null;
+
+    /**
+     * The kinds of model used in this project.
+     */
+    modelTypes?: Array<string> | null;
+
+    /**
+     * What the system in this project is intended to do.
+     */
+    purpose?: string | null;
   }
 
   export namespace Project {
@@ -746,11 +767,32 @@ export namespace InferencePipelineUpdateResponse {
     workspaceId: string | null;
 
     /**
+     * Number of days to retain monitoring data for this project. Null means data is
+     * retained indefinitely.
+     */
+    dataRetentionDays?: number | null;
+
+    /**
      * The project description.
      */
     description?: string | null;
 
     gitRepo?: Project.GitRepo | null;
+
+    /**
+     * Who developed the model used in this project.
+     */
+    modelDeveloper?: string | null;
+
+    /**
+     * The kinds of model used in this project.
+     */
+    modelTypes?: Array<string> | null;
+
+    /**
+     * What the system in this project is intended to do.
+     */
+    purpose?: string | null;
   }
 
   export namespace Project {
