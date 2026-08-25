@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.30.1 (2026-07-11)
+
+Full Changelog: [v0.30.0...v0.30.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.30.0...v0.30.1)
+
+### Chores
+
+* **internal:** codegen related update ([ea4caab](https://github.com/openlayer-ai/openlayer-ts/commit/ea4caabf02e3ef72b6eb571865643773482d25c9))
+
 ## 0.30.0 (2026-07-01)
 
 Full Changelog: [v0.29.1...v0.30.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.29.1...v0.30.0)

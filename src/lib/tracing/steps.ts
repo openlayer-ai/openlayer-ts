@@ -45,6 +45,7 @@ export interface ChatCompletionStepData extends StepData {
   cost: number | null;
   model: string | null;
   modelParameters: Record<string, any> | null;
+  usageDetails?: Record<string, number>;
 }
 
 export interface HandoffStepData extends StepData {
@@ -170,6 +171,11 @@ export class ChatCompletionStep extends Step {
   cost: number | null = null;
   model: string | null = null;
   modelParameters: Record<string, any> | null = null;
+  // Optional per-category token map (e.g. { input_tokens, output_tokens,
+  // cached_tokens, ... }). When set, the backend prices each category by exact
+  // key match to populate costDetails; serialized only when present so
+  // scalar-only integrations are unaffected.
+  usageDetails: Record<string, number> | null = null;
 
   constructor(
     name: string,
@@ -194,6 +200,7 @@ export class ChatCompletionStep extends Step {
       cost: this.cost,
       model: this.model,
       modelParameters: this.modelParameters,
+      ...(this.usageDetails ? { usageDetails: this.usageDetails } : {}),
     };
   }
 }
