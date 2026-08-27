@@ -10,7 +10,7 @@ adding one exporter to its observability config:
 ```ts
 import { Mastra } from '@mastra/core';
 import { Observability } from '@mastra/observability';
-import { OpenlayerExporter } from 'openlayer/integrations/mastra';
+import { OpenlayerExporter } from 'openlayer/lib/integrations/mastra';
 
 export const mastra = new Mastra({
   observability: new Observability({

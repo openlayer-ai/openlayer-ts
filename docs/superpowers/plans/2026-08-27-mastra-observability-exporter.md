@@ -24,6 +24,7 @@
 - **Do not add `export * from './mastra'` to `src/lib/integrations/index.ts`.** That barrel is reachable from the root entry point; re-exporting would force the optional Mastra peers to resolve for every consumer of `openlayer`.
 - **New dependencies go in `peerDependencies` (optional) + `devDependencies` only.** Nothing is added to `dependencies`.
 - Existing repo conventions: 2-space indent, single quotes, semicolons, `process.env['KEY']` bracket access (required by `noPropertyAccessFromIndexSignature`), and live tests in `tests/integrations/*.live.test.ts` gated on an env var.
+- **Corrected during execution — public import path.** This plan's code snippets below (e.g. the Goal line and the `import { OpenlayerExporter } from 'openlayer/integrations/mastra'` examples) show the subpath as originally dispatched, but the shipped path is `openlayer/lib/integrations/mastra`. The build regenerates `dist/package.json`'s `exports` map from a directory scan and discards a hand-authored `./integrations/mastra` subpath, so the snippets below are superseded by this line, not by editing them — this plan is a historical record of what was actually dispatched to implementers and is left as-is. See `README.md`, `examples/mastra-tracing.ts`, and `src/lib/integrations/mastra/index.ts` for the correct, shipped path.
 
 ---
 
