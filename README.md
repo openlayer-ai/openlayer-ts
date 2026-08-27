@@ -530,6 +530,12 @@ There are two layers, and they do different jobs:
   to `[SpanType.MODEL_CHUNK]`, because Mastra emits one span per streaming chunk and an
   unfiltered streamed reply would become hundreds of steps. Pass `[]` to export everything.
 
+  `SpanType.MODEL_STEP` was measured to be a large share of a trace's steps (4 of 7 in a single
+  one-tool-call turn) but is deliberately **not** in the default drop list: dropping a span here
+  does not reparent its children, and a live run confirmed that dropping `MODEL_STEP` silently
+  loses the nested tool-call step rather than hoisting it to the surviving `MODEL_GENERATION`
+  ancestor. Filtering it out is not safe until the exporter can reparent orphaned children.
+
 ### Troubleshooting
 
 **Nothing arrives at all.** The exporter disabled itself because credentials were missing. Look

@@ -42,6 +42,15 @@ const LOG_PREFIX = '[OpenlayerExporter]';
 /**
  * Mastra emits one span per streaming chunk. Left unfiltered, a single
  * streamed reply becomes hundreds of Openlayer steps.
+ *
+ * `MODEL_STEP` was measured (see `mastraExporter.live.test.ts`) to be 4 of 7
+ * steps (57%) in a single one-tool-call turn, and considered for this list —
+ * but dropping it here does not reparent its children to the surviving
+ * `MODEL_GENERATION` ancestor: a live run with `MODEL_STEP` dropped lost the
+ * nested `tool_call` span (and its `toolResult`) entirely, rather than
+ * hoisting it. That is a materially worse outcome than the noise it would
+ * remove, so `MODEL_STEP` stays out of this list until the exporter can
+ * reparent orphaned children before dropping their parent.
  */
 const DEFAULT_DROP_SPAN_TYPES: SpanType[] = [SpanType.MODEL_CHUNK];
 
