@@ -208,9 +208,9 @@ export interface OpenlayerExporterConfig
   endpoint?: string;             // OPENLAYER_OTEL_ENDPOINT
   projectName?: string;          // → service.name resource attribute
   headers?: Record<string, string>;
-  /** Span types dropped before export. Defaults to [SpanType.MODEL_CHUNK].
-   *  Pass [] to export everything. */
-  excludeSpanTypes?: SpanType[];
+  /** Span types this exporter drops before export. Defaults to [SpanType.MODEL_CHUNK].
+   *  Pass [] to export everything. Deliberately NOT named `excludeSpanTypes` — see below. */
+  dropSpanTypes?: SpanType[];
   // inherited and supported: batchSize, timeout, logLevel, resourceAttributes,
   //                          customSpanFormatter, logger
 }
@@ -229,11 +229,18 @@ Two defaults that are decisions rather than accidents:
 
 - **`signals: { logs: false }`.** The Openlayer OTLP endpoint is traces-only; leaving logs
   enabled would demand an `@opentelemetry/exporter-logs-otlp-proto` nobody installed.
-- **`MODEL_CHUNK` spans dropped**, via `excludeSpanTypes` defaulting to
-  `[SpanType.MODEL_CHUNK]` and enforced in an `_exportTracingEvent` override that returns early
-  before delegating to `super`. Mastra emits one span per streaming chunk, so an unfiltered
-  streamed reply becomes hundreds of steps. Passing `[]` disables the filter; users can also
-  widen it with Mastra's own config-level `excludeSpanTypes`, which runs earlier.
+- **`MODEL_CHUNK` spans dropped**, via `dropSpanTypes` defaulting to `[SpanType.MODEL_CHUNK]`
+  and enforced in an `_exportTracingEvent` override that returns early before delegating to
+  `super`. Mastra emits one span per streaming chunk, so an unfiltered streamed reply becomes
+  hundreds of steps. Passing `[]` disables it.
+
+  **Filtering has two layers and they must not share a name.**
+  `ObservabilityInstanceConfig.excludeSpanTypes` already exists at the Mastra config level and
+  drops spans before *any* exporter sees them. The exporter-level knob is therefore named
+  `dropSpanTypes`, not `excludeSpanTypes`, so a reader can never be unsure which layer a given
+  setting belongs to. Docs will state the rule plainly: **use Mastra's `excludeSpanTypes` to
+  filter for every exporter; use `dropSpanTypes` only to change what Openlayer alone receives.**
+  The exporter default exists solely so the zero-config path is safe under streaming.
 
 ## Packaging
 
@@ -274,6 +281,13 @@ Run a real Mastra agent with a tool plus a workflow, `flush()`, poll
 - `openlayer_cost > 0`, `openlayer_num_of_tokens > 0`, `model` and `provider` set
 - `openlayer_session_id` populated when `metadata.sessionId` was supplied
 - an agent that throws produces `status: "error"` while a sibling healthy trace still lands
+- **what `model_step` steps actually look like.** `getAttributes` writes
+  `mastra.model_step.input`, and `MODEL_STEP` spans do *not* receive `gen_ai.input.messages` —
+  only `MODEL_GENERATION` does. So the capability guard will fire on them and synthesize
+  messages. That is likely desirable, but it is unmeasured and `model_step` spans are numerous,
+  so the live test asserts their resulting shape rather than leaving it to be discovered in a
+  user's trace. If the result is noisy, the fix is adding `MODEL_STEP` to the `dropSpanTypes`
+  default, not adding a rule to the rewriter.
 
 ## Example and documentation
 
