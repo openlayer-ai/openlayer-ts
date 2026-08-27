@@ -562,9 +562,12 @@ longer filtered. Restore the default or add `SpanType.MODEL_CHUNK` back.
 conventions; OpenInference `input.value` / `output.value` produce empty rows. This exporter
 targets gen_ai deliberately — no configuration will change that.
 
-**Running `mastraExporter.live.test.ts` crashes on import instead of skipping.** `@ai-sdk/openai`
-is ESM-only, so this repo's test suite needs `NODE_OPTIONS=--experimental-vm-modules npx jest
-tests/integrations/mastraExporter.live.test.ts` — see that file's header comment for why.
+**Running `mastraExporter.live.test.ts` live needs `--experimental-vm-modules`.** The suite
+itself loads and skips cleanly under a plain `npx jest` run with no credentials — `@ai-sdk/openai`
+is ESM-only, but the live test imports it lazily inside the test body, which `it.skip` never
+executes. The flag is only required to actually run the live assertions once credentials are
+set: `NODE_OPTIONS=--experimental-vm-modules npx jest tests/integrations/mastraExporter.live.test.ts`
+— see that file's header comment for why.
 
 ## Frequently Asked Questions
 

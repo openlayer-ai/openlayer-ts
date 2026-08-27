@@ -16,26 +16,35 @@
  *   OPENLAYER_INFERENCE_PIPELINE_ID — destination pipeline (defaults below)
  *   OPENAI_API_KEY                  — required by the agent's model
  *
- * Must be run with ``--experimental-vm-modules``:
+ * Running it live needs ``--experimental-vm-modules``:
  *
  *     NODE_OPTIONS=--experimental-vm-modules npx jest \
  *       tests/integrations/mastraExporter.live.test.ts
  *
  * `@ai-sdk/openai` ships ESM-only (`"type": "module"`, no `require` export),
  * unlike `@mastra/core` and `@mastra/observability`, which both ship dual
- * CJS/ESM builds and load fine under plain Jest. Without the flag, Jest's own
- * module registry rejects the ESM syntax outright — even a lazy `import()`
- * inside the test body hits the same wall — so the flag is needed just to
- * load this file, for the skip path as much as the live one. Same root cause
- * as the Vertex suite's flag requirement in `googleGenAiTracer.live.test.ts`.
+ * CJS/ESM builds and load fine under plain Jest. A *static* top-level import
+ * of an ESM-only package makes Jest's CJS module registry reject the file's
+ * syntax outright, before any test — including `it.skip` — ever runs. That
+ * previously broke the skip guarantee this suite depends on: `npm test` /
+ * `npx jest` (no flag, and CI has no credentials either) crashed the whole
+ * suite instead of skipping it, because `./scripts/test`'s `jest "$@"` call
+ * sets no `NODE_OPTIONS`, and that flag is deliberately not added there —
+ * it's shared infrastructure for every suite in the SDK, and one optional
+ * live test is not a reason to change how all of them run. The fix instead:
+ * every import of an ESM-only or ESM-preferring package is a lazy
+ * `await import(...)` inside the test body below, not a static top-level
+ * import. `it.skip` never runs the body, so the dynamic import never
+ * happens, so the file loads and skips cleanly with **no flag and no
+ * credentials** — verified directly, not assumed. The flag is only needed to
+ * actually run the live assertions once credentials are present; running
+ * live without it now fails just that one test with a normal Jest error,
+ * rather than crashing the whole suite before it can decide to skip.
+ * Unrelated root cause to the Vertex suite's flag requirement in
+ * `googleGenAiTracer.live.test.ts`, which is about a dynamic `import()`
+ * *inside a transitive dependency* (`gaxios`) at OAuth-refresh time, not a
+ * load-time syntax rejection.
  */
-import { openai } from '@ai-sdk/openai';
-import { Agent } from '@mastra/core/agent';
-import { Mastra } from '@mastra/core';
-import { createTool } from '@mastra/core/tools';
-import { Observability } from '@mastra/observability';
-import { z } from 'zod';
-
 import { OpenlayerExporter } from '../../src/lib/integrations/mastra';
 
 const itLive = process.env['OPENLAYER_API_KEY'] && process.env['OPENAI_API_KEY'] ? it : it.skip;
@@ -105,6 +114,17 @@ describe('Mastra OpenlayerExporter live integration', () => {
   itLive(
     'publishes a trace with usable input, output, cost, tokens and nested tool steps',
     async () => {
+      // Lazy, not static top-level, imports — see the file header comment for
+      // why: a static import of ESM-only `@ai-sdk/openai` would make this
+      // file fail to load at all, before `it.skip` can even run, breaking the
+      // no-credentials skip path this suite depends on for CI.
+      const { openai } = await import('@ai-sdk/openai');
+      const { Agent } = await import('@mastra/core/agent');
+      const { Mastra } = await import('@mastra/core');
+      const { createTool } = await import('@mastra/core/tools');
+      const { Observability } = await import('@mastra/observability');
+      const { z } = await import('zod');
+
       const marker = `live-${Date.now()}`;
 
       const getWeather = createTool({
