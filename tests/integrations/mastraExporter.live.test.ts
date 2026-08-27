@@ -146,24 +146,41 @@ describe('Mastra OpenlayerExporter live integration', () => {
       const row = await findRow(marker, isSettled);
 
       // The defect this integration exists to fix: root I/O must not be empty.
-      expect(row['openlayer_output']).toBeTruthy();
-      expect(JSON.stringify(row['openlayer_output'])).not.toBe('{}');
+      // Content, not just shape: `{}` and `[]` are both truthy in JS and both
+      // `!== '{}'` once stringified, so a bare truthy/non-`{}` check would
+      // still pass against an empty array — assert on the actual text.
+      expect(Array.isArray(row['openlayer_output'])).toBe(true);
+      expect(row['openlayer_output'].length).toBeGreaterThan(0);
+      expect(row['openlayer_output'][0]?.content?.length).toBeGreaterThan(0);
+
+      // `openlayer_inputs` is a list of declared input-variable *names*
+      // (`["prompt"]`), not content — it is `true` whether or not the
+      // variable it names carries anything, so `toContain('prompt')` alone is
+      // a false positive against the exact defect this test exists to catch
+      // (same bug class as the `get_weather` string below). Keep it as a
+      // valid structural check, but assert on the actual content in the
+      // `prompt` column too: the real user message we sent, verified present
+      // on a live row.
       expect(row['openlayer_inputs']).toContain('prompt');
+      expect(Array.isArray(row['prompt'])).toBe(true);
+      const userMessage = row['prompt'].find((message: any) => message.role === 'user');
+      expect(userMessage?.content).toBe('What is the weather in Lisbon?');
 
       // Session metadata is lifted to session.id, which Openlayer reads.
       expect(row['openlayer_session_id']).toBe(`session-${marker}`);
 
-      // Hierarchy: the tool call is nested and mapped natively. `functionName`
-      // and `toolResult` are the actual fields on the tool step — checking for
-      // the tool's own name (`get_weather`) is not equivalent: the agent's
-      // system prompt also contains that substring ("Always use the
-      // get_weather tool"), so it would pass even with no tool step at all.
-      // Confirmed against a live row: the tool step carries
-      // `functionName: "getWeather"` (the `tools` map key, not the tool's
-      // `id`) alongside `toolResult`.
+      // Hierarchy: the tool call is nested and mapped natively. Checking for
+      // the field *names* `functionName` / `toolResult` alone is the same
+      // false-positive shape as `openlayer_inputs` above — `"toolResult":""`
+      // would still contain the substring `toolResult`. Assert on the actual
+      // values instead: `functionName` is the `tools` map key (`getWeather`,
+      // not the tool's `id`), and `tempC` is the tool's real return value —
+      // it does not appear anywhere else in the trace (unlike `get_weather`,
+      // which the agent's system prompt text also contains), so its presence
+      // specifically confirms the tool's real output reached the row.
       const steps = JSON.stringify(row['steps']);
-      expect(steps).toContain('functionName');
-      expect(steps).toContain('toolResult');
+      expect(steps).toContain('"functionName":"getWeather"');
+      expect(steps).toContain('tempC');
 
       // Documented but unmeasured: MODEL_STEP spans carry mastra.model_step.input
       // but no gen_ai messages, so the capability guard fires on them. Measured
@@ -180,6 +197,15 @@ describe('Mastra OpenlayerExporter live integration', () => {
       console.log(`[live] model_step occurrences in trace: ${modelStepCount}`);
 
       // Model metadata and tokens are normalized server-side on this path.
+      // `model`/`provider` stay truthy-only rather than exact-matched: audited
+      // for the same false-positive shape as the assertions above, but nothing
+      // in this path rewrites either field to a wrong-but-truthy value (unlike
+      // `openlayer_cost`, which silently drops to a falsy value on a bad
+      // provider slug — that path already has its own exact-value regression
+      // guard below). `provider` specifically is also server-prettified
+      // (`"OpenAI"`, not the raw `openai` slug), so pinning it to a literal
+      // would break on a legitimate display-string change rather than a
+      // real regression.
       expect(row['openlayer_num_of_tokens']).toBeGreaterThan(0);
       expect(row['model']).toBeTruthy();
       expect(row['provider']).toBeTruthy();
