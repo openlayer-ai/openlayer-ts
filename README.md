@@ -446,6 +446,129 @@ const client = new Openlayer({
 });
 ```
 
+## Mastra
+
+Send Mastra agent, workflow, model, and tool traces to Openlayer.
+
+### Installation
+
+```sh
+npm install openlayer @mastra/core @mastra/observability @mastra/otel-exporter @opentelemetry/exporter-trace-otlp-proto
+```
+
+`@mastra/observability` is required to configure any custom exporter, Openlayer included, but is
+not a peer dependency of `openlayer` itself — it's a Mastra requirement, not an Openlayer one.
+`@mastra/core`, `@mastra/otel-exporter`, and `@opentelemetry/exporter-trace-otlp-proto` are all
+declared as **optional** peer dependencies of `openlayer`, so none of the three is pulled in for
+consumers who do not use Mastra.
+
+### Configuration
+
+Set `OPENLAYER_API_KEY` and `OPENLAYER_INFERENCE_PIPELINE_ID`, then add the exporter. A third,
+optional variable, `OPENLAYER_OTEL_ENDPOINT`, overrides the OTLP endpoint the exporter posts
+to — it defaults to `https://api.openlayer.com/v1/otel/v1/traces` when unset:
+
+```ts
+import { Mastra } from '@mastra/core';
+import { Observability } from '@mastra/observability';
+import { OpenlayerExporter } from 'openlayer/lib/integrations/mastra';
+
+export const mastra = new Mastra({
+  observability: new Observability({
+    configs: {
+      openlayer: {
+        serviceName: 'my-service',
+        exporters: [new OpenlayerExporter()],
+      },
+    },
+  }),
+});
+```
+
+Every value can also be passed explicitly, which takes precedence over the environment:
+
+```ts
+new OpenlayerExporter({
+  apiKey: process.env.OPENLAYER_API_KEY,
+  inferencePipelineId: process.env.OPENLAYER_INFERENCE_PIPELINE_ID,
+  projectName: 'my-service',
+  endpoint: 'https://api.openlayer.com/v1/otel/v1/traces',
+  headers: { 'x-custom-header': 'value' },
+  batchSize: 512,
+  timeout: 30000,
+  logLevel: 'debug',
+});
+```
+
+If credentials are missing the exporter disables itself and logs the reason — it never throws.
+
+### Session and user attribution
+
+Metadata named `sessionId` (or `threadId`) and `userId` is lifted onto the trace, so rows are
+grouped by session and user in Openlayer:
+
+```ts
+await agent.generate('What is the weather in Lisbon?', {
+  tracingOptions: { metadata: { sessionId: 'session-123', userId: 'user-456' } },
+});
+```
+
+Any other metadata is preserved on the step as-is.
+
+### Composing with other exporters
+
+Mastra takes a list, so Openlayer sits alongside anything else:
+
+```ts
+exporters: [new OpenlayerExporter(), new ArizeExporter()],
+```
+
+### Filtering spans
+
+There are two layers, and they do different jobs:
+
+- **`excludeSpanTypes`** on the Mastra config drops spans before _any_ exporter sees them. Use
+  this to filter for every exporter at once.
+- **`dropSpanTypes`** on `OpenlayerExporter` changes only what Openlayer receives. It defaults
+  to `[SpanType.MODEL_CHUNK]`, because Mastra emits one span per streaming chunk and an
+  unfiltered streamed reply would become hundreds of steps. Pass `[]` to export everything.
+
+  **`dropSpanTypes` never reparents children.** It is a public knob, and dropping a span type
+  that has descendants — `WORKFLOW_STEP`, for example — silently loses that entire subtree, not
+  just the dropped span itself. `MODEL_CHUNK`, the default, is safe from this precisely because
+  chunk spans are leaves with nothing under them to lose.
+
+  `SpanType.MODEL_STEP` is the case that was actually measured: it was a large share of a
+  trace's steps (4 of 7 in a single one-tool-call turn) and was considered for the default drop
+  list, but a live run confirmed that dropping it silently lost the nested tool-call step rather
+  than hoisting it to the surviving `MODEL_GENERATION` ancestor. It is deliberately **not** in
+  the default list for that reason, and the same caution applies to any span type you add to
+  `dropSpanTypes` yourself: check what it parents before dropping it.
+
+### Troubleshooting
+
+**Nothing arrives at all.** The exporter disabled itself because credentials were missing. Look
+for `[OpenlayerExporter] Missing required configuration` in the logs at startup.
+
+**Rows arrive with empty output.** Something stripped the `mastra.*.input` / `.output` span
+attributes before the exporter ran — check any `customSpanFormatter` or span output processor
+in your observability config. Openlayer builds a row's input and output from the root span, and
+the exporter recovers them from those attributes.
+
+**Hundreds of steps in one trace.** `dropSpanTypes` was overridden and `MODEL_CHUNK` is no
+longer filtered. Restore the default or add `SpanType.MODEL_CHUNK` back.
+
+**OpenInference attributes are not read.** Openlayer's OTLP ingest maps the GenAI semantic
+conventions; OpenInference `input.value` / `output.value` produce empty rows. This exporter
+targets gen_ai deliberately — no configuration will change that.
+
+**Running `mastraExporter.live.test.ts` live needs `--experimental-vm-modules`.** The suite
+itself loads and skips cleanly under a plain `npx jest` run with no credentials — `@ai-sdk/openai`
+is ESM-only, but the live test imports it lazily inside the test body, which `it.skip` never
+executes. The flag is only required to actually run the live assertions once credentials are
+set: `NODE_OPTIONS=--experimental-vm-modules npx jest tests/integrations/mastraExporter.live.test.ts`
+— see that file's header comment for why.
+
 ## Frequently Asked Questions
 
 ## Semantic versioning
