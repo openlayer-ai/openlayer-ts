@@ -37,22 +37,18 @@ const weatherAgent = new Agent({
   tools: { getWeather },
 });
 
-const summarize = createStep({
-  id: 'summarize',
-  inputSchema: z.object({ city: z.string() }),
-  outputSchema: z.object({ summary: z.string() }),
-  execute: async ({ inputData }) => {
-    const result = await weatherAgent.generate(`What is the weather in ${inputData.city}?`);
-    return { summary: result.text };
-  },
-});
+// createStep(agent) wraps the agent as a step that runs *inside* the
+// workflow's own trace, instead of a hand-written step that calls
+// `agent.generate()` and would start an unrelated, sibling trace.
+const weatherAgentStep = createStep(weatherAgent);
 
 const weatherWorkflow = createWorkflow({
   id: 'weatherWorkflow',
   inputSchema: z.object({ city: z.string() }),
-  outputSchema: z.object({ summary: z.string() }),
+  outputSchema: z.object({ text: z.string() }),
 })
-  .then(summarize)
+  .map(async ({ inputData }) => ({ prompt: `What is the weather in ${inputData.city}?` }))
+  .then(weatherAgentStep)
   .commit();
 
 export const mastra = new Mastra({
