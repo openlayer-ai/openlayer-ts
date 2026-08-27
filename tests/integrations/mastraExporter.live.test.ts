@@ -151,7 +151,28 @@ describe('Mastra OpenlayerExporter live integration', () => {
       // still pass against an empty array — assert on the actual text.
       expect(Array.isArray(row['openlayer_output'])).toBe(true);
       expect(row['openlayer_output'].length).toBeGreaterThan(0);
-      expect(row['openlayer_output'][0]?.content?.length).toBeGreaterThan(0);
+      // `content` is itself a JSON-stringified envelope (`{"text":...,"files":[]}`),
+      // not the answer — checking only that the envelope string is non-empty
+      // still passes against `'{"text":"","files":[]}'` (22 characters), which
+      // is exactly the empty-output shape this test exists to catch. Parse it
+      // and assert on the real text. Fail loudly rather than silently skipping
+      // the check if the content is ever not JSON — a swallowed parse failure
+      // here would recreate the same bug this assertion is meant to prevent.
+      const outputContent = row['openlayer_output'][0]?.content;
+      let outputEnvelope: any;
+      try {
+        outputEnvelope = JSON.parse(outputContent);
+      } catch (error) {
+        throw new Error(
+          `openlayer_output[0].content was not the expected JSON envelope: ` +
+            `${JSON.stringify(outputContent)} (${error})`,
+        );
+      }
+      expect(typeof outputEnvelope.text).toBe('string');
+      expect(outputEnvelope.text.length).toBeGreaterThan(0);
+      // The tool always returns tempC: 24, so a real answer must mention it —
+      // same robustness class as the `tempC` check on `steps` below.
+      expect(outputEnvelope.text).toContain('24');
 
       // `openlayer_inputs` is a list of declared input-variable *names*
       // (`["prompt"]`), not content — it is `true` whether or not the
