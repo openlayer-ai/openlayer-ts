@@ -13,7 +13,7 @@ import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Mastra } from '@mastra/core';
 import { createTool } from '@mastra/core/tools';
-import { createStep, createWorkflow } from '@mastra/core/workflows';
+import { createStepFromAgent, createWorkflow } from '@mastra/core/workflows';
 import { Observability } from '@mastra/observability';
 import { OpenlayerExporter } from 'openlayer/lib/integrations/mastra';
 import { z } from 'zod';
@@ -37,10 +37,10 @@ const weatherAgent = new Agent({
   tools: { getWeather },
 });
 
-// createStep(agent) wraps the agent as a step that runs *inside* the
+// createStepFromAgent wraps the agent as a step that runs *inside* the
 // workflow's own trace, instead of a hand-written step that calls
 // `agent.generate()` and would start an unrelated, sibling trace.
-const weatherAgentStep = createStep(weatherAgent);
+const weatherAgentStep = createStepFromAgent(weatherAgent);
 
 const weatherWorkflow = createWorkflow({
   id: 'weatherWorkflow',
