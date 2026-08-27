@@ -553,6 +553,10 @@ longer filtered. Restore the default or add `SpanType.MODEL_CHUNK` back.
 conventions; OpenInference `input.value` / `output.value` produce empty rows. This exporter
 targets gen_ai deliberately — no configuration will change that.
 
+**Running `mastraExporter.live.test.ts` crashes on import instead of skipping.** `@ai-sdk/openai`
+is ESM-only, so this repo's test suite needs `NODE_OPTIONS=--experimental-vm-modules npx jest
+tests/integrations/mastraExporter.live.test.ts` — see that file's header comment for why.
+
 ## Frequently Asked Questions
 
 ## Semantic versioning

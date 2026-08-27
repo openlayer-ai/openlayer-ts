@@ -39,7 +39,12 @@ const weatherAgent = new Agent({
 
 // createStepFromAgent wraps the agent as a step that runs *inside* the
 // workflow's own trace, instead of a hand-written step that calls
-// `agent.generate()` and would start an unrelated, sibling trace.
+// `agent.generate()` and would start an unrelated, sibling trace. The
+// factory has a fixed contract, not an inferred one: its input type is
+// always `{ prompt: string }` and its output always carries `text` — which is
+// why the `.map()` step below exists (to produce that exact `{ prompt }`
+// shape from the workflow's own `{ city }` input) and why the workflow's
+// `outputSchema` declares `text`.
 const weatherAgentStep = createStepFromAgent(weatherAgent);
 
 const weatherWorkflow = createWorkflow({

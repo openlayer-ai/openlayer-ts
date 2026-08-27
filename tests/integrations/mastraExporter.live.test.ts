@@ -43,16 +43,20 @@ const itLive = process.env['OPENLAYER_API_KEY'] && process.env['OPENAI_API_KEY']
 const PIPELINE_ID = process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ?? 'cb47e4f7-15a0-4e70-bd6e-7b1b4b54e434';
 
 /**
- * A row appears in the listing as soon as it is ingested, but token counts are
- * filled in by a server-side pass afterward. Polling only for existence (as
- * the original draft did) caught the row mid-flight, before
- * `openlayer_num_of_tokens` was populated — found empirically by running this
- * test. Callers state the condition they actually need.
+ * A row appears in the listing as soon as it is ingested, but token counts
+ * (and cost, computed alongside them) are filled in by a server-side pass
+ * afterward. Polling only for existence (as the original draft did) caught
+ * the row mid-flight, before `openlayer_num_of_tokens` was populated — found
+ * empirically by running this test. Callers state the condition they
+ * actually need.
  *
- * Deliberately not gated on `openlayer_cost`: that field never arrives for
- * this call shape (see the comment at the call site), and gating on it would
- * make every assertion below unreachable — `findRow` would just time out and
- * throw before the test could tell the caller which other claims still hold.
+ * Deliberately gated on tokens only, not `openlayer_cost` directly: while the
+ * `openai.responses` provider-slug gap was still unfixed, cost never arrived
+ * at all, and gating on it made every assertion below unreachable — `findRow`
+ * would just time out and throw before the test could tell the caller which
+ * other claims still held. Tokens turned out to be a reliable, always-present
+ * proxy for "the server-side pass has run" — confirmed live, cost is present
+ * by the same poll tokens are.
  */
 function isSettled(row: any): boolean {
   return typeof row?.['openlayer_num_of_tokens'] === 'number' && row['openlayer_num_of_tokens'] > 0;
@@ -180,16 +184,16 @@ describe('Mastra OpenlayerExporter live integration', () => {
       expect(row['model']).toBeTruthy();
       expect(row['provider']).toBeTruthy();
 
-      // KNOWN LIVE FAILURE, kept rather than weakened: Mastra's OpenAI
-      // Responses API calls report `gen_ai.system` as `openai.responses`, and
-      // the Openlayer provider-cost-slug invariant requires an exact
-      // lowercased (provider, model) match with no aliasing — confirmed
-      // directly against the live cost API: `openai/gpt-4o-mini-2024-07-18`
-      // prices; `openai.responses/gpt-4o-mini-2024-07-18` 404s. Fixing this
-      // means normalizing `openai.responses` (and likely sibling variants) to
-      // `openai` before export — a rewriter change with its own design
-      // questions, out of scope for this task. Left failing on purpose so the
-      // gap stays visible instead of being silently asserted away.
+      // Regression guard for a real defect found by this test: Mastra's
+      // OpenAI Responses API calls report `gen_ai.provider.name` as
+      // `openai.responses`, and Openlayer's cost lookup is an exact lowercased
+      // (provider, model) match with no aliasing — confirmed directly against
+      // the live cost API, `openai/gpt-4o-mini-2024-07-18` prices while
+      // `openai.responses/gpt-4o-mini-2024-07-18` 404s. `rewriteSpanAttributes`
+      // now normalizes `gen_ai.provider.name` (and `gen_ai.system`) through a
+      // verified alias table (`PROVIDER_SLUG_ALIASES` in `spanRewriter.ts`)
+      // before export, so this should pass; if it starts failing again, check
+      // that table before assuming this assertion is wrong.
       expect(row['openlayer_cost']).toBeGreaterThan(0);
     },
     180_000,

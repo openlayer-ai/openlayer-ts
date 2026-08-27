@@ -205,3 +205,49 @@ describe('OpenlayerOTLPTraceExporter', () => {
     superExport.mockRestore();
   });
 });
+
+/**
+ * `rewriteSpanAttributes` also normalizes a known set of non-canonical
+ * `gen_ai.provider.name` values so Openlayer's cost lookup — an exact,
+ * lowercased `(provider, model)` match with no server-side aliasing — can
+ * find them. Confirmed live: Mastra's OpenAI Responses API calls report
+ * `openai.responses`, which 404s against `llm-costs.openlayer.com`, while the
+ * bare `openai` slug prices the same model.
+ */
+describe('rewriteSpanAttributes provider slug normalization', () => {
+  it('rewrites a known non-canonical provider slug to the one Openlayer prices', () => {
+    const result = rewriteSpanAttributes({
+      'gen_ai.provider.name': 'openai.responses',
+    });
+
+    expect(result['gen_ai.provider.name']).toBe('openai');
+  });
+
+  it('leaves an unrecognized dotted provider slug unchanged', () => {
+    const result = rewriteSpanAttributes({
+      'gen_ai.provider.name': 'somevendor.someapi',
+    });
+
+    expect(result['gen_ai.provider.name']).toBe('somevendor.someapi');
+  });
+
+  it('leaves an already-canonical provider slug unchanged', () => {
+    const result = rewriteSpanAttributes({
+      'gen_ai.provider.name': 'openai',
+    });
+
+    expect(result['gen_ai.provider.name']).toBe('openai');
+  });
+
+  it('rewrites the provider slug without disturbing other attributes on the span', () => {
+    const result = rewriteSpanAttributes({
+      'gen_ai.provider.name': 'anthropic.messages',
+      'gen_ai.request.model': 'claude-sonnet-4-20250514',
+      'mastra.span.type': 'model_generation',
+    });
+
+    expect(result['gen_ai.provider.name']).toBe('anthropic');
+    expect(result['gen_ai.request.model']).toBe('claude-sonnet-4-20250514');
+    expect(result['mastra.span.type']).toBe('model_generation');
+  });
+});

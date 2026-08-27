@@ -15,6 +15,11 @@
  * being absent. This is a capability guard rather than a span-type allowlist,
  * so it degrades gracefully as Mastra adds span types, and it yields the
  * required "leave model and tool spans alone" behaviour for free.
+ *
+ * A second, unrelated gap lives here too: some `gen_ai.provider.name` values
+ * Mastra reports (e.g. `openai.responses`) don't match Openlayer's cost table
+ * even though the underlying vendor is priced under a different slug. See
+ * `normalizeProviderSlug` below.
  */
 import { toGenAIMessages } from './genaiMessages';
 
@@ -25,6 +30,14 @@ const GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages';
 const GEN_AI_OUTPUT_MESSAGES = 'gen_ai.output.messages';
 const GEN_AI_TOOL_CALL_ARGUMENTS = 'gen_ai.tool.call.arguments';
 const GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result';
+
+// `gen_ai.provider.name` is the current stable GenAI semconv attribute (and
+// the one `@mastra/otel-exporter` 1.3.11 actually sets, confirmed by logging
+// a live span's attributes); `gen_ai.system` is the OTel name it superseded.
+// Both are checked because a producer's semconv version is not this
+// exporter's to control.
+const GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name';
+const GEN_AI_SYSTEM = 'gen_ai.system';
 
 const SESSION_ID = 'session.id';
 const USER_ID = 'user.id';
@@ -126,6 +139,45 @@ function liftIdentity(attributes: SpanAttributes): void {
 }
 
 /**
+ * Openlayer's cost lookup (`llm-costs.openlayer.com`) is an exact, lowercased
+ * `(provider, model)` match against its cost table, with no server-side
+ * aliasing — an unrecognized provider slug silently yields a missing/zero
+ * cost, never an error. Mastra (via the AI SDK) reports dotted,
+ * API-shape-specific provider slugs — e.g. `openai.responses` for OpenAI's
+ * Responses API — that don't match Openlayer's table, even though the bare
+ * vendor slug (`openai`) does. `@mastra/otel-exporter`'s own provider
+ * normalization does not catch these either: it strips punctuation before
+ * comparing (`openai.responses` -> `openairesponses`), which never matches
+ * its own `openai` alias, so the dotted slug passes through unchanged.
+ *
+ * Every key here was verified individually against
+ * `https://llm-costs.openlayer.com/v1/costs/<provider>/<model>` before being
+ * added: the source slug 404s, the target slug prices. Never add an entry you
+ * have not confirmed this way — a wrong alias produces a wrong cost, which is
+ * worse than the missing cost it would replace.
+ */
+const PROVIDER_SLUG_ALIASES: Record<string, string> = {
+  'openai.responses': 'openai',
+  'openai.chat': 'openai',
+  'anthropic.messages': 'anthropic',
+  'google.generative-ai': 'gemini',
+};
+
+/**
+ * Rewrite a known non-canonical provider slug to the one Openlayer's cost
+ * table uses. A slug not in {@link PROVIDER_SLUG_ALIASES} is left untouched —
+ * guessing a mapping is not an option here, only a verified one.
+ */
+function normalizeProviderSlug(attributes: SpanAttributes): void {
+  for (const key of [GEN_AI_PROVIDER_NAME, GEN_AI_SYSTEM]) {
+    const value = attributes[key];
+    if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(PROVIDER_SLUG_ALIASES, value)) {
+      attributes[key] = PROVIDER_SLUG_ALIASES[value];
+    }
+  }
+}
+
+/**
  * Apply every Openlayer rewrite rule to a span's attributes.
  *
  * Returns a new object; the input is not mutated.
@@ -134,5 +186,6 @@ export function rewriteSpanAttributes(attributes: SpanAttributes): SpanAttribute
   const rewritten: SpanAttributes = { ...attributes };
   recoverMessages(rewritten);
   liftIdentity(rewritten);
+  normalizeProviderSlug(rewritten);
   return rewritten;
 }
