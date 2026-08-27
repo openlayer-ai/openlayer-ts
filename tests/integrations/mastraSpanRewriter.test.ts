@@ -44,6 +44,16 @@ describe('rewriteSpanAttributes', () => {
     expect(result['gen_ai.input.messages']).toBe(original);
   });
 
+  it('never overwrites an existing gen_ai.output.messages', () => {
+    const original = JSON.stringify([{ role: 'assistant', parts: [{ type: 'text', content: 'hi back' }] }]);
+    const result = rewriteSpanAttributes({
+      'mastra.span.type': 'model_generation',
+      'gen_ai.output.messages': original,
+      'mastra.model_generation.output': 'SHOULD NOT BE USED',
+    });
+    expect(result['gen_ai.output.messages']).toBe(original);
+  });
+
   it('leaves tool spans untouched — gen_ai.tool.call.* maps natively', () => {
     const result = rewriteSpanAttributes({
       'mastra.span.type': 'tool_call',
@@ -54,6 +64,34 @@ describe('rewriteSpanAttributes', () => {
     });
     expect(result['gen_ai.input.messages']).toBeUndefined();
     expect(result['gen_ai.output.messages']).toBeUndefined();
+  });
+
+  it('leaves a tool span untouched even when gen_ai.tool.call.result is missing', () => {
+    const result = rewriteSpanAttributes({
+      'mastra.span.type': 'tool_call',
+      'gen_ai.tool.call.arguments': '{"city":"Lisbon"}',
+      'mastra.tool_call.output': 'Error: upstream 500',
+    });
+    expect(result['gen_ai.input.messages']).toBeUndefined();
+    expect(result['gen_ai.output.messages']).toBeUndefined();
+  });
+
+  it('leaves mcp_tool_call and provider_tool_call spans untouched', () => {
+    const mcpResult = rewriteSpanAttributes({
+      'mastra.span.type': 'mcp_tool_call',
+      'mastra.mcp_tool_call.input': 'SHOULD NOT BE USED',
+      'mastra.mcp_tool_call.output': 'SHOULD NOT BE USED',
+    });
+    expect(mcpResult['gen_ai.input.messages']).toBeUndefined();
+    expect(mcpResult['gen_ai.output.messages']).toBeUndefined();
+
+    const providerResult = rewriteSpanAttributes({
+      'mastra.span.type': 'provider_tool_call',
+      'mastra.provider_tool_call.input': 'SHOULD NOT BE USED',
+      'mastra.provider_tool_call.output': 'SHOULD NOT BE USED',
+    });
+    expect(providerResult['gen_ai.input.messages']).toBeUndefined();
+    expect(providerResult['gen_ai.output.messages']).toBeUndefined();
   });
 
   it('does not mistake a user metadata key ending in .input for span input', () => {

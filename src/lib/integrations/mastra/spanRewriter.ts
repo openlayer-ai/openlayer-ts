@@ -31,10 +31,22 @@ const USER_ID = 'user.id';
 
 const MASTRA_PREFIX = 'mastra.';
 const MASTRA_METADATA_PREFIX = 'mastra.metadata.';
+const MASTRA_SPAN_TYPE = 'mastra.span.type';
 
 const MASTRA_METADATA_SESSION_ID = 'mastra.metadata.sessionId';
 const MASTRA_METADATA_THREAD_ID = 'mastra.metadata.threadId';
 const MASTRA_METADATA_USER_ID = 'mastra.metadata.userId';
+
+/**
+ * Span types whose payload maps natively via `gen_ai.tool.call.*` and must
+ * never be synthesized from `mastra.<type>.input` / `.output`. Today's
+ * `@mastra/otel-exporter` only reaches the `mastra.*` fallback branch for
+ * non-tool span types, so this guard is unreachable in practice — it exists
+ * as defense in depth rather than to fix an observed failure, since the
+ * "never rewrite tool spans" rule must not depend on a third-party package's
+ * private branch structure holding across future Mastra versions.
+ */
+const TOOL_SPAN_TYPES = new Set(['tool_call', 'mcp_tool_call', 'provider_tool_call']);
 
 /**
  * Find the `mastra.<span_type>.input` / `.output` key holding a span's payload.
@@ -56,6 +68,15 @@ function findMastraPayloadKey(attributes: SpanAttributes, suffix: '.input' | '.o
 
 /** Fill in gen_ai messages for spans where Mastra did not emit them. */
 function recoverMessages(attributes: SpanAttributes): void {
+  // Tool spans map natively via gen_ai.tool.call.arguments / .result.
+  // Synthesizing gen_ai.*.messages for them from mastra.<type>.input / .output
+  // was measured to make the Openlayer step strictly worse, so they are
+  // skipped outright rather than relying on the arguments/result attributes
+  // always being present together.
+  if (TOOL_SPAN_TYPES.has(String(attributes[MASTRA_SPAN_TYPE] ?? ''))) {
+    return;
+  }
+
   if (!attributes[GEN_AI_INPUT_MESSAGES] && !attributes[GEN_AI_TOOL_CALL_ARGUMENTS]) {
     const key = findMastraPayloadKey(attributes, '.input');
     if (key !== undefined) {
