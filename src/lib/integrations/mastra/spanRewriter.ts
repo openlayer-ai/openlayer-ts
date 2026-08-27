@@ -26,6 +26,8 @@ import { toGenAIMessages } from './genaiMessages';
 /** OTel span attributes. Values must stay primitives on the wire. */
 export type SpanAttributes = Record<string, any>;
 
+const LOG_PREFIX = '[OpenlayerExporter]';
+
 const GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages';
 const GEN_AI_OUTPUT_MESSAGES = 'gen_ai.output.messages';
 const GEN_AI_TOOL_CALL_ARGUMENTS = 'gen_ai.tool.call.arguments';
@@ -58,6 +60,13 @@ const MASTRA_METADATA_USER_ID = 'mastra.metadata.userId';
  * as defense in depth rather than to fix an observed failure, since the
  * "never rewrite tool spans" rule must not depend on a third-party package's
  * private branch structure holding across future Mastra versions.
+ *
+ * `client_tool_call` is deliberately absent from this set. Mastra's own tool
+ * branch in `@mastra/otel-exporter` omits it too, so a `client_tool_call`
+ * span never gets `gen_ai.tool.call.*` in the first place — it carries
+ * `mastra.client_tool_call.input` / `.output` like any non-tool span. There is
+ * nothing native to protect there, so the capability guard in
+ * `recoverMessages` below already does the right thing for it unassisted.
  */
 const TOOL_SPAN_TYPES = new Set(['tool_call', 'mcp_tool_call', 'provider_tool_call']);
 
@@ -121,19 +130,27 @@ function recoverMessages(attributes: SpanAttributes): void {
  *
  * Source attributes are deliberately kept — Openlayer preserves them into step
  * metadata, and deleting them (as Langfuse does) would lose information.
+ *
+ * Both ids accept `string | number`, not just `string`. `SpanConverter.convertSpan`
+ * (`@mastra/otel-exporter`) copies `span.metadata` onto attributes verbatim except
+ * for objects, which it JSON-stringifies first — so a numeric database id such as
+ * `metadata: { userId: 4821 }` arrives here as a genuine `number`, and an
+ * object-valued id arrives already stringified (handled by the `string` branch, no
+ * special case needed). A `string`-only guard would silently drop the numeric case
+ * and leave `user.id` unset.
  */
 function liftIdentity(attributes: SpanAttributes): void {
   if (attributes[SESSION_ID] === undefined) {
     const sessionId = attributes[MASTRA_METADATA_SESSION_ID] ?? attributes[MASTRA_METADATA_THREAD_ID];
-    if (typeof sessionId === 'string' && sessionId !== '') {
-      attributes[SESSION_ID] = sessionId;
+    if (typeof sessionId === 'number' || (typeof sessionId === 'string' && sessionId !== '')) {
+      attributes[SESSION_ID] = String(sessionId);
     }
   }
 
   if (attributes[USER_ID] === undefined) {
     const userId = attributes[MASTRA_METADATA_USER_ID];
-    if (typeof userId === 'string' && userId !== '') {
-      attributes[USER_ID] = userId;
+    if (typeof userId === 'number' || (typeof userId === 'string' && userId !== '')) {
+      attributes[USER_ID] = String(userId);
     }
   }
 }
@@ -167,12 +184,26 @@ const PROVIDER_SLUG_ALIASES: Record<string, string> = {
  * Rewrite a known non-canonical provider slug to the one Openlayer's cost
  * table uses. A slug not in {@link PROVIDER_SLUG_ALIASES} is left untouched —
  * guessing a mapping is not an option here, only a verified one.
+ *
+ * A dotted slug that isn't in the table is exactly the failure this module
+ * exists to prevent — it will silently price at zero — so it gets a one-line
+ * `console.debug` naming the slug, matching this repo's existing convention
+ * (see `src/lib/tracing/tracer.ts`). Bare slugs like `openai` never match
+ * `.includes('.')` and so never log; mapped dotted slugs are rewritten above
+ * and never reach this branch.
  */
 function normalizeProviderSlug(attributes: SpanAttributes): void {
   for (const key of [GEN_AI_PROVIDER_NAME, GEN_AI_SYSTEM]) {
     const value = attributes[key];
-    if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(PROVIDER_SLUG_ALIASES, value)) {
+    if (typeof value !== 'string') continue;
+
+    if (Object.prototype.hasOwnProperty.call(PROVIDER_SLUG_ALIASES, value)) {
       attributes[key] = PROVIDER_SLUG_ALIASES[value];
+    } else if (value.includes('.')) {
+      console.debug(
+        `${LOG_PREFIX} Unmapped provider slug "${value}" on ${key} — cost will be zero for it. ` +
+          'Add a verified entry to PROVIDER_SLUG_ALIASES in spanRewriter.ts if this vendor prices under a bare slug.',
+      );
     }
   }
 }

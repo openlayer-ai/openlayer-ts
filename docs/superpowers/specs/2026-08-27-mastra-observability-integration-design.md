@@ -62,9 +62,18 @@ scratchpad (`otel_probe2.py` … `otel_probe5.py`).
   to a tool span does *not* populate `inputs` — it only leaves a redundant blob in metadata.
 - **Session and user** come from `session.id` and `user.id`. `gen_ai.conversation.id` also
   fills session but not user; `openlayer.session_id` / `openlayer.sessionId` do nothing.
-- **Cost, provider, and tokens are normalized server-side on this path.**
-  `gen_ai.system=openai` came back as `provider: "OpenAI"` with a real `openlayer_cost`, so
-  the exact-lowercase-slug requirement that applies to the data-stream API does not apply here.
+- **Cost, provider, and tokens were measured to normalize server-side — for the one slug shape
+  actually tried.** `gen_ai.system=openai` came back as `provider: "OpenAI"` with a real
+  `openlayer_cost`, which was read at the time as meaning the exact-lowercase-slug requirement
+  that applies to the data-stream API does not apply on this path. **That generalization is
+  false.** The AI SDK that Mastra sits on reports dotted, API-shape-specific slugs this probe
+  never exercised — e.g. `openai.responses` for OpenAI's Responses API — and those 404 against
+  `llm-costs.openlayer.com` exactly as a bad slug would on the data-stream path, producing a
+  silent zero cost. This shipped as a real defect and was fixed after the fact via
+  `PROVIDER_SLUG_ALIASES` in `spanRewriter.ts`: a small table of dotted-slug → bare-slug
+  rewrites (`openai.responses` → `openai`, etc.), each individually confirmed against the cost
+  endpoint before being added. Bare slugs (`openai`, `anthropic`, …) still need no rewrite; it
+  is only the dotted, API-shape-specific ones that don't price.
 - Unrecognized attributes are preserved into step `metadata` as nested objects rather than
   dropped, so `mastra.metadata.*` needs no special handling to satisfy the custom-metadata
   requirement.

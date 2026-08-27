@@ -32,8 +32,15 @@ describe('toGenAIMessages', () => {
   });
 
   it('passes through messages already in the parts shape', () => {
-    const input = [{ role: 'assistant', parts: [{ type: 'text', content: '4' }] }];
-    expect(toGenAIMessages(input, 'assistant')).toEqual(input);
+    // `role: 'tool'` is deliberately not the `defaultRole` ('user'), so an
+    // implementation that ignored `record['role']` and always substituted the
+    // default would fail here. The expectation is a fresh literal rather than
+    // `input` itself, so in-place mutation of the caller's array — e.g. via
+    // `coerceEntry` returning `record['parts']` unchanged — would also fail.
+    const input = [{ role: 'tool', parts: [{ type: 'text', content: '4' }] }];
+    expect(toGenAIMessages(input, 'user')).toEqual([
+      { role: 'tool', parts: [{ type: 'text', content: '4' }] },
+    ]);
   });
 
   it('parses a pre-serialized JSON string before coercing', () => {

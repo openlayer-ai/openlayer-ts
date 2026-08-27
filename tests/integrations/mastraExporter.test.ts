@@ -37,6 +37,13 @@ async function exporterConfig(exporter: OpenlayerExporter): Promise<{ url?: stri
 
 describe('OpenlayerExporter', () => {
   beforeEach(resetEnv);
+  afterEach(() => {
+    // Some tests below spy on `OtelExporter.prototype._exportTracingEvent`, a shared
+    // prototype. Restoring here (rather than as the last line of each test body)
+    // ensures a failing assertion mid-test can't leak the spy into a later,
+    // unrelated test.
+    jest.restoreAllMocks();
+  });
   afterAll(() => {
     process.env = { ...ORIGINAL_ENV };
   });
@@ -96,6 +103,28 @@ describe('OpenlayerExporter', () => {
     expect(headers?.['Authorization']).toBe('Bearer sk-ol');
   });
 
+  it('honours OPENLAYER_OTEL_ENDPOINT when no explicit endpoint is configured', async () => {
+    process.env['OPENLAYER_API_KEY'] = 'sk-ol-env';
+    process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] = 'pipeline-env';
+    process.env['OPENLAYER_OTEL_ENDPOINT'] = 'https://env-endpoint.example.com/v1/traces';
+
+    const exporter = new OpenlayerExporter();
+    const { url } = await exporterConfig(exporter);
+
+    expect(url).toBe('https://env-endpoint.example.com/v1/traces');
+  });
+
+  it('prefers an explicit endpoint over OPENLAYER_OTEL_ENDPOINT', async () => {
+    process.env['OPENLAYER_API_KEY'] = 'sk-ol-env';
+    process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] = 'pipeline-env';
+    process.env['OPENLAYER_OTEL_ENDPOINT'] = 'https://env-endpoint.example.com/v1/traces';
+
+    const exporter = new OpenlayerExporter({ endpoint: 'https://explicit.example.com/v1/traces' });
+    const { url } = await exporterConfig(exporter);
+
+    expect(url).toBe('https://explicit.example.com/v1/traces');
+  });
+
   it('disables itself without throwing when credentials are missing', () => {
     let exporter!: OpenlayerExporter;
     expect(() => {
@@ -134,7 +163,6 @@ describe('OpenlayerExporter', () => {
     await (exporter as any)._exportTracingEvent(event(SpanType.AGENT_RUN));
 
     expect(forwarded).toEqual([SpanType.AGENT_RUN]);
-    jest.restoreAllMocks();
   });
 
   it('exports MODEL_CHUNK when dropSpanTypes is emptied', async () => {
@@ -163,6 +191,5 @@ describe('OpenlayerExporter', () => {
     });
 
     expect(forwarded).toEqual([SpanType.MODEL_CHUNK]);
-    jest.restoreAllMocks();
   });
 });

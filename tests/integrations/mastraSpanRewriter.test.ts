@@ -8,6 +8,14 @@
  */
 import { rewriteSpanAttributes } from '../../src/lib/integrations/mastra/spanRewriter';
 
+// `OpenlayerOTLPTraceExporter` tests below spy on `OTLPTraceExporter.prototype.export`,
+// a shared prototype. Restoring in `afterEach` (rather than as the last line of each
+// test body) ensures a failing assertion mid-test can't leak the spy into a later,
+// unrelated test.
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe('rewriteSpanAttributes', () => {
   it('recovers root agent_run input and output into gen_ai messages', () => {
     const result = rewriteSpanAttributes({
@@ -132,6 +140,38 @@ describe('rewriteSpanAttributes', () => {
     expect(result['user.id']).toBe('already-set-user');
   });
 
+  it('lifts a numeric sessionId and userId, coercing them to strings', () => {
+    // @mastra/otel-exporter's SpanConverter copies span.metadata onto attributes
+    // verbatim for non-object values, so a numeric database id (e.g.
+    // `metadata: { userId: 4821 }`) arrives here as a genuine number, not a string.
+    const result = rewriteSpanAttributes({
+      'mastra.metadata.sessionId': 4821,
+      'mastra.metadata.userId': 90210,
+    });
+    expect(result['session.id']).toBe('4821');
+    expect(result['user.id']).toBe('90210');
+  });
+
+  it('still does not lift an empty-string sessionId or userId', () => {
+    const result = rewriteSpanAttributes({
+      'mastra.metadata.sessionId': '',
+      'mastra.metadata.userId': '',
+    });
+    expect(result['session.id']).toBeUndefined();
+    expect(result['user.id']).toBeUndefined();
+  });
+
+  it('lifts an object-valued id, which Mastra pre-stringifies before it reaches the rewriter', () => {
+    // Mastra's SpanConverter does `typeof v === 'object' ? JSON.stringify(v) : v`
+    // before setting the attribute, so an object-valued id never arrives here as
+    // an object — it arrives as the JSON string, which the existing string branch
+    // already handles correctly.
+    const result = rewriteSpanAttributes({
+      'mastra.metadata.userId': JSON.stringify({ id: 4821, tenant: 'acme' }),
+    });
+    expect(result['user.id']).toBe('{"id":4821,"tenant":"acme"}');
+  });
+
   it('preserves the original mastra attributes so they still reach step metadata', () => {
     const result = rewriteSpanAttributes({
       'mastra.span.type': 'agent_run',
@@ -181,8 +221,6 @@ describe('OpenlayerOTLPTraceExporter', () => {
     expect(JSON.parse(forwarded[0].attributes['gen_ai.input.messages'])).toEqual([
       { role: 'user', parts: [{ type: 'text', content: 'hello' }] },
     ]);
-
-    superExport.mockRestore();
   });
 
   it('exports the span unchanged rather than dropping the batch if rewriting throws', () => {
@@ -201,8 +239,6 @@ describe('OpenlayerOTLPTraceExporter', () => {
 
     expect(() => exporter.export([span] as any, () => undefined)).not.toThrow();
     expect(superExport).toHaveBeenCalledTimes(1);
-
-    superExport.mockRestore();
   });
 });
 
@@ -224,6 +260,8 @@ describe('rewriteSpanAttributes provider slug normalization', () => {
   });
 
   it('leaves an unrecognized dotted provider slug unchanged', () => {
+    jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+
     const result = rewriteSpanAttributes({
       'gen_ai.provider.name': 'somevendor.someapi',
     });
@@ -249,5 +287,30 @@ describe('rewriteSpanAttributes provider slug normalization', () => {
     expect(result['gen_ai.provider.name']).toBe('anthropic');
     expect(result['gen_ai.request.model']).toBe('claude-sonnet-4-20250514');
     expect(result['mastra.span.type']).toBe('model_generation');
+  });
+
+  it('logs a debug miss signal for an unrecognized dotted provider slug', () => {
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+    rewriteSpanAttributes({ 'gen_ai.provider.name': 'somevendor.someapi' });
+
+    expect(debugSpy).toHaveBeenCalledTimes(1);
+    expect(debugSpy.mock.calls[0]![0]).toContain('somevendor.someapi');
+  });
+
+  it('does not log a miss signal for a bare (non-dotted) provider slug', () => {
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+    rewriteSpanAttributes({ 'gen_ai.provider.name': 'openai' });
+
+    expect(debugSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not log a miss signal for a dotted slug that has a verified alias', () => {
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+    rewriteSpanAttributes({ 'gen_ai.provider.name': 'openai.responses' });
+
+    expect(debugSpy).not.toHaveBeenCalled();
   });
 });

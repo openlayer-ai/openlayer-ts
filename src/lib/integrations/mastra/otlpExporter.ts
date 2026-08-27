@@ -22,8 +22,18 @@ export class OpenlayerOTLPTraceExporter extends OTLPTraceExporter {
   override export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
     for (const span of spans) {
       try {
-        // ReadableSpan.attributes is readonly by type but mutable in practice;
-        // this is the same in-place rewrite @mastra/arize performs.
+        // ReadableSpan.attributes is readonly by type but mutable in practice.
+        // Mutating it in place is safe — not merely "additive, so it's fine" —
+        // because each `OtelExporter` instance owns an exclusive `SpanConverter`
+        // and calls `convertSpan()` per tracing event
+        // (@mastra/otel-exporter dist/index.cjs:973-974), and `convertSpan()`
+        // returns a freshly built `ReadableSpan` with a freshly built
+        // `attributes` object every time (ibid. getAttributes() at :419,
+        // convertSpan() at :601-647). No two exporters — e.g. this one and
+        // `@mastra/arize`'s — ever see the same span object, so this rewrite
+        // cannot leak into a sibling exporter's copy. That guarantee holds even
+        // for a rewrite that *replaces* a value, as `PROVIDER_SLUG_ALIASES`
+        // does, not just for additive ones.
         (span as { attributes: Record<string, unknown> }).attributes = rewriteSpanAttributes(span.attributes);
       } catch {
         // A rewrite failure must never cost us the batch — export unchanged.

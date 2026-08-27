@@ -136,8 +136,14 @@ function resolveExporterConfig(config: OpenlayerExporterConfig): ResolvedConfig 
   return {
     droppedSpanTypes,
     otelConfig: {
-      exporter: new OpenlayerOTLPTraceExporter({ url: endpoint, headers }),
       ...config,
+      // Placed after `...config`, like `signals`/`resourceAttributes`/`provider`
+      // below: the `Omit<OtelExporterConfig, 'provider' | 'exporter'>` type
+      // blocks a caller from passing `exporter` at compile time, but nothing
+      // stops it in plain JS, and `exporter` spread before `...config` would
+      // let a stray key silently replace this rewriting exporter — reintroducing
+      // the empty-input/output defect this whole integration exists to fix.
+      exporter: new OpenlayerOTLPTraceExporter({ url: endpoint, headers }),
       // Openlayer's OTLP endpoint accepts traces only; leaving logs enabled
       // would demand an @opentelemetry/exporter-logs-otlp-proto nobody installed.
       signals: { logs: false, ...config.signals },

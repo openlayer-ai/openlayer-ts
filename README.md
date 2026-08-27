@@ -453,17 +453,20 @@ Send Mastra agent, workflow, model, and tool traces to Openlayer.
 ### Installation
 
 ```sh
-npm install openlayer @mastra/observability @mastra/otel-exporter @opentelemetry/exporter-trace-otlp-proto
+npm install openlayer @mastra/core @mastra/observability @mastra/otel-exporter @opentelemetry/exporter-trace-otlp-proto
 ```
 
-`@mastra/core` is already present in any Mastra app, and `@mastra/observability` is required to
-configure any custom exporter, Openlayer included. `@mastra/otel-exporter` and
-`@opentelemetry/exporter-trace-otlp-proto` are declared as optional peer dependencies of
-`openlayer`, so neither is pulled in for consumers who do not use Mastra.
+`@mastra/observability` is required to configure any custom exporter, Openlayer included, but is
+not a peer dependency of `openlayer` itself — it's a Mastra requirement, not an Openlayer one.
+`@mastra/core`, `@mastra/otel-exporter`, and `@opentelemetry/exporter-trace-otlp-proto` are all
+declared as **optional** peer dependencies of `openlayer`, so none of the three is pulled in for
+consumers who do not use Mastra.
 
 ### Configuration
 
-Set `OPENLAYER_API_KEY` and `OPENLAYER_INFERENCE_PIPELINE_ID`, then add the exporter:
+Set `OPENLAYER_API_KEY` and `OPENLAYER_INFERENCE_PIPELINE_ID`, then add the exporter. A third,
+optional variable, `OPENLAYER_OTEL_ENDPOINT`, overrides the OTLP endpoint the exporter posts
+to — it defaults to `https://api.openlayer.com/v1/otel/v1/traces` when unset:
 
 ```ts
 import { Mastra } from '@mastra/core';
@@ -530,11 +533,17 @@ There are two layers, and they do different jobs:
   to `[SpanType.MODEL_CHUNK]`, because Mastra emits one span per streaming chunk and an
   unfiltered streamed reply would become hundreds of steps. Pass `[]` to export everything.
 
-  `SpanType.MODEL_STEP` was measured to be a large share of a trace's steps (4 of 7 in a single
-  one-tool-call turn) but is deliberately **not** in the default drop list: dropping a span here
-  does not reparent its children, and a live run confirmed that dropping `MODEL_STEP` silently
-  loses the nested tool-call step rather than hoisting it to the surviving `MODEL_GENERATION`
-  ancestor. Filtering it out is not safe until the exporter can reparent orphaned children.
+  **`dropSpanTypes` never reparents children.** It is a public knob, and dropping a span type
+  that has descendants — `WORKFLOW_STEP`, for example — silently loses that entire subtree, not
+  just the dropped span itself. `MODEL_CHUNK`, the default, is safe from this precisely because
+  chunk spans are leaves with nothing under them to lose.
+
+  `SpanType.MODEL_STEP` is the case that was actually measured: it was a large share of a
+  trace's steps (4 of 7 in a single one-tool-call turn) and was considered for the default drop
+  list, but a live run confirmed that dropping it silently lost the nested tool-call step rather
+  than hoisting it to the surviving `MODEL_GENERATION` ancestor. It is deliberately **not** in
+  the default list for that reason, and the same caution applies to any span type you add to
+  `dropSpanTypes` yourself: check what it parents before dropping it.
 
 ### Troubleshooting
 
