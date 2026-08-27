@@ -157,3 +157,51 @@ describe('rewriteSpanAttributes', () => {
     expect(result['gen_ai.output.messages']).toBeUndefined();
   });
 });
+
+describe('OpenlayerOTLPTraceExporter', () => {
+  it('rewrites span attributes before delegating to the OTLP exporter', () => {
+    // Required lazily so the suite above still runs if the optional peers are absent.
+    const { OpenlayerOTLPTraceExporter } = require('../../src/lib/integrations/mastra/otlpExporter');
+    const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
+
+    const superExport = jest.spyOn(OTLPTraceExporter.prototype, 'export').mockImplementation(() => undefined);
+
+    const exporter = new OpenlayerOTLPTraceExporter({ url: 'https://example.invalid/v1/traces' });
+    const span = {
+      attributes: {
+        'mastra.span.type': 'agent_run',
+        'mastra.agent_run.input': 'hello',
+      },
+    };
+
+    exporter.export([span] as any, () => undefined);
+
+    expect(superExport).toHaveBeenCalledTimes(1);
+    const forwarded = superExport.mock.calls[0]![0] as any[];
+    expect(JSON.parse(forwarded[0].attributes['gen_ai.input.messages'])).toEqual([
+      { role: 'user', parts: [{ type: 'text', content: 'hello' }] },
+    ]);
+
+    superExport.mockRestore();
+  });
+
+  it('exports the span unchanged rather than dropping the batch if rewriting throws', () => {
+    const { OpenlayerOTLPTraceExporter } = require('../../src/lib/integrations/mastra/otlpExporter');
+    const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
+
+    const superExport = jest.spyOn(OTLPTraceExporter.prototype, 'export').mockImplementation(() => undefined);
+
+    const exporter = new OpenlayerOTLPTraceExporter({ url: 'https://example.invalid/v1/traces' });
+    // A getter that throws simulates a hostile span object.
+    const span = {
+      get attributes(): Record<string, unknown> {
+        throw new Error('boom');
+      },
+    };
+
+    expect(() => exporter.export([span] as any, () => undefined)).not.toThrow();
+    expect(superExport).toHaveBeenCalledTimes(1);
+
+    superExport.mockRestore();
+  });
+});
