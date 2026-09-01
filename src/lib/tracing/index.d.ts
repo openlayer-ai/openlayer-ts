@@ -9,6 +9,7 @@ export {
   startAgentStep,
   addHandoffStepToTrace,
   configure,
+  runInTraceContext,
   replayBufferedTraces,
   getBufferStatus,
   clearOfflineBuffer,
