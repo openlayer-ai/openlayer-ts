@@ -13,7 +13,7 @@
 import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getCurrentTrace, postProcessTrace } from '../tracing/tracer';
+import { getCurrentTrace, postProcessTrace, runInTraceContext } from '../tracing/tracer';
 
 // Define shared interfaces and utilities here
 export interface RunReturn {
@@ -141,40 +141,48 @@ class CLIHandler {
     const { data: dataset } = loadDataset(datasetPath);
 
     // Process each item in the dataset dynamically
-    Promise.all<Output>(
-      dataset.map(async (item: any) => {
-        try {
-          const result = await this.run(item);
-          // Merge the original item fields with the result
-          const traceData = getCurrentTrace() ?? undefined;
-          const postProcessedTrace =
-            typeof traceData === 'undefined' || traceData === null ?
-              undefined
-            : postProcessTrace(traceData)?.traceData;
+    return Promise.all<Output>(
+      // Each row runs in its own trace context so concurrent rows root their
+      // own traces rather than nesting into whichever row started first.
+      dataset.map((item: any) =>
+        runInTraceContext(async () => {
+          try {
+            const result = await this.run(item);
+            // Merge the original item fields with the result
+            const traceData = getCurrentTrace() ?? undefined;
+            // postProcessTrace returns { traceData, inputVariableNames } as
+            // siblings, so keep the whole result — the names are not on
+            // traceData itself.
+            const processed =
+              typeof traceData === 'undefined' || traceData === null ?
+                undefined
+              : postProcessTrace(traceData);
+            const postProcessedTrace = processed?.traceData;
 
-          const output: Output = {
-            ...item,
-            ...result.otherFields,
-            output: result.output,
-            steps: traceData?.toJSON(),
-            latency: postProcessedTrace?.latency,
-            cost: postProcessedTrace?.cost,
-            tokens: postProcessedTrace?.tokens,
-            metadata: {
-              ...(postProcessedTrace?.metadata ?? {}),
-              inputVariableNames: postProcessedTrace?.inputVariableNames,
-            },
-          };
+            const output: Output = {
+              ...item,
+              ...result.otherFields,
+              output: result.output,
+              steps: traceData?.toJSON(),
+              latency: postProcessedTrace?.latency,
+              cost: postProcessedTrace?.cost,
+              tokens: postProcessedTrace?.tokens,
+              metadata: {
+                ...(postProcessedTrace?.metadata ?? {}),
+                inputVariableNames: processed?.inputVariableNames,
+              },
+            };
 
-          return output;
-        } catch (error) {
-          console.error('Error processing dataset: ', error);
-          return {
-            ...item,
-            error: error instanceof Error ? error.message : String(error),
-          };
-        }
-      }),
+            return output;
+          } catch (error) {
+            console.error('Error processing dataset: ', error);
+            return {
+              ...item,
+              error: error instanceof Error ? error.message : String(error),
+            };
+          }
+        }),
+      ),
     )
       .then((results) => {
         /*

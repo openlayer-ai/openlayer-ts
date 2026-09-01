@@ -15,8 +15,42 @@ import {
 import Openlayer, { type ClientOptions } from '../../index';
 import type { DataStreamParams } from '../../resources/inference-pipelines/data';
 import { OfflineBuffer } from './offlineBuffer';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
-let currentTrace: Trace | null = null;
+/**
+ * Trace context: the in-flight trace plus the stack of open steps.
+ *
+ * This lives in an AsyncLocalStorage so that concurrently traced units of work
+ * (dataset rows in development mode, parallel requests in monitoring) each root
+ * their own trace instead of nesting into whichever one happened to start first.
+ *
+ * Callers that never establish a context share `defaultContext`, which behaves
+ * exactly like the module-level globals this replaced.
+ */
+interface TraceContext {
+  trace: Trace | null;
+  stepStack: Step[];
+}
+
+const traceStorage = new AsyncLocalStorage<TraceContext>();
+
+const defaultContext: TraceContext = { trace: null, stepStack: [] };
+
+function ctx(): TraceContext {
+  return traceStorage.getStore() ?? defaultContext;
+}
+
+/**
+ * Runs `fn` in an isolated trace context, so steps created inside it can never
+ * attach to a trace started outside it (or by a sibling running concurrently).
+ *
+ * Note this must wrap the work with a callback boundary — `enterWith()` is not
+ * a substitute, because the synchronous prelude of an async function runs in
+ * its *caller's* context and would leak the store to sibling calls.
+ */
+export function runInTraceContext<T>(fn: () => T): T {
+  return traceStorage.run({ trace: null, stepStack: [] }, fn);
+}
 
 // Lazy-initialized Openlayer client to ensure environment variables are loaded
 let client: Openlayer | null = null;
@@ -118,15 +152,8 @@ function getOpenlayerClient(): Openlayer | null {
 }
 
 export function getCurrentTrace(): Trace | null {
-  return currentTrace;
+  return ctx().trace;
 }
-
-function setCurrentTrace(trace: Trace | null) {
-  currentTrace = trace;
-}
-
-// Function to create a new step
-const stepStack: Step[] = [];
 
 function createStep(
   name: string,
@@ -144,22 +171,27 @@ function createStep(
   const inferencePipelineId =
     openlayerInferencePipelineId || configuredPipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
 
+  // Bind the context at creation time. endStep may be invoked from a different
+  // async context than the one that opened the step — frameworks call
+  // completion callbacks from wherever they happen to be — so resolving the
+  // store again inside endStep could reach the wrong context, or none at all.
+  const stepCtx = ctx();
+
   const parentStep = getCurrentStep();
   const isRootStep = parentStep === null;
 
   if (isRootStep) {
     console.debug('Starting a new trace...');
     console.debug(`Adding step ${name} as the root step`);
-    const currentTrace = new Trace();
-    setCurrentTrace(currentTrace);
-    currentTrace.addStep(newStep);
+    const newTrace = new Trace();
+    stepCtx.trace = newTrace;
+    newTrace.addStep(newStep);
   } else {
     console.debug(`Adding step ${name} as a nested step to ${parentStep!.name}`);
-    currentTrace = getCurrentTrace()!;
     parentStep!.addNestedStep(newStep);
   }
 
-  stepStack.push(newStep);
+  stepCtx.stepStack.push(newStep);
 
   const endStep = () => {
     // Calculate latency for this step before removing from stack
@@ -173,12 +205,19 @@ function createStep(
       }
     }
 
-    stepStack.pop(); // Remove the current step from the stack
+    // Remove *this* step, not whatever is on top: within a single context a
+    // user's own Promise.all over parallel tool calls can end steps out of
+    // order, and popping blindly would evict an unrelated step.
+    const { stepStack } = stepCtx;
+    const stepIndex = stepStack.lastIndexOf(newStep);
+    if (stepIndex !== -1) {
+      stepStack.splice(stepIndex, 1);
+    }
     console.debug(`Ending step ${newStep.name}`);
 
     if (isRootStep) {
       console.debug('Ending the trace...');
-      const traceData = getCurrentTrace();
+      const traceData = stepCtx.trace;
 
       // NOTE: currentTrace is intentionally NOT reset here — integrations and
       // tests inspect the completed trace via getCurrentTrace() after the root
@@ -193,6 +232,7 @@ function createStep(
 }
 
 export function getCurrentStep(): Step | null | undefined {
+  const { stepStack } = ctx();
   const currentStep = stepStack.length > 0 ? stepStack[stepStack.length - 1] : null;
   return currentStep;
 }
@@ -686,6 +726,17 @@ export function addGuardrailStepToTrace(params: {
   return { step, endStep };
 }
 
+/**
+ * Totals a numeric ChatCompletionStep field across a step and all of its
+ * descendants. Only chat-completion steps carry `cost` / `tokens`; every other
+ * step type contributes 0.
+ */
+function sumStepField(step: Step, field: 'cost' | 'tokens'): number {
+  const own = (step as ChatCompletionStep)[field];
+  const ownValue = typeof own === 'number' ? own : 0;
+  return step.steps.reduce((total, nested) => total + sumStepField(nested, field), ownValue);
+}
+
 export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariableNames: string[] } {
   const rootStep = traceObj.steps[0];
 
@@ -700,8 +751,11 @@ export function postProcessTrace(traceObj: Trace): { traceData: any; inputVariab
     output: rootStep!.output,
     groundTruth: rootStep!.groundTruth,
     latency: rootStep!.latency,
-    cost: (rootStep as ChatCompletionStep)!.cost,
-    tokens: (rootStep as ChatCompletionStep)!.tokens,
+    // Totals for the whole trace, not just the root: an agent- or chain-rooted
+    // trace carries its cost and tokens on nested LLM steps, and reading only
+    // the root silently reported nothing for them.
+    cost: sumStepField(rootStep!, 'cost'),
+    tokens: sumStepField(rootStep!, 'tokens'),
     steps: processed_steps,
     metadata: rootStep!.metadata,
   };
