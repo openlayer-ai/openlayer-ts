@@ -360,7 +360,7 @@ export namespace InferencePipelineRetrieveResponse {
     /**
      * The source of the project.
      */
-    source: 'web' | 'api' | 'null' | null;
+    source: 'web' | 'api' | null;
 
     /**
      * The task type of the project.
@@ -749,7 +749,7 @@ export namespace InferencePipelineUpdateResponse {
     /**
      * The source of the project.
      */
-    source: 'web' | 'api' | 'null' | null;
+    source: 'web' | 'api' | null;
 
     /**
      * The task type of the project.

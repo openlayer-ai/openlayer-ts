@@ -159,7 +159,7 @@ export interface ProjectCreateResponse {
   /**
    * The source of the project.
    */
-  source: 'web' | 'api' | 'null' | null;
+  source: 'web' | 'api' | null;
 
   /**
    * The task type of the project.
@@ -294,7 +294,7 @@ export interface ProjectUpdateResponse {
   /**
    * The source of the project.
    */
-  source: 'web' | 'api' | 'null' | null;
+  source: 'web' | 'api' | null;
 
   /**
    * The task type of the project.
@@ -434,7 +434,7 @@ export namespace ProjectListResponse {
     /**
      * The source of the project.
      */
-    source: 'web' | 'api' | 'null' | null;
+    source: 'web' | 'api' | null;
 
     /**
      * The task type of the project.
