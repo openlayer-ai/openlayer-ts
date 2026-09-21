@@ -22,4 +22,19 @@ describe('resource presignedURL', () => {
   test('create: required and optional params', async () => {
     const response = await client.storage.presignedURL.create({ objectName: 'objectName' });
   });
+
+  test('retrieve: only required params', async () => {
+    const responsePromise = client.storage.presignedURL.retrieve({ storageUri: 'storageUri' });
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('retrieve: required and optional params', async () => {
+    const response = await client.storage.presignedURL.retrieve({ storageUri: 'storageUri' });
+  });
 });

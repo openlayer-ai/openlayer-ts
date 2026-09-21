@@ -17,6 +17,7 @@ import * as Errors from './core/error';
 import * as Uploads from './core/uploads';
 import * as API from './resources/index';
 import { APIPromise } from './core/api-promise';
+import { BackgroundTaskRetrieveResponse, BackgroundTasks } from './resources/background-tasks';
 import {
   TestEvaluateParams,
   TestEvaluateResponse,
@@ -25,6 +26,7 @@ import {
   Tests,
 } from './resources/tests';
 import { CommitRetrieveResponse, Commits } from './resources/commits/commits';
+import { Governance } from './resources/governance/governance';
 import {
   InferencePipelineRetrieveParams,
   InferencePipelineRetrieveResponse,
@@ -41,6 +43,8 @@ import {
   ProjectCreateResponse,
   ProjectListParams,
   ProjectListResponse,
+  ProjectUpdateParams,
+  ProjectUpdateResponse,
   Projects,
 } from './resources/projects/projects';
 import { Storage } from './resources/storage/storage';
@@ -779,6 +783,8 @@ export class Openlayer {
   inferencePipelines: API.InferencePipelines = new API.InferencePipelines(this);
   storage: API.Storage = new API.Storage(this);
   tests: API.Tests = new API.Tests(this);
+  backgroundTasks: API.BackgroundTasks = new API.BackgroundTasks(this);
+  governance: API.Governance = new API.Governance(this);
 }
 
 Openlayer.Projects = Projects;
@@ -787,6 +793,8 @@ Openlayer.Commits = Commits;
 Openlayer.InferencePipelines = InferencePipelines;
 Openlayer.Storage = Storage;
 Openlayer.Tests = Tests;
+Openlayer.BackgroundTasks = BackgroundTasks;
+Openlayer.Governance = Governance;
 
 export declare namespace Openlayer {
   export type RequestOptions = Opts.RequestOptions;
@@ -794,8 +802,10 @@ export declare namespace Openlayer {
   export {
     Projects as Projects,
     type ProjectCreateResponse as ProjectCreateResponse,
+    type ProjectUpdateResponse as ProjectUpdateResponse,
     type ProjectListResponse as ProjectListResponse,
     type ProjectCreateParams as ProjectCreateParams,
+    type ProjectUpdateParams as ProjectUpdateParams,
     type ProjectListParams as ProjectListParams,
   };
 
@@ -829,4 +839,11 @@ export declare namespace Openlayer {
     type TestEvaluateParams as TestEvaluateParams,
     type TestListResultsParams as TestListResultsParams,
   };
+
+  export {
+    BackgroundTasks as BackgroundTasks,
+    type BackgroundTaskRetrieveResponse as BackgroundTaskRetrieveResponse,
+  };
+
+  export { Governance as Governance };
 }

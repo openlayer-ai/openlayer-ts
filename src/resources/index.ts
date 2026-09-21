@@ -1,6 +1,8 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
+export { BackgroundTasks, type BackgroundTaskRetrieveResponse } from './background-tasks';
 export { Commits, type CommitRetrieveResponse } from './commits/commits';
+export { Governance } from './governance/governance';
 export {
   InferencePipelines,
   type InferencePipelineRetrieveResponse,
@@ -15,8 +17,10 @@ export {
 export {
   Projects,
   type ProjectCreateResponse,
+  type ProjectUpdateResponse,
   type ProjectListResponse,
   type ProjectCreateParams,
+  type ProjectUpdateParams,
   type ProjectListParams,
 } from './projects/projects';
 export { Storage } from './storage/storage';

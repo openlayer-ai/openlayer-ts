@@ -7,9 +7,13 @@ const client = new Openlayer({
   baseURL: process.env['TEST_API_BASE_URL'] ?? 'http://127.0.0.1:4010',
 });
 
-describe('resource projects', () => {
+describe('resource rules', () => {
   test('create: only required params', async () => {
-    const responsePromise = client.projects.create({ name: 'My Project', taskType: 'llm-base' });
+    const responsePromise = client.governance.rules.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      name: 'Monitoring enabled',
+      scope: 'project',
+      type: 'platform',
+    });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -20,19 +24,23 @@ describe('resource projects', () => {
   });
 
   test('create: required and optional params', async () => {
-    const response = await client.projects.create({
-      name: 'My Project',
-      taskType: 'llm-base',
-      dataRetentionDays: 30,
-      description: 'My project description.',
-      modelDeveloper: 'Acme AI',
-      modelTypes: ['llm'],
-      purpose: 'Answer customer billing questions.',
+    const response = await client.governance.rules.create('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {
+      name: 'Monitoring enabled',
+      scope: 'project',
+      type: 'platform',
+      assigneeId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+      automationParams: { foo: 'bar' },
+      automationType: 'monitoring_mode_enabled',
+      deactivated: true,
+      description: 'Each project must have Openlayer monitoring mode enabled.',
+      evidenceType: 'document',
+      renewalCadenceDays: 90,
+      tagIds: ['182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e'],
     });
   });
 
-  test('update', async () => {
-    const responsePromise = client.projects.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+  test('retrieve', async () => {
+    const responsePromise = client.governance.rules.retrieve('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -42,26 +50,19 @@ describe('resource projects', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  test('update: request options and params are passed correctly', async () => {
-    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
-    await expect(
-      client.projects.update(
-        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
-        {
-          dataRetentionDays: 30,
-          description: 'My project description.',
-          modelDeveloper: 'Acme AI',
-          modelTypes: ['llm'],
-          name: 'My Project',
-          purpose: 'Answer customer billing questions.',
-        },
-        { path: '/_stainless_unknown_path' },
-      ),
-    ).rejects.toThrow(Openlayer.NotFoundError);
+  test('update', async () => {
+    const responsePromise = client.governance.rules.update('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e', {});
+    const rawResponse = await responsePromise.asResponse();
+    expect(rawResponse).toBeInstanceOf(Response);
+    const response = await responsePromise;
+    expect(response).not.toBeInstanceOf(Response);
+    const dataAndResponse = await responsePromise.withResponse();
+    expect(dataAndResponse.data).toBe(response);
+    expect(dataAndResponse.response).toBe(rawResponse);
   });
 
   test('list', async () => {
-    const responsePromise = client.projects.list();
+    const responsePromise = client.governance.rules.list('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -74,12 +75,26 @@ describe('resource projects', () => {
   test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      client.projects.list(
+      client.governance.rules.list(
+        '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
         {
-          name: 'name',
+          asc: true,
+          assigneeId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+          deactivated: true,
+          enabledFrameworkOnly: true,
+          frameworkId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+          group: 'open',
+          includeResults: true,
+          includeUnframed: true,
           page: 1,
           perPage: 1,
-          taskType: 'llm-base',
+          projectId: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+          scope: 'project',
+          searchQuery: 'searchQuery',
+          sortBy: 'name',
+          status: 'passing',
+          tags: ['182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e'],
+          type: 'platform',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -87,7 +102,7 @@ describe('resource projects', () => {
   });
 
   test('delete', async () => {
-    const responsePromise = client.projects.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
+    const responsePromise = client.governance.rules.delete('182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;

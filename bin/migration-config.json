@@ -68,6 +68,113 @@
           "type": "options"
         }
       ]
+    },
+    {
+      "base": "governance.frameworks.documents",
+      "name": "retrieve",
+      "params": [
+        {
+          "type": "param",
+          "key": "documentId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "frameworkId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "documentId",
+          "location": "path"
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "governance.frameworks.sections",
+      "name": "listRules",
+      "params": [
+        {
+          "type": "param",
+          "key": "sectionId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "frameworkId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "sectionId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": true
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "governance.frameworks.subsections",
+      "name": "listRules",
+      "params": [
+        {
+          "type": "param",
+          "key": "subsectionId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "frameworkId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "subsectionId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": true
+        },
+        {
+          "type": "options"
+        }
+      ]
     }
   ]
 }

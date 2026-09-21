@@ -3,11 +3,13 @@
 Types:
 
 - <code><a href="./src/resources/projects/projects.ts">ProjectCreateResponse</a></code>
+- <code><a href="./src/resources/projects/projects.ts">ProjectUpdateResponse</a></code>
 - <code><a href="./src/resources/projects/projects.ts">ProjectListResponse</a></code>
 
 Methods:
 
 - <code title="post /projects">client.projects.<a href="./src/resources/projects/projects.ts">create</a>({ ...params }) -> ProjectCreateResponse</code>
+- <code title="patch /projects/{projectId}">client.projects.<a href="./src/resources/projects/projects.ts">update</a>(projectID, { ...params }) -> ProjectUpdateResponse</code>
 - <code title="get /projects">client.projects.<a href="./src/resources/projects/projects.ts">list</a>({ ...params }) -> ProjectListResponse</code>
 - <code title="delete /projects/{projectId}">client.projects.<a href="./src/resources/projects/projects.ts">delete</a>(projectID) -> void</code>
 
@@ -162,10 +164,12 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/storage/presigned-url.ts">PresignedURLCreateResponse</a></code>
+- <code><a href="./src/resources/storage/presigned-url.ts">PresignedURLRetrieveResponse</a></code>
 
 Methods:
 
 - <code title="post /storage/presigned-url">client.storage.presignedURL.<a href="./src/resources/storage/presigned-url.ts">create</a>({ ...params }) -> PresignedURLCreateResponse</code>
+- <code title="get /storage/presigned-url">client.storage.presignedURL.<a href="./src/resources/storage/presigned-url.ts">retrieve</a>({ ...params }) -> PresignedURLRetrieveResponse</code>
 
 # Tests
 
@@ -178,3 +182,126 @@ Methods:
 
 - <code title="post /tests/{testId}/evaluate">client.tests.<a href="./src/resources/tests.ts">evaluate</a>(testID, { ...params }) -> TestEvaluateResponse</code>
 - <code title="get /tests/{testId}/results">client.tests.<a href="./src/resources/tests.ts">listResults</a>(testID, { ...params }) -> TestListResultsResponse</code>
+
+# BackgroundTasks
+
+Types:
+
+- <code><a href="./src/resources/background-tasks.ts">BackgroundTaskRetrieveResponse</a></code>
+
+Methods:
+
+- <code title="get /background-tasks/{taskId}">client.backgroundTasks.<a href="./src/resources/background-tasks.ts">retrieve</a>(taskID) -> BackgroundTaskRetrieveResponse</code>
+
+# Governance
+
+## Frameworks
+
+Types:
+
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkCreateResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkRetrieveResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkUpdateResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkListResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkExportResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkListProjectRuleStatsResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkListProjectsResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/frameworks.ts">FrameworkListRulesResponse</a></code>
+
+Methods:
+
+- <code title="post /workspaces/{workspaceId}/frameworks">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">create</a>(workspaceID, { ...params }) -> FrameworkCreateResponse</code>
+- <code title="get /frameworks/{frameworkId}">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">retrieve</a>(frameworkID) -> FrameworkRetrieveResponse</code>
+- <code title="put /frameworks/{frameworkId}">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">update</a>(frameworkID, { ...params }) -> FrameworkUpdateResponse</code>
+- <code title="get /workspaces/{workspaceId}/frameworks">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">list</a>(workspaceID, { ...params }) -> FrameworkListResponse</code>
+- <code title="post /frameworks/{frameworkId}/export">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">export</a>(frameworkID, { ...params }) -> FrameworkExportResponse</code>
+- <code title="get /frameworks/{frameworkId}/project-rule-stats">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">listProjectRuleStats</a>(frameworkID, { ...params }) -> FrameworkListProjectRuleStatsResponse</code>
+- <code title="get /frameworks/{frameworkId}/projects">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">listProjects</a>(frameworkID, { ...params }) -> FrameworkListProjectsResponse</code>
+- <code title="get /frameworks/{frameworkId}/rules">client.governance.frameworks.<a href="./src/resources/governance/frameworks/frameworks.ts">listRules</a>(frameworkID, { ...params }) -> FrameworkListRulesResponse</code>
+
+### Documents
+
+Types:
+
+- <code><a href="./src/resources/governance/frameworks/documents.ts">DocumentRetrieveResponse</a></code>
+- <code><a href="./src/resources/governance/frameworks/documents.ts">DocumentListResponse</a></code>
+
+Methods:
+
+- <code title="get /frameworks/{frameworkId}/documents/{documentId}">client.governance.frameworks.documents.<a href="./src/resources/governance/frameworks/documents.ts">retrieve</a>(documentID, { ...params }) -> DocumentRetrieveResponse</code>
+- <code title="get /frameworks/{frameworkId}/documents">client.governance.frameworks.documents.<a href="./src/resources/governance/frameworks/documents.ts">list</a>(frameworkID, { ...params }) -> DocumentListResponse</code>
+
+### Sections
+
+Types:
+
+- <code><a href="./src/resources/governance/frameworks/sections.ts">SectionListRulesResponse</a></code>
+
+Methods:
+
+- <code title="get /frameworks/{frameworkId}/sections/{sectionId}/rules">client.governance.frameworks.sections.<a href="./src/resources/governance/frameworks/sections.ts">listRules</a>(sectionID, { ...params }) -> SectionListRulesResponse</code>
+
+### Subsections
+
+Types:
+
+- <code><a href="./src/resources/governance/frameworks/subsections.ts">SubsectionListRulesResponse</a></code>
+
+Methods:
+
+- <code title="get /frameworks/{frameworkId}/subsections/{subsectionId}/rules">client.governance.frameworks.subsections.<a href="./src/resources/governance/frameworks/subsections.ts">listRules</a>(subsectionID, { ...params }) -> SubsectionListRulesResponse</code>
+
+## Rules
+
+Types:
+
+- <code><a href="./src/resources/governance/rules.ts">RuleCreateResponse</a></code>
+- <code><a href="./src/resources/governance/rules.ts">RuleRetrieveResponse</a></code>
+- <code><a href="./src/resources/governance/rules.ts">RuleUpdateResponse</a></code>
+- <code><a href="./src/resources/governance/rules.ts">RuleListResponse</a></code>
+
+Methods:
+
+- <code title="post /workspaces/{workspaceId}/rules">client.governance.rules.<a href="./src/resources/governance/rules.ts">create</a>(workspaceID, { ...params }) -> RuleCreateResponse</code>
+- <code title="get /rules/{ruleId}">client.governance.rules.<a href="./src/resources/governance/rules.ts">retrieve</a>(ruleID) -> RuleRetrieveResponse</code>
+- <code title="put /rules/{ruleId}">client.governance.rules.<a href="./src/resources/governance/rules.ts">update</a>(ruleID, { ...params }) -> RuleUpdateResponse</code>
+- <code title="get /workspaces/{workspaceId}/rules">client.governance.rules.<a href="./src/resources/governance/rules.ts">list</a>(workspaceID, { ...params }) -> RuleListResponse</code>
+- <code title="delete /rules/{ruleId}">client.governance.rules.<a href="./src/resources/governance/rules.ts">delete</a>(ruleID) -> void</code>
+
+## RuleResults
+
+Types:
+
+- <code><a href="./src/resources/governance/rule-results.ts">RuleResultRetrieveResponse</a></code>
+- <code><a href="./src/resources/governance/rule-results.ts">RuleResultUpdateResponse</a></code>
+- <code><a href="./src/resources/governance/rule-results.ts">RuleResultListResponse</a></code>
+- <code><a href="./src/resources/governance/rule-results.ts">RuleResultCreateEvidenceResponse</a></code>
+- <code><a href="./src/resources/governance/rule-results.ts">RuleResultListEvidenceResponse</a></code>
+
+Methods:
+
+- <code title="get /rule-results/{ruleResultId}">client.governance.ruleResults.<a href="./src/resources/governance/rule-results.ts">retrieve</a>(ruleResultID) -> RuleResultRetrieveResponse</code>
+- <code title="patch /rule-results/{ruleResultId}">client.governance.ruleResults.<a href="./src/resources/governance/rule-results.ts">update</a>(ruleResultID, { ...params }) -> RuleResultUpdateResponse</code>
+- <code title="get /workspaces/{workspaceId}/rule-results">client.governance.ruleResults.<a href="./src/resources/governance/rule-results.ts">list</a>(workspaceID, { ...params }) -> RuleResultListResponse</code>
+- <code title="post /rule-results/{ruleResultId}/evidence">client.governance.ruleResults.<a href="./src/resources/governance/rule-results.ts">createEvidence</a>(ruleResultID, { ...params }) -> RuleResultCreateEvidenceResponse</code>
+- <code title="get /rule-results/{ruleResultId}/evidence">client.governance.ruleResults.<a href="./src/resources/governance/rule-results.ts">listEvidence</a>(ruleResultID, { ...params }) -> RuleResultListEvidenceResponse</code>
+
+## RuleStats
+
+Types:
+
+- <code><a href="./src/resources/governance/rule-stats.ts">RuleStatRetrieveResponse</a></code>
+
+Methods:
+
+- <code title="get /workspaces/{workspaceId}/rule-stats">client.governance.ruleStats.<a href="./src/resources/governance/rule-stats.ts">retrieve</a>(workspaceID, { ...params }) -> RuleStatRetrieveResponse</code>
+
+## RuleTags
+
+Types:
+
+- <code><a href="./src/resources/governance/rule-tags.ts">RuleTagListResponse</a></code>
+
+Methods:
+
+- <code title="get /workspaces/{workspaceId}/rule-tags">client.governance.ruleTags.<a href="./src/resources/governance/rule-tags.ts">list</a>(workspaceID, { ...params }) -> RuleTagListResponse</code>
