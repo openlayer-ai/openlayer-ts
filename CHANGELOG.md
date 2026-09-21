@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.31.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.30.1...v0.31.0) (2026-09-21)
+
+
+### Features
+
+* **governance:** add the governance write endpoints and generate governance SDK methods ([f1e2f80](https://github.com/openlayer-ai/openlayer-ts/commit/f1e2f8084653f2d394d640415682fbe7008c5098))
+* **stlc:** add stlc workspace and CI automation ([f173f09](https://github.com/openlayer-ai/openlayer-ts/commit/f173f096b49bca1540b056f23979b71efa25666b))
+
+
+### Chores
+
+* **ci:** point stlc workflows at openlayer-ai ([592a666](https://github.com/openlayer-ai/openlayer-ts/commit/592a66637ca7dd29e3e8d8ab62139560650ea192))
+
+
+### Documentation
+
+* **closes OPEN-9410:** expose the governance framework endpoints ([43b38ab](https://github.com/openlayer-ai/openlayer-ts/commit/43b38ab472dc6cd9268b67dc176643f5dd3dbbb6))
+
 ## 0.30.1 (2026-07-11)
 
 Full Changelog: [v0.30.0...v0.30.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.30.0...v0.30.1)
