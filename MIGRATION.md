@@ -56,6 +56,9 @@ This affects the following methods:
 
 - `client.inferencePipelines.rows.retrieve()`
 - `client.inferencePipelines.rows.delete()`
+- `client.governance.frameworks.documents.retrieve()`
+- `client.governance.frameworks.sections.listRules()`
+- `client.governance.frameworks.subsections.listRules()`
 
 ### URI encoded path parameters
 
@@ -84,7 +87,9 @@ client.example.list(undefined, { headers: { ... } });
 + client.example.list({}, { headers: { ... } });
 ```
 
-This affects the following methods:
+<details>
+
+<summary>This affects the following methods</summary>
 
 - `client.projects.update()`
 - `client.projects.list()`
@@ -103,6 +108,19 @@ This affects the following methods:
 - `client.inferencePipelines.rows.list()`
 - `client.inferencePipelines.testResults.list()`
 - `client.tests.listResults()`
+- `client.governance.frameworks.list()`
+- `client.governance.frameworks.export()`
+- `client.governance.frameworks.listProjectRuleStats()`
+- `client.governance.frameworks.listProjects()`
+- `client.governance.frameworks.listRules()`
+- `client.governance.frameworks.documents.list()`
+- `client.governance.rules.list()`
+- `client.governance.ruleResults.list()`
+- `client.governance.ruleResults.listEvidence()`
+- `client.governance.ruleStats.retrieve()`
+- `client.governance.ruleTags.list()`
+
+</details>
 
 ### Removed `httpAgent` in favor of `fetchOptions`
 
