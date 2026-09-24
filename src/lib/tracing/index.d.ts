@@ -12,7 +12,15 @@ export {
   replayBufferedTraces,
   getBufferStatus,
   clearOfflineBuffer,
+  logAttachment,
 } from './tracer';
+export { Attachment, guessMediaType } from './attachments';
+export type { AttachmentData, AttachmentInit } from './attachments';
+export { ContentType, TextContent, ImageContent, AudioContent, FileContent } from './content';
+export type { ContentItem } from './content';
+export { AttachmentUploader, findAttachments } from './attachmentUploader';
+export type { AttachmentUploaderOptions } from './attachmentUploader';
+export type { AttachableData } from './steps';
 export type {
   ConfigureOptions,
   BufferStatus,
