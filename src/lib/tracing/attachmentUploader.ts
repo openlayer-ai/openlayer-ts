@@ -38,10 +38,12 @@ export interface AttachmentUploaderOptions {
 /**
  * Recursively collect the ``Attachment`` objects in a step's inputs/outputs.
  *
- * Descends only into arrays and plain objects, and picks up content items (any
- * object whose ``attachment`` is an ``Attachment``). Class instances are not
- * traversed — ``trace()`` records every function argument as an input, so inputs
- * can hold SDK clients, buffers or large object graphs — and cycles are skipped.
+ * Descends into every value of arrays and plain objects (so a key named
+ * ``attachment`` is just another value). Class instances are not traversed —
+ * ``trace()`` records every function argument as an input, so inputs can hold
+ * SDK clients, buffers or large object graphs — except content items
+ * (``AudioContent`` etc.: an instance whose ``attachment`` is an ``Attachment``).
+ * Cycles are skipped.
  */
 export function findAttachments(data: unknown, seen: WeakSet<object> = new WeakSet()): Attachment[] {
   if (typeof data !== 'object' || data === null) {
@@ -55,11 +57,6 @@ export function findAttachments(data: unknown, seen: WeakSet<object> = new WeakS
   }
   seen.add(data);
 
-  const nested = (data as { attachment?: unknown }).attachment;
-  if (Attachment.isAttachment(nested)) {
-    return [nested];
-  }
-
   if (Array.isArray(data)) {
     return data.flatMap((item) => findAttachments(item, seen));
   }
@@ -68,7 +65,9 @@ export function findAttachments(data: unknown, seen: WeakSet<object> = new WeakS
   if (proto === Object.prototype || proto === null) {
     return Object.values(data).flatMap((value) => findAttachments(value, seen));
   }
-  return [];
+
+  const nested = (data as { attachment?: unknown }).attachment;
+  return Attachment.isAttachment(nested) ? [nested] : [];
 }
 
 /**

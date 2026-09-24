@@ -319,15 +319,19 @@ export class Attachment {
   }
 
   /**
-   * Create an attachment from raw bytes. By default the bytes are held for
-   * upload and never serialized; ``inline: true`` stores them as base64 in the
-   * trace instead (only for small payloads).
+   * Create an attachment from raw bytes. The bytes are copied, so the caller may
+   * reuse its buffer. By default they are held for upload and never
+   * serialized; ``inline: true`` stores them as base64 in the trace instead
+   * (only for small payloads).
    */
   static fromBytes(
     data: Uint8Array | ArrayBuffer | ArrayBufferView,
     options: { name: string; mediaType: string; inline?: boolean },
   ): Attachment {
-    const bytes = toUint8Array(data);
+    // Own a copy: the bytes are read at upload time (asynchronously), and the
+    // checksum computed here is the dedup key, so a caller reusing or mutating
+    // its buffer must not change what gets uploaded under that checksum.
+    const bytes = new Uint8Array(toUint8Array(data));
     const attachment = new Attachment({
       name: options.name,
       mediaType: options.mediaType,

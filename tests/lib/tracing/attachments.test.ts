@@ -137,6 +137,14 @@ describe('Attachment behavior', () => {
     expect(attachment.hasData()).toBe(true);
   });
 
+  it('fromBytes snapshots the input so later mutation cannot change it', () => {
+    const buffer = new Uint8Array(AUDIO);
+    const attachment = Attachment.fromBytes(buffer, { name: 'clip.wav', mediaType: 'audio/wav' });
+    buffer.fill(0);
+    expect(attachment.getBytes()).toEqual(AUDIO);
+    expect(attachment.checksumMd5).toBe(python['fromBytes'].checksumMd5);
+  });
+
   it('clearData drops pending and inline bytes', () => {
     const attachment = Attachment.fromBytes(AUDIO, { name: 'a', mediaType: 'audio/wav', inline: true });
     attachment.clearData();

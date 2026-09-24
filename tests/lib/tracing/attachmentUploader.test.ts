@@ -69,6 +69,17 @@ describe('findAttachments', () => {
     expect(findAttachments('x')).toEqual([]);
     expect(findAttachments(42)).toEqual([]);
   });
+
+  it('keeps traversing siblings of a plain-object key named `attachment`', () => {
+    const first = audio('first.wav');
+    const second = audio('second.wav');
+    const third = audio('third.wav');
+    expect(findAttachments({ attachment: first, other: second, nested: [{ attachment: third }] })).toEqual([
+      first,
+      second,
+      third,
+    ]);
+  });
 });
 
 describe('resolveUploadMethod', () => {
@@ -184,6 +195,33 @@ describe('AttachmentUploader', () => {
     expect(attachment.toJSON().storageUri).toBeDefined();
   });
 
+  it('uploads the bytes as they were when the attachment was created, even if the caller reuses the buffer', async () => {
+    const { client } = fakeClient();
+    const uploaded: Uint8Array[] = [];
+    const fetch = jest.fn(async (_url: any, init: any) => {
+      const file = (init.body as FormData).get('file') as File;
+      uploaded.push(new Uint8Array(await file.arrayBuffer()));
+      return new Response(null, { status: 204 });
+    }) as unknown as typeof globalThis.fetch;
+    const uploader = new AttachmentUploader(client, { fetch });
+
+    const buffer = new TextEncoder().encode('original');
+    const first = Attachment.fromBytes(buffer, { name: 'a.bin', mediaType: 'application/octet-stream' });
+    buffer.set(new TextEncoder().encode('XXXXXXXX')); // app reuses its buffer before the async upload
+    await uploader.uploadAttachment(first);
+
+    expect(new TextDecoder().decode(uploaded[0])).toBe('original');
+    expect(first.checksumMd5).toBe(
+      Attachment.fromBytes(new TextEncoder().encode('original'), { name: 'b', mediaType: 'x/y' }).checksumMd5,
+    );
+
+    // Content that really is 'XXXXXXXX' must not be deduplicated onto the 'original' object.
+    const second = Attachment.fromBytes(buffer, { name: 'c.bin', mediaType: 'application/octet-stream' });
+    await uploader.uploadAttachment(second);
+    expect(second.storageUri).not.toBe(first.storageUri);
+    expect(new TextDecoder().decode(uploaded[1])).toBe('XXXXXXXX');
+  });
+
   it('deduplicates identical content, including concurrent uploads', async () => {
     const { client, create } = fakeClient();
     const { fetch, calls } = fakeFetch();
@@ -254,6 +292,23 @@ describe('AttachmentUploader', () => {
 
     expect(calls).toHaveLength(1);
     expect(attachment.storageUri).toBe('s3://bucket/attachments/abc.wav');
+  });
+
+  it('uploadTraceAttachments uploads every attachment when an input key is named `attachment`', async () => {
+    const { client } = fakeClient();
+    const { fetch } = fakeFetch();
+    const first = audio('first.wav', new Uint8Array([7]));
+    const second = audio('second.wav', new Uint8Array([8]));
+    // e.g. a traced function `function f(attachment, other)` records { attachment, other }.
+    const root = new UserCallStep('root', { attachment: first, other: second });
+    const trace = new Trace();
+    trace.addStep(root);
+
+    const count = await new AttachmentUploader(client, { fetch }).uploadTraceAttachments(trace);
+
+    expect(count).toBe(2);
+    expect(first.storageUri).not.toBeNull();
+    expect(second.storageUri).not.toBeNull();
   });
 
   it('uploadTraceAttachments walks step attachments, inputs, outputs and nested steps once each', async () => {
