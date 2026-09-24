@@ -14,8 +14,14 @@
  *
  * The Azure credential never leaves the process: the client's property collection
  * also holds the subscription key and authorization token, so only an allowlist
- * of non-secret settings is read from it. Audio is not captured — the TypeScript
- * SDK has no attachment upload support yet.
+ * of non-secret settings is read from it.
+ *
+ * Audio is attached only when ``attachmentUploadEnabled`` is configured
+ * (``configure({ attachmentUploadEnabled: true })``) and is uploaded to Openlayer
+ * storage separately from the trace: synthesized audio from each result, and
+ * recognition input audio passed explicitly as ``inputAudio`` (an ``AudioConfig``
+ * does not expose its source). Storing audio in Openlayer sends that data to
+ * Openlayer, so keep it opt-in.
  *
  * The Speech SDK is only imported for types, so this module loads (and is
  * re-exported from ``integrations/index``) without the SDK installed.
@@ -30,7 +36,11 @@ import type {
   TranslationRecognizer,
 } from 'microsoft-cognitiveservices-speech-sdk';
 
-import { addChatCompletionStepToTrace } from '../tracing/tracer';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { Attachment, guessMediaType } from '../tracing/attachments';
+import { addChatCompletionStepToTrace, isAttachmentUploadEnabled } from '../tracing/tracer';
 
 /**
  * Provider string. No space: the Openlayer cost lookup matches ``provider``
@@ -100,6 +110,19 @@ const PATCHED = Symbol.for('openlayer.azureSpeech.patched');
 
 export type AzureSpeechClient = SpeechRecognizer | TranslationRecognizer | SpeechSynthesizer;
 
+/** Audio accepted as ``inputAudio``: raw bytes, a local file path, or an ``Attachment``. */
+export type AzureSpeechInputAudio = Uint8Array | ArrayBuffer | ArrayBufferView | string | Attachment;
+
+export interface TraceAzureSpeechOptions {
+  /**
+   * Recognizers only: the audio this recognizer transcribes (typically the same
+   * bytes or file given to its ``AudioConfig``). It is snapshotted now, attached
+   * to every recognition step of this recognizer as ``inputs.audio``, and
+   * uploaded once — only when ``attachmentUploadEnabled`` is configured.
+   */
+  inputAudio?: AzureSpeechInputAudio;
+}
+
 type RecognitionCallback = (result: SpeechRecognitionResult) => void;
 type SynthesisCallback = (result: SpeechSynthesisResult) => void;
 type ErrorCallback = (error: string) => void;
@@ -115,17 +138,28 @@ type ErrorCallback = (error: string) => void;
  * details — the Speech SDK reports most failures as canceled results. Calls
  * that fail through the error callback are traced with the error message.
  *
+ * With ``attachmentUploadEnabled`` configured, synthesized audio is attached as
+ * ``output.audio`` and ``options.inputAudio`` as a recognition step's
+ * ``inputs.audio``; both render as audio players in Openlayer.
+ *
  * @param client - The client to patch. Mutated in place.
+ * @param options - See ``TraceAzureSpeechOptions``.
  * @returns The same client, for convenient inline use.
  */
-export function traceAzureSpeech<T extends AzureSpeechClient>(client: T): T {
+export function traceAzureSpeech<T extends AzureSpeechClient>(
+  client: T,
+  options: TraceAzureSpeechOptions = {},
+): T {
   const target = client as T & { [PATCHED]?: boolean };
   if (target[PATCHED]) {
     return client;
   }
 
   if (typeof (client as SpeechRecognizer).recognizeOnceAsync === 'function') {
-    patchRecognizer(client as SpeechRecognizer | TranslationRecognizer);
+    patchRecognizer(
+      client as SpeechRecognizer | TranslationRecognizer,
+      toInputAttachment(options.inputAudio),
+    );
   } else if (typeof (client as SpeechSynthesizer).speakTextAsync === 'function') {
     patchSynthesizer(client as SpeechSynthesizer);
   } else {
@@ -139,7 +173,10 @@ export function traceAzureSpeech<T extends AzureSpeechClient>(client: T): T {
   return client;
 }
 
-function patchRecognizer(recognizer: SpeechRecognizer | TranslationRecognizer): void {
+function patchRecognizer(
+  recognizer: SpeechRecognizer | TranslationRecognizer,
+  inputAudio: Attachment | null,
+): void {
   const isTranslation = Array.isArray((recognizer as TranslationRecognizer).targetLanguages);
   const original = recognizer.recognizeOnceAsync;
 
@@ -161,14 +198,14 @@ function patchRecognizer(recognizer: SpeechRecognizer | TranslationRecognizer): 
       (result: SpeechRecognitionResult) => {
         if (!traced) {
           traced = true;
-          safeTrace(() => traceRecognition(recognizer, isTranslation, result, startTime));
+          safeTrace(() => traceRecognition(recognizer, isTranslation, inputAudio, result, startTime));
         }
         cb?.(result);
       },
       (error: string) => {
         if (!traced) {
           traced = true;
-          safeTrace(() => traceRecognitionError(recognizer, isTranslation, error, startTime));
+          safeTrace(() => traceRecognitionError(recognizer, isTranslation, inputAudio, error, startTime));
         }
         err?.(error);
       },
@@ -230,6 +267,7 @@ function safeTrace(fn: () => void): void {
 function traceRecognition(
   recognizer: SpeechRecognizer | TranslationRecognizer,
   isTranslation: boolean,
+  inputAudio: Attachment | null,
   result: SpeechRecognitionResult | TranslationRecognitionResult,
   startTime: number,
 ): void {
@@ -241,7 +279,7 @@ function traceRecognition(
 
   addStep({
     name: isTranslation ? 'Azure Speech Translation' : 'Azure Speech Recognition',
-    inputs: recognitionInputs(recognizer, isTranslation, modelParameters),
+    inputs: recognitionInputs(recognizer, isTranslation, modelParameters, inputAudio),
     output,
     model: modelParameters['endpoint_id'] || 'speech-to-text',
     modelParameters,
@@ -253,13 +291,14 @@ function traceRecognition(
 function traceRecognitionError(
   recognizer: SpeechRecognizer | TranslationRecognizer,
   isTranslation: boolean,
+  inputAudio: Attachment | null,
   error: string,
   startTime: number,
 ): void {
   const modelParameters = readProperties(recognizer.properties, RECOGNITION_PROPERTIES);
   addStep({
     name: isTranslation ? 'Azure Speech Translation' : 'Azure Speech Recognition',
-    inputs: recognitionInputs(recognizer, isTranslation, modelParameters),
+    inputs: recognitionInputs(recognizer, isTranslation, modelParameters, inputAudio),
     output: null,
     model: modelParameters['endpoint_id'] || 'speech-to-text',
     modelParameters,
@@ -277,13 +316,21 @@ function traceSynthesis(
 ): void {
   const modelParameters = readProperties(synthesizer.properties, SYNTHESIS_PROPERTIES);
   const audioDuration = result.audioDuration;
+  const audioData = result.audioData;
+  const output: Record<string, any> = {
+    audioDurationMs: typeof audioDuration === 'number' ? audioDuration / TICKS_PER_MS : null,
+    audioSizeBytes: audioData?.byteLength ?? 0,
+  };
+  if (audioData && audioData.byteLength > 0 && isAttachmentUploadEnabled()) {
+    // A bare Attachment directly under the output is what the Openlayer UI
+    // renders as an audio player (a typed AudioContent nested here is not).
+    const { mediaType, extension } = synthesisAudioType(modelParameters['output_format']);
+    output['audio'] = Attachment.fromBytes(audioData, { name: `synthesis.${extension}`, mediaType });
+  }
   addStep({
     name: 'Azure Speech Synthesis',
     inputs: { [inputKey]: input },
-    output: {
-      audioDurationMs: typeof audioDuration === 'number' ? audioDuration / TICKS_PER_MS : null,
-      audioSizeBytes: result.audioData?.byteLength ?? 0,
-    },
+    output,
     model: modelParameters['voice'] || 'text-to-speech',
     modelParameters,
     metadata: resultMetadata(result),
@@ -365,12 +412,63 @@ function recognitionInputs(
   recognizer: SpeechRecognizer | TranslationRecognizer,
   isTranslation: boolean,
   modelParameters: Record<string, string>,
+  inputAudio: Attachment | null,
 ): Record<string, any> {
   const inputs: Record<string, any> = { language: modelParameters['language'] ?? null };
   if (isTranslation) {
     inputs['targetLanguages'] = [...((recognizer as TranslationRecognizer).targetLanguages ?? [])];
   }
+  if (inputAudio && isAttachmentUploadEnabled()) {
+    inputs['audio'] = inputAudio;
+  }
   return inputs;
+}
+
+// ----------------------------- Audio ----------------------------- //
+
+/**
+ * Snapshot ``inputAudio`` into an Attachment. File paths are read as bytes so the
+ * local path is never recorded in the trace. Returns null (with a warning) for a
+ * missing file or an unsupported value.
+ */
+function toInputAttachment(audio: AzureSpeechInputAudio | undefined): Attachment | null {
+  if (audio === undefined || audio === null) {
+    return null;
+  }
+  if (Attachment.isAttachment(audio)) {
+    return audio;
+  }
+  try {
+    if (typeof audio === 'string') {
+      const bytes = fs.readFileSync(audio);
+      return Attachment.fromBytes(bytes, {
+        name: path.basename(audio),
+        mediaType: guessMediaType(audio) ?? 'audio/wav',
+      });
+    }
+    if (audio instanceof ArrayBuffer || ArrayBuffer.isView(audio)) {
+      return Attachment.fromBytes(audio, { name: 'audio.wav', mediaType: 'audio/wav' });
+    }
+  } catch (error) {
+    console.warn('Openlayer: could not read `inputAudio`; recognition steps will not carry audio.', error);
+    return null;
+  }
+  console.warn('Openlayer: unsupported `inputAudio` value; expected bytes, a file path, or an Attachment.');
+  return null;
+}
+
+/**
+ * MIME type and file extension for a synthesis output format name
+ * (``SpeechSynthesisOutputFormat``, e.g. ``Audio16Khz32KBitRateMonoMp3``). The
+ * SDK default is RIFF (WAV).
+ */
+function synthesisAudioType(outputFormat: string | undefined): { mediaType: string; extension: string } {
+  const format = (outputFormat ?? '').toLowerCase();
+  if (format.includes('mp3')) return { mediaType: 'audio/mpeg', extension: 'mp3' };
+  if (format.includes('ogg')) return { mediaType: 'audio/ogg', extension: 'ogg' };
+  if (format.includes('webm')) return { mediaType: 'audio/webm', extension: 'webm' };
+  if (format.startsWith('raw')) return { mediaType: 'audio/pcm', extension: 'pcm' };
+  return { mediaType: 'audio/wav', extension: 'wav' };
 }
 
 function readTranslations(result: TranslationRecognitionResult): Record<string, string> {

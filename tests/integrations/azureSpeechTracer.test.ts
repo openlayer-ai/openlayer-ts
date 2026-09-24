@@ -1,3 +1,7 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
 import {
@@ -5,10 +9,12 @@ import {
   RESULT_REASON_NAMES,
   traceAzureSpeech,
 } from '../../src/lib/integrations/azureSpeechTracer';
-import { addChatCompletionStepToTrace } from '../../src/lib/tracing/tracer';
+import { Attachment } from '../../src/lib/tracing/attachments';
+import { addChatCompletionStepToTrace, isAttachmentUploadEnabled } from '../../src/lib/tracing/tracer';
 
 jest.mock('../../src/lib/tracing/tracer', () => ({
   addChatCompletionStepToTrace: jest.fn(),
+  isAttachmentUploadEnabled: jest.fn(() => false),
 }));
 
 /*
@@ -422,6 +428,164 @@ describe('traceAzureSpeech', () => {
 
       expect(addStepMock).toHaveBeenCalledTimes(1);
       expect(onError).toHaveBeenCalledWith('Error: caller bug');
+    });
+  });
+
+  describe('audio capture', () => {
+    const uploadsEnabled = isAttachmentUploadEnabled as jest.Mock;
+    const WAV = new Uint8Array(Buffer.from('RIFF\x24\x00\x00\x00WAVEfmt fake-audio', 'latin1'));
+
+    afterEach(() => uploadsEnabled.mockReturnValue(false));
+
+    function synthesisWithAudio(audio: Uint8Array): sdk.SpeechSynthesisResult {
+      const buffer = audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength) as ArrayBuffer;
+      return new sdk.SpeechSynthesisResult(
+        'syn-a',
+        sdk.ResultReason.SynthesizingAudioCompleted,
+        buffer,
+        undefined,
+        undefined,
+        10_000_000,
+      );
+    }
+
+    async function speak(synthesizer: sdk.SpeechSynthesizer): Promise<void> {
+      await new Promise((resolve) => synthesizer.speakTextAsync('Hi', resolve));
+    }
+
+    it('attaches nothing while attachment uploads are disabled (the default)', async () => {
+      const synthesizer = makeSynthesizer();
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(WAV) });
+      const recognizer = makeRecognizer();
+      stubRecognize(recognizer, { result: recognitionResult() });
+      traceAzureSpeech(synthesizer);
+      traceAzureSpeech(recognizer, { inputAudio: WAV });
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await speak(synthesizer);
+      await recognize(recognizer);
+      warn.mockRestore();
+
+      const [synthesis, recognition] = addStepMock.mock.calls.map((call) => call[0]);
+      expect(synthesis.output).toEqual({ audioDurationMs: 1000, audioSizeBytes: WAV.byteLength });
+      expect('audio' in recognition.inputs).toBe(false);
+    });
+
+    it('attaches the synthesized audio as a bare Attachment under output.audio', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const synthesizer = makeSynthesizer();
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(WAV) });
+      traceAzureSpeech(synthesizer);
+
+      await speak(synthesizer);
+
+      const output = addStepMock.mock.calls[0][0].output;
+      expect(output.audioSizeBytes).toBe(WAV.byteLength);
+      expect(Attachment.isAttachment(output.audio)).toBe(true);
+      expect(output.audio.name).toBe('synthesis.wav');
+      expect(output.audio.mediaType).toBe('audio/wav');
+      expect(output.audio.getBytes()).toEqual(WAV);
+      // Uploaded separately, never inlined into the trace.
+      expect(output.audio.toJSON().dataBase64).toBeUndefined();
+    });
+
+    it.each([
+      ['Audio16Khz32KBitRateMonoMp3', 'audio/mpeg', 'mp3'],
+      ['Ogg16Khz16BitMonoOpus', 'audio/ogg', 'ogg'],
+      ['Webm24Khz16BitMonoOpus', 'audio/webm', 'webm'],
+      ['Raw16Khz16BitMonoPcm', 'audio/pcm', 'pcm'],
+      ['Riff24Khz16BitMonoPcm', 'audio/wav', 'wav'],
+    ])('maps output format %s to %s', async (formatName, mediaType, extension) => {
+      uploadsEnabled.mockReturnValue(true);
+      const config = speechConfig();
+      config.speechSynthesisOutputFormat = (sdk.SpeechSynthesisOutputFormat as any)[formatName];
+      const synthesizer = new sdk.SpeechSynthesizer(config, null as any);
+      clients.push(synthesizer);
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(WAV) });
+      traceAzureSpeech(synthesizer);
+
+      await speak(synthesizer);
+
+      const { audio } = addStepMock.mock.calls[0][0].output;
+      expect([audio.mediaType, audio.name]).toEqual([mediaType, `synthesis.${extension}`]);
+    });
+
+    it('skips the attachment when synthesis produced no audio', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const synthesizer = makeSynthesizer();
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(new Uint8Array()) });
+      traceAzureSpeech(synthesizer);
+
+      await speak(synthesizer);
+
+      expect('audio' in addStepMock.mock.calls[0][0].output).toBe(false);
+    });
+
+    it('attaches inputAudio bytes to every recognition step, as one attachment', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const recognizer = makeRecognizer();
+      stubRecognize(recognizer, { result: recognitionResult() });
+      const bytes = new Uint8Array(WAV);
+      traceAzureSpeech(recognizer, { inputAudio: bytes });
+      bytes.fill(0); // snapshotted at trace time: later mutation can't change it
+
+      await recognize(recognizer);
+      await recognize(recognizer);
+
+      const [first, second] = addStepMock.mock.calls.map((call) => call[0].inputs.audio);
+      expect(Attachment.isAttachment(first)).toBe(true);
+      expect(second).toBe(first);
+      expect(first.getBytes()).toEqual(WAV);
+      expect([first.name, first.mediaType]).toEqual(['audio.wav', 'audio/wav']);
+    });
+
+    it('reads an inputAudio path as bytes without recording the local path', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ol-speech-'));
+      const file = path.join(dir, 'caller.wav');
+      fs.writeFileSync(file, WAV);
+      try {
+        const recognizer = makeRecognizer();
+        stubRecognize(recognizer, { result: recognitionResult() });
+        traceAzureSpeech(recognizer, { inputAudio: file });
+
+        await recognize(recognizer);
+
+        const audio = addStepMock.mock.calls[0][0].inputs.audio;
+        expect([audio.name, audio.mediaType]).toEqual(['caller.wav', 'audio/x-wav']);
+        expect(audio.getBytes()).toEqual(WAV);
+        expect(JSON.stringify(audio)).not.toContain(dir);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('accepts an existing Attachment as inputAudio', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const attachment = Attachment.fromUrl('https://example.com/call.mp3');
+      const recognizer = makeRecognizer();
+      stubRecognize(recognizer, { error: 'boom' });
+      traceAzureSpeech(recognizer, { inputAudio: attachment });
+
+      await expect(recognize(recognizer)).rejects.toBe('boom');
+
+      // Error steps carry the input audio too.
+      expect(addStepMock.mock.calls[0][0].inputs.audio).toBe(attachment);
+    });
+
+    it('a missing inputAudio file is skipped with a warning, and tracing still works', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const recognizer = makeRecognizer();
+      stubRecognize(recognizer, { result: recognitionResult() });
+      traceAzureSpeech(recognizer, { inputAudio: '/definitely/not/here.wav' });
+
+      await recognize(recognizer);
+
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+      expect(addStepMock).toHaveBeenCalledTimes(1);
+      expect('audio' in addStepMock.mock.calls[0][0].inputs).toBe(false);
     });
   });
 

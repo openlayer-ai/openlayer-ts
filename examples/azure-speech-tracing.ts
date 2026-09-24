@@ -2,7 +2,7 @@ import * as fs from 'fs';
 
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { traceAzureSpeech } from 'openlayer/lib/integrations/azureSpeechTracer';
-import trace from 'openlayer/lib/tracing/tracer';
+import trace, { configure } from 'openlayer/lib/tracing/tracer';
 
 // First, make sure you export your:
 // - AZURE_SPEECH_KEY and AZURE_SPEECH_REGION -- load these from your secret store
@@ -18,6 +18,11 @@ import trace from 'openlayer/lib/tracing/tracer';
 // The Azure key is never sent to Openlayer: the tracer records only non-secret
 // settings (region, language, voice, custom endpoint ID, output format), the
 // recognized text or synthesized-audio stats, latency and failure details.
+
+// Optional: attach audio to the traces (rendered as audio players in Openlayer).
+// This uploads audio to Openlayer storage, so only enable it when that fits your
+// privacy requirements. Off by default.
+configure({ attachmentUploadEnabled: true });
 
 const speechConfig = sdk.SpeechConfig.fromSubscription(
   process.env['AZURE_SPEECH_KEY'] ?? '',
@@ -39,8 +44,12 @@ function speak(text: string): Promise<sdk.SpeechSynthesisResult> {
 }
 
 function recognize(audioPath: string): Promise<sdk.SpeechRecognitionResult> {
+  const audio = fs.readFileSync(audioPath);
+  // `inputAudio` attaches the audio being transcribed (the SDK's AudioConfig
+  // doesn't expose it); it is only uploaded when attachmentUploadEnabled is on.
   const recognizer = traceAzureSpeech(
-    new sdk.SpeechRecognizer(speechConfig, sdk.AudioConfig.fromWavFileInput(fs.readFileSync(audioPath))),
+    new sdk.SpeechRecognizer(speechConfig, sdk.AudioConfig.fromWavFileInput(audio)),
+    { inputAudio: audio },
   );
   return new Promise<sdk.SpeechRecognitionResult>((resolve, reject) =>
     recognizer.recognizeOnceAsync(resolve, reject),
