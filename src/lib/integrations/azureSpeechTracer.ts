@@ -40,6 +40,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { Attachment, guessMediaType } from '../tracing/attachments';
+import { collectSecrets, describeSynthesisAudio, redactSecrets } from './azureSpeechUtils';
 import { addChatCompletionStepToTrace, isAttachmentUploadEnabled } from '../tracing/tracer';
 
 /**
@@ -283,7 +284,7 @@ function traceRecognition(
     output,
     model: modelParameters['endpoint_id'] || 'speech-to-text',
     modelParameters,
-    metadata: resultMetadata(result),
+    metadata: resultMetadata(result, collectSecrets(recognizer.properties)),
     startTime,
   });
 }
@@ -302,7 +303,7 @@ function traceRecognitionError(
     output: null,
     model: modelParameters['endpoint_id'] || 'speech-to-text',
     modelParameters,
-    metadata: { error: String(error) },
+    metadata: { error: redactSecrets(String(error), collectSecrets(recognizer.properties)) },
     startTime,
   });
 }
@@ -324,8 +325,13 @@ function traceSynthesis(
   if (audioData && audioData.byteLength > 0 && isAttachmentUploadEnabled()) {
     // A bare Attachment directly under the output is what the Openlayer UI
     // renders as an audio player (a typed AudioContent nested here is not).
-    const { mediaType, extension } = synthesisAudioType(modelParameters['output_format']);
-    output['audio'] = Attachment.fromBytes(audioData, { name: `synthesis.${extension}`, mediaType });
+    const audio = describeSynthesisAudio(audioData, modelParameters['output_format']);
+    const attachment = Attachment.fromBytes(audio.bytes, {
+      name: `synthesis.${audio.extension}`,
+      mediaType: audio.mediaType,
+    });
+    Object.assign(attachment.metadata, audio.metadata);
+    output['audio'] = attachment;
   }
   addStep({
     name: 'Azure Speech Synthesis',
@@ -333,7 +339,7 @@ function traceSynthesis(
     output,
     model: modelParameters['voice'] || 'text-to-speech',
     modelParameters,
-    metadata: resultMetadata(result),
+    metadata: resultMetadata(result, collectSecrets(synthesizer.properties)),
     startTime,
   });
 }
@@ -352,7 +358,7 @@ function traceSynthesisError(
     output: null,
     model: modelParameters['voice'] || 'text-to-speech',
     modelParameters,
-    metadata: { error: String(error) },
+    metadata: { error: redactSecrets(String(error), collectSecrets(synthesizer.properties)) },
     startTime,
   });
 }
@@ -457,20 +463,6 @@ function toInputAttachment(audio: AzureSpeechInputAudio | undefined): Attachment
   return null;
 }
 
-/**
- * MIME type and file extension for a synthesis output format name
- * (``SpeechSynthesisOutputFormat``, e.g. ``Audio16Khz32KBitRateMonoMp3``). The
- * SDK default is RIFF (WAV).
- */
-function synthesisAudioType(outputFormat: string | undefined): { mediaType: string; extension: string } {
-  const format = (outputFormat ?? '').toLowerCase();
-  if (format.includes('mp3')) return { mediaType: 'audio/mpeg', extension: 'mp3' };
-  if (format.includes('ogg')) return { mediaType: 'audio/ogg', extension: 'ogg' };
-  if (format.includes('webm')) return { mediaType: 'audio/webm', extension: 'webm' };
-  if (format.startsWith('raw')) return { mediaType: 'audio/pcm', extension: 'pcm' };
-  return { mediaType: 'audio/wav', extension: 'wav' };
-}
-
 function readTranslations(result: TranslationRecognitionResult): Record<string, string> {
   const translations: Record<string, string> = {};
   const collection = result.translations;
@@ -481,7 +473,10 @@ function readTranslations(result: TranslationRecognitionResult): Record<string, 
 }
 
 /** Result ID, reason, timings, and no-match or cancellation details. */
-function resultMetadata(result: SpeechRecognitionResult | SpeechSynthesisResult): Record<string, any> {
+function resultMetadata(
+  result: SpeechRecognitionResult | SpeechSynthesisResult,
+  secrets: readonly string[],
+): Record<string, any> {
   const metadata: Record<string, any> = {};
   if (result.resultId) {
     metadata['resultId'] = result.resultId;
@@ -512,7 +507,7 @@ function resultMetadata(result: SpeechRecognitionResult | SpeechSynthesisResult)
       // A cancellation without an error code means the audio stream ended.
       reason: errorCode === 'NoError' ? 'EndOfStream' : 'Error',
       errorCode,
-      errorDetails: result.errorDetails ?? null,
+      errorDetails: result.errorDetails ? redactSecrets(result.errorDetails, secrets) : null,
     };
   }
 

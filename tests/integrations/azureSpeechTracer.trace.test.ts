@@ -84,7 +84,8 @@ describe('traceAzureSpeech with the real tracer', () => {
     configure({ attachmentUploadEnabled: true });
     try {
       const config = sdk.SpeechConfig.fromSubscription(FAKE_KEY, 'eastus');
-      const wav = new Uint8Array([82, 73, 70, 70, 1, 2, 3, 4]);
+      // A minimal RIFF/WAVE header, as the SDK's default output format produces.
+      const wav = Uint8Array.from('RIFF\x04\x00\x00\x00WAVE', (c) => c.charCodeAt(0));
       const recognizer = new sdk.SpeechRecognizer(
         config,
         sdk.AudioConfig.fromStreamInput(sdk.AudioInputStream.createPushStream()),
@@ -119,7 +120,7 @@ describe('traceAzureSpeech with the real tracer', () => {
       // What goes over the wire (publishing is disabled here, so nothing uploads).
       const [recognition, synthesis] = JSON.parse(JSON.stringify(getCurrentTrace()!.toJSON()))[0].steps;
       for (const audio of [recognition.inputs.audio, synthesis.output.audio]) {
-        expect(audio).toMatchObject({ mediaType: 'audio/wav', sizeBytes: 8 });
+        expect(audio).toMatchObject({ mediaType: 'audio/wav', sizeBytes: 12 });
         expect(audio.checksumMd5).toMatch(/^[0-9a-f]{32}$/);
         expect(audio.type).toBeUndefined(); // bare attachment, not a nested content item
         expect(audio.dataBase64).toBeUndefined(); // bytes are uploaded, never inlined

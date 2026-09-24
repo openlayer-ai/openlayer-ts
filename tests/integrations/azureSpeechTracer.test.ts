@@ -489,25 +489,54 @@ describe('traceAzureSpeech', () => {
       expect(output.audio.toJSON().dataBase64).toBeUndefined();
     });
 
+    const ascii = (text: string) => Uint8Array.from(text, (c) => c.charCodeAt(0));
     it.each([
-      ['Audio16Khz32KBitRateMonoMp3', 'audio/mpeg', 'mp3'],
-      ['Ogg16Khz16BitMonoOpus', 'audio/ogg', 'ogg'],
-      ['Webm24Khz16BitMonoOpus', 'audio/webm', 'webm'],
-      ['Raw16Khz16BitMonoPcm', 'audio/pcm', 'pcm'],
-      ['Riff24Khz16BitMonoPcm', 'audio/wav', 'wav'],
-    ])('maps output format %s to %s', async (formatName, mediaType, extension) => {
+      // [format, audio bytes as the service returns them, expected mediaType, extension]
+      ['Audio16Khz32KBitRateMonoMp3', Uint8Array.from([0xff, 0xf3, 0x44, 0xc4, 0, 0]), 'audio/mpeg', 'mp3'],
+      ['Ogg16Khz16BitMonoOpus', ascii('OggS\x00\x02rest'), 'audio/ogg', 'ogg'],
+      ['Webm24Khz16BitMonoOpus', Uint8Array.from([0x1a, 0x45, 0xdf, 0xa3, 1, 2]), 'audio/webm', 'webm'],
+      ['Riff24Khz16BitMonoPcm', WAV, 'audio/wav', 'wav'],
+      ['Raw16Khz16BitMonoPcm', Uint8Array.from([0, 0, 1, 0]), 'audio/wav', 'wav'],
+      ['Raw8Khz8BitMonoMULaw', Uint8Array.from([0xff, 0x7f, 0xff]), 'audio/wav', 'wav'],
+      ['Raw16Khz16BitMonoTrueSilk', Uint8Array.from([2, 3, 4]), 'application/octet-stream', 'bin'],
+      ['Audio24Khz16Bit48KbpsMonoOpus', Uint8Array.from([0x4f, 0x70, 1]), 'application/octet-stream', 'bin'],
+    ])('labels %s output by its actual encoding', async (formatName, bytes, mediaType, extension) => {
       uploadsEnabled.mockReturnValue(true);
       const config = speechConfig();
       config.speechSynthesisOutputFormat = (sdk.SpeechSynthesisOutputFormat as any)[formatName];
       const synthesizer = new sdk.SpeechSynthesizer(config, null as any);
       clients.push(synthesizer);
-      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(WAV) });
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(bytes as Uint8Array) });
       traceAzureSpeech(synthesizer);
 
       await speak(synthesizer);
 
       const { audio } = addStepMock.mock.calls[0][0].output;
       expect([audio.mediaType, audio.name]).toEqual([mediaType, `synthesis.${extension}`]);
+      expect(audio.metadata.outputFormat).toBe(formatName);
+    });
+
+    it('wraps headerless PCM / µ-law in a playable WAV with the right format tag and rate', async () => {
+      uploadsEnabled.mockReturnValue(true);
+      const config = speechConfig();
+      config.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Raw8Khz8BitMonoMULaw;
+      const synthesizer = new sdk.SpeechSynthesizer(config, null as any);
+      clients.push(synthesizer);
+      const samples = Uint8Array.from([0xff, 0x7f, 0x80, 0x00]);
+      stubSpeak(synthesizer, 'speakTextAsync', { result: synthesisWithAudio(samples) });
+      traceAzureSpeech(synthesizer);
+
+      await speak(synthesizer);
+
+      const { audio } = addStepMock.mock.calls[0][0].output;
+      const wav = Buffer.from(audio.getBytes());
+      expect(wav.toString('latin1', 0, 4)).toBe('RIFF');
+      expect(wav.toString('latin1', 8, 12)).toBe('WAVE');
+      expect(wav.readUInt16LE(20)).toBe(7); // WAVE_FORMAT_MULAW
+      expect(wav.readUInt32LE(24)).toBe(8000);
+      expect(wav.readUInt16LE(34)).toBe(8);
+      expect(new Uint8Array(wav.subarray(44))).toEqual(samples);
+      expect(audio.metadata).toMatchObject({ encoding: 'mulaw', sampleRateHz: 8000, wrappedInWav: true });
     });
 
     it('skips the attachment when synthesis produced no audio', async () => {
@@ -586,6 +615,83 @@ describe('traceAzureSpeech', () => {
       warn.mockRestore();
       expect(addStepMock).toHaveBeenCalledTimes(1);
       expect('audio' in addStepMock.mock.calls[0][0].inputs).toBe(false);
+    });
+  });
+
+  describe('credential redaction', () => {
+    const ENDPOINT_TOKEN = 'FAKE-ENDPOINT-TOKEN-123';
+
+    function endpointRecognizer(): sdk.SpeechRecognizer {
+      const config = sdk.SpeechConfig.fromEndpoint(
+        new URL(`wss://speech.example.com/stt/websocket/v1?token=${ENDPOINT_TOKEN}&sig=SIGNATURE-VALUE-9`),
+        FAKE_KEY,
+      );
+      const recognizer = new sdk.SpeechRecognizer(
+        config,
+        sdk.AudioConfig.fromStreamInput(sdk.AudioInputStream.createPushStream()),
+      );
+      clients.push(recognizer);
+      return recognizer;
+    }
+
+    it('redacts endpoint credentials from cancellation errorDetails', async () => {
+      const recognizer = endpointRecognizer();
+      const endpoint = recognizer.properties.getProperty('SpeechServiceConnection_Endpoint', '');
+      // Exact shape the SDK builds on connection failure (ServiceRecognizerBase.js).
+      const errorDetails = `Unable to contact server. StatusCode: 1006, ${endpoint} Reason: Unexpected server response: 401`;
+      stubRecognize(recognizer, {
+        result: recognitionResult({
+          reason: sdk.ResultReason.Canceled,
+          text: '',
+          errorDetails,
+          properties: cancellationProperties('ConnectionFailure'),
+        }),
+      });
+      traceAzureSpeech(recognizer);
+
+      await recognize(recognizer);
+
+      const serialized = JSON.stringify(addStepMock.mock.calls);
+      expect(serialized).not.toContain(ENDPOINT_TOKEN);
+      expect(serialized).not.toContain('SIGNATURE-VALUE-9');
+      expect(serialized).not.toContain(FAKE_KEY);
+      const details = addStepMock.mock.calls[0][0].metadata.cancellation.errorDetails;
+      expect(details).toContain(
+        'Unable to contact server. StatusCode: 1006, wss://speech.example.com/stt/websocket/v1?',
+      );
+      expect(details).toContain('token=[REDACTED]');
+      expect(details).toContain('Reason: Unexpected server response: 401');
+    });
+
+    it('redacts error-callback messages, including a key echoed back verbatim', async () => {
+      const recognizer = endpointRecognizer();
+      stubRecognize(recognizer, {
+        error: `Error: connect failed for key ${FAKE_KEY} at wss://speech.example.com/x?token=${ENDPOINT_TOKEN}`,
+      });
+      traceAzureSpeech(recognizer);
+
+      await expect(recognize(recognizer)).rejects.toContain(ENDPOINT_TOKEN); // the caller still gets the raw error
+
+      const recorded = addStepMock.mock.calls[0][0].metadata.error;
+      expect(recorded).not.toContain(ENDPOINT_TOKEN);
+      expect(recorded).not.toContain(FAKE_KEY);
+      expect(recorded).toContain('[REDACTED]');
+    });
+
+    it('redacts synthesis cancellation details too', async () => {
+      const synthesizer = makeSynthesizer();
+      stubSpeak(synthesizer, 'speakTextAsync', {
+        result: synthesisResult({
+          reason: sdk.ResultReason.Canceled,
+          errorDetails: `Unable to contact server. StatusCode: 401, https://x.example.com/tts?subscription-key=${FAKE_KEY}`,
+          properties: cancellationProperties('AuthenticationFailure'),
+        }),
+      });
+      traceAzureSpeech(synthesizer);
+
+      await new Promise((resolve) => synthesizer.speakTextAsync('Hi', resolve));
+
+      expect(JSON.stringify(addStepMock.mock.calls)).not.toContain(FAKE_KEY);
     });
   });
 
