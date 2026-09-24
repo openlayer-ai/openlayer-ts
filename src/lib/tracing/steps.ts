@@ -7,6 +7,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
+import { Attachment, type AttachmentData } from './attachments';
+
 // ============================= ENUMS ============================= //
 
 export enum StepType {
@@ -35,7 +37,12 @@ export interface StepData {
   latency: number | null;
   startTime: number;
   endTime: number | null;
+  /** Step-level attachments; only present when the step has valid ones. */
+  attachments?: AttachmentData[];
 }
+
+/** Data accepted by ``Step.attach``: raw bytes, a file path, or an ``Attachment``. */
+export type AttachableData = Uint8Array | ArrayBuffer | ArrayBufferView | string | Attachment;
 
 export interface ChatCompletionStepData extends StepData {
   provider: string | null;
@@ -86,6 +93,8 @@ export class Step {
   groundTruth: any = null;
   latency: number | null = null;
   steps: Step[] = [];
+  /** Unstructured data (audio, images, documents, ...) attached to this step. */
+  attachments: Attachment[] = [];
 
   constructor(
     name: string,
@@ -109,6 +118,49 @@ export class Step {
    */
   addNestedStep(nestedStep: Step): void {
     this.steps.push(nestedStep);
+  }
+
+  /**
+   * Attach unstructured data to this step. It is uploaded to Openlayer storage
+   * when the trace completes, if ``attachmentUploadEnabled`` is configured.
+   *
+   * @param data - Raw bytes, a local file path, or an existing ``Attachment``.
+   * @param options.name - Display name (defaults to the file name, or ``"attachment"``).
+   * @param options.mediaType - MIME type (guessed from file paths when omitted).
+   * @param options.metadata - Extra metadata, e.g. duration or dimensions.
+   *
+   * @example
+   * step.attach('/path/to/audio.wav');
+   * step.attach(pngBytes, { name: 'screenshot.png', mediaType: 'image/png' });
+   */
+  attach(
+    data: AttachableData,
+    options: { name?: string; mediaType?: string; metadata?: Record<string, any> } = {},
+  ): Attachment {
+    let attachment: Attachment;
+    if (Attachment.isAttachment(data)) {
+      attachment = data;
+    } else if (typeof data === 'string') {
+      attachment = Attachment.fromFile(data, {
+        ...(options.name !== undefined ? { name: options.name } : {}),
+        ...(options.mediaType !== undefined ? { mediaType: options.mediaType } : {}),
+      });
+    } else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+      attachment = Attachment.fromBytes(data, {
+        name: options.name ?? 'attachment',
+        mediaType: options.mediaType ?? 'application/octet-stream',
+      });
+    } else {
+      throw new TypeError(
+        'Unsupported data type for attach(). Expected bytes (Uint8Array/Buffer/ArrayBuffer), a file path, or an Attachment.',
+      );
+    }
+
+    if (options.metadata) {
+      Object.assign(attachment.metadata, options.metadata);
+    }
+    this.attachments.push(attachment);
+    return attachment;
   }
 
   /**
@@ -139,7 +191,14 @@ export class Step {
       latency: this.latency,
       startTime: this.startTime,
       endTime: this.endTime,
+      ...this.attachmentsJSON(),
     };
+  }
+
+  /** Valid step-level attachments only (those with no data or reference are dropped). */
+  protected attachmentsJSON(): { attachments?: AttachmentData[] } {
+    const valid = this.attachments.filter((attachment) => attachment.isValid());
+    return valid.length > 0 ? { attachments: valid.map((attachment) => attachment.toJSON()) } : {};
   }
 }
 

@@ -1,0 +1,165 @@
+{
+  "fromBytes": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "clip.wav",
+    "mediaType": "audio/wav",
+    "sizeBytes": 26,
+    "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+  },
+  "fromBytesUploaded": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "clip.wav",
+    "mediaType": "audio/wav",
+    "storageUri": "s3://bucket/attachments/clip.wav",
+    "sizeBytes": 26,
+    "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+  },
+  "fromBytesInline": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "clip.wav",
+    "mediaType": "audio/wav",
+    "dataBase64": "UklGRiQAAABXQVZFZm10IGZha2UtYXVkaW8=",
+    "sizeBytes": 26,
+    "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+  },
+  "fromBytesEmpty": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "empty.bin",
+    "mediaType": "application/octet-stream",
+    "sizeBytes": 0,
+    "checksumMd5": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "fromBase64": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "hello.txt",
+    "mediaType": "text/plain",
+    "dataBase64": "aGVsbG8gd29ybGQ=",
+    "sizeBytes": 11,
+    "checksumMd5": "5eb63bbbe01eeed093cb22bb8f5acdc3"
+  },
+  "fromUrl": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "photo.png",
+    "mediaType": "image/png",
+    "url": "https://example.com/assets/photo.png?sig=abc"
+  },
+  "fromUrlNoPath": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "attachment",
+    "mediaType": "application/octet-stream",
+    "url": "https://example.com"
+  },
+  "fromUrlExplicit": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "voice.mp3",
+    "mediaType": "audio/mpeg",
+    "url": "https://example.com/x"
+  },
+  "withMetadata": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "clip.wav",
+    "mediaType": "audio/wav",
+    "sizeBytes": 26,
+    "checksumMd5": "38e35426c52ab3b337daf9bd96585160",
+    "metadata": {
+      "duration_seconds": 1.5,
+      "channels": 1
+    }
+  },
+  "fromFile": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "report.pdf",
+    "mediaType": "application/pdf",
+    "filePath": "<FILE_PATH>",
+    "sizeBytes": 13,
+    "checksumMd5": "307ddb5f41f66df59f1e28b325a31c3e"
+  },
+  "audioContent": {
+    "type": "audio",
+    "attachment": {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "clip.wav",
+      "mediaType": "audio/wav",
+      "storageUri": "s3://bucket/attachments/clip.wav",
+      "sizeBytes": 26,
+      "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+    }
+  },
+  "imageContent": {
+    "type": "image",
+    "attachment": {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "clip.wav",
+      "mediaType": "audio/wav",
+      "storageUri": "s3://bucket/attachments/clip.wav",
+      "sizeBytes": 26,
+      "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+    }
+  },
+  "fileContent": {
+    "type": "file",
+    "attachment": {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "clip.wav",
+      "mediaType": "audio/wav",
+      "storageUri": "s3://bucket/attachments/clip.wav",
+      "sizeBytes": 26,
+      "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+    }
+  },
+  "textContent": {
+    "type": "text",
+    "text": "hello"
+  },
+  "stepAttachments": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "clip.wav",
+      "mediaType": "audio/wav",
+      "storageUri": "s3://bucket/attachments/clip.wav",
+      "sizeBytes": 26,
+      "checksumMd5": "38e35426c52ab3b337daf9bd96585160"
+    }
+  ],
+  "objectNames": {
+    "clip.wav|audio/wav": "attachments/38e35426c52ab3b337daf9bd96585160.wav",
+    "voice|audio/mpeg": "attachments/38e35426c52ab3b337daf9bd96585160.mp3",
+    "photo|image/jpeg": "attachments/38e35426c52ab3b337daf9bd96585160.jpg",
+    "take|audio/x-wav": "attachments/38e35426c52ab3b337daf9bd96585160.wav",
+    "memo|audio/x-m4a": "attachments/38e35426c52ab3b337daf9bd96585160.m4a",
+    "scan|image/png": "attachments/38e35426c52ab3b337daf9bd96585160.png",
+    "blob|application": "attachments/38e35426c52ab3b337daf9bd96585160"
+  },
+  "mimeDefaults": {
+    ".wav": "audio/x-wav",
+    ".mp3": "audio/mpeg",
+    ".m4a": null,
+    ".ogg": null,
+    ".oga": null,
+    ".flac": null,
+    ".aac": "audio/aac",
+    ".opus": "audio/opus",
+    ".weba": null,
+    ".webm": "video/webm",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": null,
+    ".svg": "image/svg+xml",
+    ".bmp": "image/bmp",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
+    ".ico": "image/vnd.microsoft.icon",
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".csv": "text/csv",
+    ".json": "application/json",
+    ".html": "text/html",
+    ".md": null,
+    ".xml": "text/xml",
+    ".zip": "application/zip"
+  }
+}
