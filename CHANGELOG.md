@@ -5,9 +5,7 @@
 
 ### Features
 
-* **OPEN-11883:** add attachments/multimodal subsystem (parity with Python) ([1017e58](https://github.com/openlayer-ai/openlayer-ts/commit/1017e5834baf9357b08fba06dc7e689fae8d268f))
 * **OPEN-11883:** add attachments/multimodal subsystem (parity with Python) ([033d210](https://github.com/openlayer-ai/openlayer-ts/commit/033d21029dcc7beb28aa14802695d1b6ad6cd239))
-* **OPEN-12792:** add Azure AI Speech tracer ([8814f0b](https://github.com/openlayer-ai/openlayer-ts/commit/8814f0bb9480b1ea10e60166901fc4d1ce20a160))
 * **OPEN-12792:** add Azure AI Speech tracer ([6b195db](https://github.com/openlayer-ai/openlayer-ts/commit/6b195db77502af48e99a93c73a64033a7c9753b7))
 * **OPEN-12792:** attach Speech audio in the TypeScript tracer ([b4a6022](https://github.com/openlayer-ai/openlayer-ts/commit/b4a6022ea3a189de3ce88582df3305f79b5314df))
 
