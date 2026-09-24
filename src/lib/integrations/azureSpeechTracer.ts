@@ -146,19 +146,30 @@ function patchRecognizer(recognizer: SpeechRecognizer | TranslationRecognizer): 
   // `recognizeOnceAsync(cb, err)` is callback-based: intercept both callbacks and
   // record the step BEFORE invoking the caller's, so a caller awaiting a promise
   // around this call still has its step on the stack when the step is added.
+  //
+  // One step per call: if the caller's `cb` throws, the SDK routes that
+  // exception into `err` (`marshalPromiseToCallbacks`), so the call reaches both
+  // wrapped callbacks.
   (recognizer as SpeechRecognizer).recognizeOnceAsync = function (
     cb?: RecognitionCallback,
     err?: ErrorCallback,
   ): void {
     const startTime = Date.now();
+    let traced = false;
     original.call(
       recognizer,
       (result: SpeechRecognitionResult) => {
-        safeTrace(() => traceRecognition(recognizer, isTranslation, result, startTime));
+        if (!traced) {
+          traced = true;
+          safeTrace(() => traceRecognition(recognizer, isTranslation, result, startTime));
+        }
         cb?.(result);
       },
       (error: string) => {
-        safeTrace(() => traceRecognitionError(recognizer, isTranslation, error, startTime));
+        if (!traced) {
+          traced = true;
+          safeTrace(() => traceRecognitionError(recognizer, isTranslation, error, startTime));
+        }
         err?.(error);
       },
     );
@@ -172,7 +183,8 @@ function patchSynthesizer(synthesizer: SpeechSynthesizer): void {
   ] as const) {
     const original = synthesizer[method];
     // Both public methods funnel into the private `speakImpl`, never into each
-    // other, so wrapping both can't double-trace a call.
+    // other, so wrapping both can't double-trace a call. Within a call, a throwing
+    // caller `cb` is routed into `err` (`createSynthesisCallbacks`), hence `traced`.
     synthesizer[method] = function (
       input: string,
       cb?: SynthesisCallback,
@@ -180,15 +192,22 @@ function patchSynthesizer(synthesizer: SpeechSynthesizer): void {
       stream?: Parameters<SpeechSynthesizer['speakTextAsync']>[3],
     ): void {
       const startTime = Date.now();
+      let traced = false;
       original.call(
         synthesizer,
         input,
         (result: SpeechSynthesisResult) => {
-          safeTrace(() => traceSynthesis(synthesizer, inputKey, input, result, startTime));
+          if (!traced) {
+            traced = true;
+            safeTrace(() => traceSynthesis(synthesizer, inputKey, input, result, startTime));
+          }
           cb?.(result);
         },
         (error: string) => {
-          safeTrace(() => traceSynthesisError(synthesizer, inputKey, input, error, startTime));
+          if (!traced) {
+            traced = true;
+            safeTrace(() => traceSynthesisError(synthesizer, inputKey, input, error, startTime));
+          }
           err?.(error);
         },
         stream,
@@ -364,7 +383,7 @@ function readTranslations(result: TranslationRecognitionResult): Record<string, 
 }
 
 /** Result ID, reason, timings, and no-match or cancellation details. */
-export function resultMetadata(result: SpeechRecognitionResult | SpeechSynthesisResult): Record<string, any> {
+function resultMetadata(result: SpeechRecognitionResult | SpeechSynthesisResult): Record<string, any> {
   const metadata: Record<string, any> = {};
   if (result.resultId) {
     metadata['resultId'] = result.resultId;

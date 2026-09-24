@@ -372,6 +372,59 @@ describe('traceAzureSpeech', () => {
     });
   });
 
+  /**
+   * The SDK routes an exception thrown by the caller's `cb` into `err`
+   * (`marshalPromiseToCallbacks` for recognition, `createSynthesisCallbacks`
+   * for synthesis). These stubs reproduce that, so one call reaches both
+   * wrapped callbacks.
+   */
+  describe('callback that throws', () => {
+    function sdkLikeCallbacks(result: any) {
+      return jest.fn((...args: any[]) => {
+        const [cb, err] =
+          args.length >= 2 && typeof args[0] === 'string' ? [args[1], args[2]] : [args[0], args[1]];
+        try {
+          cb?.(result);
+        } catch (error: any) {
+          err?.(`${error.name}: ${error.message}`);
+        }
+      });
+    }
+
+    it('recognition is traced once and the error still reaches the caller', () => {
+      const recognizer = makeRecognizer();
+      (recognizer as any).recognizeOnceAsync = sdkLikeCallbacks(recognitionResult());
+      traceAzureSpeech(recognizer);
+      const onError = jest.fn();
+
+      recognizer.recognizeOnceAsync(() => {
+        throw new Error('caller bug');
+      }, onError);
+
+      expect(addStepMock).toHaveBeenCalledTimes(1);
+      expect(addStepMock.mock.calls[0][0].metadata.reason).toBe('RecognizedSpeech');
+      expect(onError).toHaveBeenCalledWith('Error: caller bug');
+    });
+
+    it('synthesis is traced once and the error still reaches the caller', () => {
+      const synthesizer = makeSynthesizer();
+      (synthesizer as any).speakTextAsync = sdkLikeCallbacks(synthesisResult());
+      traceAzureSpeech(synthesizer);
+      const onError = jest.fn();
+
+      synthesizer.speakTextAsync(
+        'Hi',
+        () => {
+          throw new Error('caller bug');
+        },
+        onError,
+      );
+
+      expect(addStepMock).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith('Error: caller bug');
+    });
+  });
+
   describe('robustness', () => {
     it('a tracing failure does not break the call', async () => {
       const recognizer = makeRecognizer();
