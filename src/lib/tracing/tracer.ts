@@ -15,6 +15,9 @@ import {
 import Openlayer, { type ClientOptions } from '../../index';
 import type { DataStreamParams } from '../../resources/inference-pipelines/data';
 import { OfflineBuffer } from './offlineBuffer';
+import type { Attachment } from './attachments';
+import { AttachmentUploader } from './attachmentUploader';
+import type { AttachableData } from './steps';
 
 let currentTrace: Trace | null = null;
 
@@ -61,6 +64,17 @@ export interface ConfigureOptions {
   offlineBufferPath?: string;
   /** Maximum number of buffered trace files. Defaults to 1000. */
   maxBufferSize?: number;
+  /**
+   * Upload attachments (audio, images, documents, ...) found on steps and in
+   * their inputs/outputs to Openlayer storage before publishing a trace.
+   * Defaults to false. Upload failures are logged and never block the publish.
+   */
+  attachmentUploadEnabled?: boolean;
+  /**
+   * When ``attachmentUploadEnabled`` is true, also download external-URL
+   * attachments and re-upload them to Openlayer storage. Defaults to false.
+   */
+  urlUploadEnabled?: boolean;
 }
 
 export interface BufferStatus {
@@ -93,8 +107,11 @@ let configuredOnFlushFailure: OnFlushFailureCallback | undefined;
 let configuredOfflineBufferEnabled = false;
 let configuredOfflineBufferPath: string | undefined;
 let configuredMaxBufferSize: number | undefined;
+let configuredAttachmentUploadEnabled = false;
+let configuredUrlUploadEnabled = false;
 
 let offlineBuffer: OfflineBuffer | null = null;
+let attachmentUploader: AttachmentUploader | null = null;
 
 function getOpenlayerClient(): Openlayer | null {
   if (clientInitialized) {
@@ -203,6 +220,26 @@ export function getCurrentStep(): Step | null | undefined {
  * assemble traces themselves.
  */
 export function processAndUploadTrace(trace: Trace, openlayerInferencePipelineId?: string): Promise<void> {
+  const inferencePipelineId =
+    openlayerInferencePipelineId || configuredPipelineId || process.env['OPENLAYER_INFERENCE_PIPELINE_ID'];
+  const uploader = inferencePipelineId ? getAttachmentUploader() : null;
+  if (!uploader) {
+    return publishTrace(trace, openlayerInferencePipelineId);
+  }
+
+  // Attachments must be in storage before the row is built: postProcessTrace
+  // serializes each attachment with the storageUri the upload sets. A storage
+  // failure is logged and the trace is still published.
+  return uploader
+    .uploadTraceAttachments(trace)
+    .catch((error: unknown) => {
+      console.error('Failed to upload trace attachments:', error);
+      return 0;
+    })
+    .then(() => publishTrace(trace, openlayerInferencePipelineId));
+}
+
+function publishTrace(trace: Trace, openlayerInferencePipelineId?: string): Promise<void> {
   const { traceData: processedTraceData, inputVariableNames } = postProcessTrace(trace);
 
   const inferencePipelineId =
@@ -270,11 +307,40 @@ export function configure(options: ConfigureOptions): void {
     configuredOfflineBufferEnabled = options.offlineBufferEnabled;
   if (options.offlineBufferPath !== undefined) configuredOfflineBufferPath = options.offlineBufferPath;
   if (options.maxBufferSize !== undefined) configuredMaxBufferSize = options.maxBufferSize;
+  if (options.attachmentUploadEnabled !== undefined)
+    configuredAttachmentUploadEnabled = options.attachmentUploadEnabled;
+  if (options.urlUploadEnabled !== undefined) configuredUrlUploadEnabled = options.urlUploadEnabled;
 
   // Reset so they are recreated with the new configuration.
   client = null;
   clientInitialized = false;
   offlineBuffer = null;
+  attachmentUploader = null;
+}
+
+/** Whether ``attachmentUploadEnabled`` is configured (integrations use it to decide whether to capture media). */
+export function isAttachmentUploadEnabled(): boolean {
+  return configuredAttachmentUploadEnabled;
+}
+
+/**
+ * Get or lazily create the attachment uploader, or null when attachment uploads
+ * are disabled or there is no client to upload with (publishing disabled).
+ */
+function getAttachmentUploader(): AttachmentUploader | null {
+  if (!configuredAttachmentUploadEnabled) {
+    return null;
+  }
+  const openlayerClient = getOpenlayerClient();
+  if (!openlayerClient) {
+    return null;
+  }
+  if (attachmentUploader === null) {
+    attachmentUploader = new AttachmentUploader(openlayerClient, {
+      urlUploadEnabled: configuredUrlUploadEnabled,
+    });
+  }
+  return attachmentUploader;
 }
 
 /** Get or lazily create the offline buffer, or null when buffering is disabled. */
@@ -453,6 +519,28 @@ function trace(
       endStep();
     }
   };
+}
+
+/**
+ * Attach unstructured data (audio, image, PDF, ...) to the currently active
+ * step. It is uploaded to Openlayer storage when the trace completes, if
+ * ``attachmentUploadEnabled`` is configured.
+ *
+ * @param data - Raw bytes, a local file path, or an existing ``Attachment``.
+ * @returns The attachment, or null when called outside a traced step.
+ */
+export function logAttachment(
+  data: AttachableData,
+  options: { name?: string; mediaType?: string; metadata?: Record<string, any> } = {},
+): Attachment | null {
+  const currentStep = getCurrentStep();
+  if (!currentStep) {
+    console.warn(
+      'logAttachment() called without an active step. Call it inside a function wrapped with trace().',
+    );
+    return null;
+  }
+  return currentStep.attach(data, options);
 }
 
 export function addChatCompletionStepToTrace(
