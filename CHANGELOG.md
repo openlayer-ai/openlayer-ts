@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.32.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.31.0...v0.32.0) (2026-09-24)
+
+
+### Features
+
+* **OPEN-11883:** add attachments/multimodal subsystem (parity with Python) ([033d210](https://github.com/openlayer-ai/openlayer-ts/commit/033d21029dcc7beb28aa14802695d1b6ad6cd239))
+* **OPEN-12792:** add Azure AI Speech tracer ([6b195db](https://github.com/openlayer-ai/openlayer-ts/commit/6b195db77502af48e99a93c73a64033a7c9753b7))
+* **OPEN-12792:** attach Speech audio in the TypeScript tracer ([b4a6022](https://github.com/openlayer-ai/openlayer-ts/commit/b4a6022ea3a189de3ce88582df3305f79b5314df))
+
+
+### Bug Fixes
+
+* **OPEN-11883:** snapshot attachment bytes and walk all plain-object values ([90c248f](https://github.com/openlayer-ai/openlayer-ts/commit/90c248febc996ffc44e8c6c06d190e75058d113a))
+* **OPEN-12792:** redact credentials from Speech errors; label audio by its real encoding ([2dca55f](https://github.com/openlayer-ai/openlayer-ts/commit/2dca55f26a13af10017023131686e857d63c1df9))
+* **OPEN-12792:** trace a Speech call once when the caller's callback throws ([3c7085e](https://github.com/openlayer-ai/openlayer-ts/commit/3c7085e370f79a4d1e5440f246ffc1294cb6e0e2))
+
+
+### Documentation
+
+* **OPEN-11883:** add an attachments tracing example ([75c7e55](https://github.com/openlayer-ai/openlayer-ts/commit/75c7e552418e65461bbd286a3bcc7f3a6fd0a7cd))
+
 ## [0.31.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.30.1...v0.31.0) (2026-09-21)
 
 
