@@ -318,6 +318,11 @@ export function configure(options: ConfigureOptions): void {
   attachmentUploader = null;
 }
 
+/** Whether ``attachmentUploadEnabled`` is configured (integrations use it to decide whether to capture media). */
+export function isAttachmentUploadEnabled(): boolean {
+  return configuredAttachmentUploadEnabled;
+}
+
 /**
  * Get or lazily create the attachment uploader, or null when attachment uploads
  * are disabled or there is no client to upload with (publishing disabled).

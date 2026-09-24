@@ -1,3 +1,4 @@
+export * from './azureSpeechTracer';
 export * from './bedrockAgentTracer';
 export * from './claudeAgentSdk';
 export * from './googleGenAiTracer';

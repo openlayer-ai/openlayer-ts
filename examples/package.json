@@ -15,6 +15,7 @@
     "@langchain/openai": "^0.6.17",
     "form-data": "^4.0.4",
     "langchain": "^0.3.37",
+    "microsoft-cognitiveservices-speech-sdk": "^1.51.0",
     "openai": "^4.104.0",
     "openlayer": "^0.22.2"
   },
