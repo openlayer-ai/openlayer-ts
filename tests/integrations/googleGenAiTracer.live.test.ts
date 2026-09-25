@@ -5,17 +5,24 @@
  * publish path, and reads the row back to confirm the backend priced it — the
  * assertions run against the stored row, not against local objects.
  *
- * Two independently guarded suites:
+ * Two independently guarded suites, both skipped unless the Openlayer variables
+ * below are all set:
  *   - AI Studio, enabled by ``GOOGLE_API_KEY`` / ``GEMINI_API_KEY``
  *   - Vertex AI, enabled by ``GOOGLE_CLOUD_PROJECT`` (needs Application Default
  *     Credentials: ``gcloud auth application-default login``)
  *
  * Env it expects:
+ *   OPENLAYER_LIVE_TESTS=1          — explicit opt-in, so a stray key can't enable it
+ *   OPENLAYER_API_KEY               — Openlayer ingest key
+ *   OPENLAYER_BASE_URL              — e.g. https://api.openlayer.com/v1; no default,
+ *                                     so the target is always a deliberate choice
+ *   OPENLAYER_INFERENCE_PIPELINE_ID — destination pipeline
  *   GOOGLE_API_KEY / GEMINI_API_KEY — enables the AI Studio suite
  *   GOOGLE_CLOUD_PROJECT           — enables the Vertex suite
  *   GOOGLE_CLOUD_LOCATION          — Vertex region, defaults to us-central1
- *   OPENLAYER_API_KEY               — Openlayer ingest key
- *   OPENLAYER_INFERENCE_PIPELINE_ID — destination pipeline
+ *
+ * Run this file on its own (e.g. ``yarn test tests/integrations/googleGenAiTracer.live.test.ts``): the
+ * generated tests in tests/index.test.ts expect OPENLAYER_BASE_URL to be unset.
  *
  * The Vertex suite must be run with ``--experimental-vm-modules``:
  *
@@ -33,21 +40,29 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { traceGoogleGenAI } from '../../src/lib/integrations/googleGenAiTracer';
 import trace, { getCurrentTrace } from '../../src/lib/tracing/tracer';
 
+// Trimmed like the client's readEnv: a blank OPENLAYER_BASE_URL must not pass the
+// gate, or the client would fall back to its production default.
+const env = (name: string) => process.env[name]?.trim();
+const openlayerReady = Boolean(
+  env('OPENLAYER_LIVE_TESTS') === '1' &&
+    env('OPENLAYER_API_KEY') &&
+    env('OPENLAYER_BASE_URL') &&
+    env('OPENLAYER_INFERENCE_PIPELINE_ID'),
+);
+
 // Kept as a plain `string` rather than `string | undefined`: the repo compiles
 // with `exactOptionalPropertyTypes`, so `GoogleGenAIOptions.apiKey` rejects
 // `undefined` outright. The empty string simply never reaches the client,
 // because `itLive` skips every test in that case.
 const apiKey = process.env['GOOGLE_API_KEY'] ?? process.env['GEMINI_API_KEY'] ?? '';
-const itLive = apiKey ? it : it.skip;
+const itLive = openlayerReady && apiKey ? it : it.skip;
 
 // Vertex needs a GCP project plus Application Default Credentials
 // (`gcloud auth application-default login`) rather than an API key, so it is
 // guarded separately from the AI Studio tests above.
 const vertexProject = process.env['GOOGLE_CLOUD_PROJECT'] ?? '';
 const vertexLocation = process.env['GOOGLE_CLOUD_LOCATION'] ?? 'us-central1';
-const itVertex = vertexProject ? it : it.skip;
-
-const PIPELINE_ID = 'cb47e4f7-15a0-4e70-bd6e-7b1b4b54e434';
+const itVertex = openlayerReady && vertexProject ? it : it.skip;
 
 /**
  * Poll the row back until it satisfies `isReady`.
@@ -59,7 +74,9 @@ const PIPELINE_ID = 'cb47e4f7-15a0-4e70-bd6e-7b1b4b54e434';
  * mere existence.
  */
 async function fetchRow(inferenceId: string, isReady: (row: any) => boolean = () => true): Promise<any> {
-  const url = `https://api.openlayer.com/v1/inference-pipelines/${process.env['OPENLAYER_INFERENCE_PIPELINE_ID']}/rows?inferenceId=${inferenceId}`;
+  // Same base URL the tracer publishes to; it already ends in /v1.
+  const baseURL = env('OPENLAYER_BASE_URL')!.replace(/\/+$/, '');
+  const url = `${baseURL}/inference-pipelines/${process.env['OPENLAYER_INFERENCE_PIPELINE_ID']}/rows?inferenceId=${inferenceId}`;
   let lastSeen: any;
   for (let attempt = 0; attempt < 12; attempt++) {
     const res = await fetch(url, {
@@ -114,7 +131,6 @@ describe('googleGenAiTracer live integration', () => {
   itLive(
     'publishes a priced row for a real gemini-2.5-flash call',
     async () => {
-      process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= PIPELINE_ID;
       delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 
       const client = traceGoogleGenAI(new GoogleGenAI({ apiKey }));
@@ -151,7 +167,6 @@ describe('googleGenAiTracer live integration', () => {
   itLive(
     'publishes a priced row for a real streaming call',
     async () => {
-      process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= PIPELINE_ID;
       delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 
       const client = traceGoogleGenAI(new GoogleGenAI({ apiKey }));
@@ -187,7 +202,6 @@ describe('googleGenAiTracer live integration', () => {
   itLive(
     'publishes a priced row carrying the function call as output',
     async () => {
-      process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= PIPELINE_ID;
       delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 
       const client = traceGoogleGenAI(new GoogleGenAI({ apiKey }));
@@ -245,7 +259,6 @@ describe('googleGenAiTracer live integration', () => {
       // and dispatches through `models.generateContent` at call time, so every
       // turn should become its own step. Only the real SDK can prove that
       // coupling still holds, hence a live test rather than a unit test.
-      process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= PIPELINE_ID;
       delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 
       const client = traceGoogleGenAI(new GoogleGenAI({ apiKey }));
@@ -307,7 +320,6 @@ describe('googleGenAiTracer live integration (Vertex AI)', () => {
 
   /** Run one traced Vertex call and return its stored chat-completion step. */
   async function tracedVertexStep(model: string, options: { streaming?: boolean } = {}): Promise<any> {
-    process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= PIPELINE_ID;
     delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 
     const client = vertexClient();
