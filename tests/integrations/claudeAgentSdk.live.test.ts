@@ -1,28 +1,43 @@
 /**
  * Live integration test for the Claude Agent SDK Openlayer wrapper.
  *
- * Skipped unless ``ANTHROPIC_API_KEY`` is set in the environment. When run,
- * it exercises the full real-world path: the actual ``@anthropic-ai/claude-agent-sdk``
- * (which boots its bundled Claude Code subprocess), the actual Openlayer
- * publish path, and the entire wrapper end-to-end.
+ * Skipped unless every variable below is set. When run, it exercises the full
+ * real-world path: the actual ``@anthropic-ai/claude-agent-sdk`` (which boots
+ * its bundled Claude Code subprocess), the actual Openlayer publish path, and
+ * the entire wrapper end-to-end.
  *
- * Env it expects:
- *   ANTHROPIC_API_KEY               — required to enable the test
+ * Env it expects (all required):
+ *   OPENLAYER_LIVE_TESTS=1          — explicit opt-in, so a stray key can't enable it
+ *   ANTHROPIC_API_KEY               — Anthropic credentials
  *   OPENLAYER_API_KEY               — Openlayer ingest key
+ *   OPENLAYER_BASE_URL              — e.g. https://api.openlayer.com/v1; no default,
+ *                                     so the target is always a deliberate choice
  *   OPENLAYER_INFERENCE_PIPELINE_ID — destination pipeline
+ *
+ * Run this file on its own (e.g. ``yarn test tests/integrations/claudeAgentSdk.live.test.ts``): the
+ * generated tests in tests/index.test.ts expect OPENLAYER_BASE_URL to be unset.
  */
 
 import { tracedQuery } from '../../src/lib/integrations/claudeAgentSdk';
 
-const itLive = process.env['ANTHROPIC_API_KEY'] ? it : it.skip;
+// Trimmed like the client's readEnv: a blank OPENLAYER_BASE_URL must not pass the
+// gate, or the client would fall back to its production default.
+const env = (name: string) => process.env[name]?.trim();
+const itLive =
+  (
+    env('OPENLAYER_LIVE_TESTS') === '1' &&
+    env('ANTHROPIC_API_KEY') &&
+    env('OPENLAYER_API_KEY') &&
+    env('OPENLAYER_BASE_URL') &&
+    env('OPENLAYER_INFERENCE_PIPELINE_ID')
+  ) ?
+    it
+  : it.skip;
 
 describe('claudeAgentSdk live integration', () => {
   itLive(
     'produces a valid trace for a one-turn query against claude-haiku-4-5',
     async () => {
-      // Defaults — only the API key is required from the caller; everything
-      // else has a sensible value for the project's test pipeline.
-      process.env['OPENLAYER_INFERENCE_PIPELINE_ID'] ??= 'cb47e4f7-15a0-4e70-bd6e-7b1b4b54e434';
       // Don't disable publish — this test wants to publish.
       delete process.env['OPENLAYER_DISABLE_PUBLISH'];
 

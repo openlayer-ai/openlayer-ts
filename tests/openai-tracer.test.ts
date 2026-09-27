@@ -269,7 +269,7 @@ describe('OpenAI Tracer', () => {
     });
 
     it('should handle response with function calls', async () => {
-      const mockResponse: OpenAI.Responses.Response = {
+      const mockResponse = {
         id: 'resp-123',
         object: 'response',
         created_at: 1677652288,
@@ -278,13 +278,12 @@ describe('OpenAI Tracer', () => {
         output: [
           {
             type: 'function_call',
-            id: 'call_123',
+            id: 'fc_123',
+            call_id: 'call_123',
             status: 'completed',
-            function: {
-              name: 'get_weather',
-              arguments: '{"location": "San Francisco"}',
-            },
-          } as any,
+            name: 'get_weather',
+            arguments: '{"location": "San Francisco"}',
+          },
         ],
         usage: {
           input_tokens: 15,
@@ -302,7 +301,7 @@ describe('OpenAI Tracer', () => {
         tools: [],
         error: null,
         incomplete_details: null,
-      } as any;
+      } satisfies OpenAI.Responses.Response;
 
       mockOpenAI.responses.create.mockResolvedValue(mockResponse);
 
@@ -313,16 +312,15 @@ describe('OpenAI Tracer', () => {
         tools: [
           {
             type: 'function',
-            function: {
-              name: 'get_weather',
-              description: 'Get weather',
-              parameters: {
-                type: 'object',
-                properties: { location: { type: 'string' } },
-                required: ['location'],
-              },
+            name: 'get_weather',
+            description: 'Get weather',
+            parameters: {
+              type: 'object',
+              properties: { location: { type: 'string' } },
+              required: ['location'],
             },
-          } as any,
+            strict: false,
+          },
         ],
       });
 
@@ -330,7 +328,11 @@ describe('OpenAI Tracer', () => {
         expect.objectContaining({
           name: 'OpenAI Response',
           provider: 'OpenAI',
-          output: expect.stringContaining('get_weather'),
+          output: JSON.stringify(
+            { name: 'get_weather', arguments: '{"location": "San Francisco"}' },
+            null,
+            2,
+          ),
         }),
       );
     });

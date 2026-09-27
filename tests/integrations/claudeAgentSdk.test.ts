@@ -7,7 +7,7 @@
  * tracer's in-memory ``Trace`` object after the wrapper finishes.
  *
  * Live tests live alongside in ``claudeAgentSdk.live.test.ts`` and skip
- * unless ``ANTHROPIC_API_KEY`` is set.
+ * unless ``OPENLAYER_LIVE_TESTS=1`` and the credentials listed there are set.
  */
 import { getCurrentTrace } from '../../src/lib/tracing/tracer';
 import {
