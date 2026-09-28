@@ -1,0 +1,55 @@
+# Separate from the generated ci.yml. stlc keeps workflow files across builds, but
+# `stlc build --rewrite-scaffold` would drop this one; re-add it after such a run.
+name: Tests
+on:
+  # No job-level `if:` (unlike ci.yml): a job skipped on pull_request counts as passing
+  # for required checks, and the PRs to gate (promote, release-please) are same-repo.
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # A new PR push cancels the old run. Other runs get a group per commit: GitHub also
+  # cancels a queued run when a newer one joins its group, and a cancelled run on main
+  # would fail the required check for a good commit.
+  group: test-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    timeout-minutes: 10
+    name: full suite (node24)
+    runs-on: ${{ github.repository == 'stainless-sdks/openlayer-typescript' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # Also needed by the mock server, which scripts/mock installs with `npm exec`.
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      # Frozen, unlike ci.yml: test the locked tree and fail on lockfile drift.
+      - name: Bootstrap
+        run: ./scripts/bootstrap --frozen-lockfile
+
+      # A CLI pattern replaces jest.config.ts's ['scripts'] instead of adding to it, so
+      # pass both. Live tests are opt-in (OPENLAYER_LIVE_TESTS=1) and need secrets.
+      - name: Run tests
+        run: ./scripts/test --testPathIgnorePatterns scripts '\.live\.'
+
+  # The one check to require in rulesets, so jobs can be added or renamed freely.
+  # always(), not !cancelled(): a skipped required check would count as passing.
+  required:
+    if: always()
+    needs: [test]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = success
