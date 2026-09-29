@@ -8,7 +8,7 @@ import { path } from '../../internal/utils/path';
 
 export class Rows extends APIResource {
   /**
-   * Fetch a single inference pipeline row by inference ID, including OTel steps.
+   * Retrieve a row by inference ID, including OTel steps.
    *
    * @example
    * ```ts
@@ -31,7 +31,7 @@ export class Rows extends APIResource {
   }
 
   /**
-   * Update an inference data point in an inference pipeline.
+   * Update a row in an inference pipeline.
    *
    * @example
    * ```ts
@@ -58,7 +58,7 @@ export class Rows extends APIResource {
   }
 
   /**
-   * A list of rows for an inference pipeline.
+   * List the rows in an inference pipeline.
    *
    * @example
    * ```ts
@@ -81,8 +81,7 @@ export class Rows extends APIResource {
   }
 
   /**
-   * Delete a single inference pipeline row by inference ID. Only project admins can
-   * perform this action.
+   * Delete a row by inference ID.
    *
    * @example
    * ```ts

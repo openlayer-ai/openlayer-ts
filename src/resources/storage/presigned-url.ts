@@ -6,7 +6,7 @@ import { RequestOptions } from '../../internal/request-options';
 
 export class PresignedURL extends APIResource {
   /**
-   * Retrieve a presigned url to post storage artifacts.
+   * Get a presigned url to upload a file.
    */
   create(params: PresignedURLCreateParams, options?: RequestOptions): APIPromise<PresignedURLCreateResponse> {
     const { objectName } = params;
@@ -14,16 +14,7 @@ export class PresignedURL extends APIResource {
   }
 
   /**
-   * Exchange a `storageUri` for a short-lived presigned url you can download the
-   * object from.
-   *
-   * Use it to collect anything the platform stored on your behalf -- for example the
-   * archive a framework export leaves behind, whose `storageUri` comes back in the
-   * background task's `outputs`.
-   *
-   * The workspace is taken from the API key, so there is nothing else to send. The
-   * url is only issued for objects your workspace owns, and `404` covers both "no
-   * such object" and "not yours".
+   * Get a short-lived download url for a stored object.
    */
   retrieve(
     query: PresignedURLRetrieveParams,
@@ -66,7 +57,8 @@ export interface PresignedURLCreateParams {
 
 export interface PresignedURLRetrieveParams {
   /**
-   * The object's storage uri.
+   * The object's storage uri, for example `outputs.storageUri` from a framework
+   * export's background task.
    */
   storageUri: string;
 }

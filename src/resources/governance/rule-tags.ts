@@ -9,10 +9,6 @@ export class RuleTags extends APIResource {
   /**
    * List the rule tags in a workspace.
    *
-   * Tags group rules across frameworks, for example by team or by control family.
-   * Use the ids returned here with the `tags` filter on
-   * [List rules](/api-reference/rest/governance/list-rules).
-   *
    * @example
    * ```ts
    * const ruleTags = await client.governance.ruleTags.list(
@@ -34,6 +30,10 @@ export interface RuleTagListResponse {
 }
 
 export namespace RuleTagListResponse {
+  /**
+   * A label that groups rules across frameworks, for example by team or control
+   * family.
+   */
   export interface Item {
     /**
      * The rule tag id.
@@ -56,7 +56,7 @@ export namespace RuleTagListResponse {
     dateUpdated: string;
 
     /**
-     * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+     * Whether the tag is managed by Openlayer. These tags can't be deleted.
      */
     immutable: boolean;
 

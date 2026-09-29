@@ -27,7 +27,7 @@ export class InferencePipelines extends APIResource {
   testResults: TestResultsAPI.TestResults = new TestResultsAPI.TestResults(this._client);
 
   /**
-   * Retrieve inference pipeline.
+   * Retrieve an inference pipeline.
    *
    * @example
    * ```ts
@@ -46,7 +46,7 @@ export class InferencePipelines extends APIResource {
   }
 
   /**
-   * Update inference pipeline.
+   * Update an inference pipeline.
    *
    * @example
    * ```ts
@@ -65,7 +65,7 @@ export class InferencePipelines extends APIResource {
   }
 
   /**
-   * Delete inference pipeline.
+   * Delete an inference pipeline.
    *
    * @example
    * ```ts
@@ -82,12 +82,7 @@ export class InferencePipelines extends APIResource {
   }
 
   /**
-   * Get aggregated session data for an inference pipeline with pagination and
-   * metadata.
-   *
-   * Returns a list of sessions for the inference pipeline, including activity
-   * statistics such as record counts, token usage, cost, latency, and the first and
-   * last records.
+   * List the sessions in an inference pipeline, with their stats.
    *
    * @example
    * ```ts
@@ -111,11 +106,7 @@ export class InferencePipelines extends APIResource {
   }
 
   /**
-   * Get aggregated user data for an inference pipeline with pagination and metadata.
-   *
-   * Returns a list of users who have interacted with the inference pipeline,
-   * including their activity statistics such as session counts, record counts, token
-   * usage, and costs.
+   * List the users of an inference pipeline, with their stats.
    *
    * @example
    * ```ts
@@ -925,6 +916,10 @@ export interface InferencePipelineRetrieveSessionsResponse {
 }
 
 export namespace InferencePipelineRetrieveSessionsResponse {
+  /**
+   * A session in an inference pipeline, with its activity stats: record counts,
+   * token usage, cost, latency, and its first and last records.
+   */
   export interface Item {
     /**
      * The unique session identifier
@@ -996,6 +991,10 @@ export interface InferencePipelineRetrieveUsersResponse {
 }
 
 export namespace InferencePipelineRetrieveUsersResponse {
+  /**
+   * A user who has interacted with an inference pipeline, with their activity stats:
+   * session and record counts, token usage, and cost.
+   */
   export interface Item {
     /**
      * The unique user identifier
