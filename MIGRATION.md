@@ -54,6 +54,10 @@ client.parents.children.retrieve('c_456', { parent_id: 'p_123' });
 
 This affects the following methods:
 
+- `client.workspaces.apiKeys.retrieve()`
+- `client.workspaces.apiKeys.update()`
+- `client.workspaces.apiKeys.delete()`
+- `client.workspaces.apiKeys.rotate()`
 - `client.inferencePipelines.rows.retrieve()`
 - `client.inferencePipelines.rows.delete()`
 - `client.governance.frameworks.documents.retrieve()`

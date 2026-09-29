@@ -2,7 +2,19 @@
 
 import { APIResource } from '../../core/resource';
 import * as APIKeysAPI from './api-keys';
-import { APIKeyCreateParams, APIKeyCreateResponse, APIKeys } from './api-keys';
+import {
+  APIKeyCreateParams,
+  APIKeyCreateResponse,
+  APIKeyDeleteParams,
+  APIKeyListResponse,
+  APIKeyRetrieveParams,
+  APIKeyRetrieveResponse,
+  APIKeyRotateParams,
+  APIKeyRotateResponse,
+  APIKeyUpdateParams,
+  APIKeyUpdateResponse,
+  APIKeys,
+} from './api-keys';
 import * as InvitesAPI from './invites';
 import {
   InviteCreateParams,
@@ -262,6 +274,14 @@ export declare namespace Workspaces {
   export {
     APIKeys as APIKeys,
     type APIKeyCreateResponse as APIKeyCreateResponse,
+    type APIKeyRetrieveResponse as APIKeyRetrieveResponse,
+    type APIKeyUpdateResponse as APIKeyUpdateResponse,
+    type APIKeyListResponse as APIKeyListResponse,
+    type APIKeyRotateResponse as APIKeyRotateResponse,
     type APIKeyCreateParams as APIKeyCreateParams,
+    type APIKeyRetrieveParams as APIKeyRetrieveParams,
+    type APIKeyUpdateParams as APIKeyUpdateParams,
+    type APIKeyDeleteParams as APIKeyDeleteParams,
+    type APIKeyRotateParams as APIKeyRotateParams,
   };
 }
