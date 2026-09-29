@@ -7,11 +7,7 @@ import { path } from '../../internal/utils/path';
 
 export class RuleStats extends APIResource {
   /**
-   * Get a compliance roll-up for a workspace: how many rules exist, and how many of
-   * their results are passing, failing, pending, or due for renewal.
-   *
-   * Counts respect the filters you pass, so `frameworkId` gives you a single
-   * framework's overall compliance and `projectId` gives you a single project's.
+   * Get compliance statistics for a workspace.
    *
    * @example
    * ```ts
@@ -29,6 +25,11 @@ export class RuleStats extends APIResource {
   }
 }
 
+/**
+ * Counts of rules and their results by status. Narrowed by the request's filters,
+ * so `frameworkId` gives one framework's compliance and `projectId` gives one
+ * project's.
+ */
 export interface RuleStatRetrieveResponse {
   /**
    * Counts of rule results, after any filters in the request, with breakdowns by the

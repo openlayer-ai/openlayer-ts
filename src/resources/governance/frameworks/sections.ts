@@ -7,11 +7,7 @@ import { path } from '../../../internal/utils/path';
 
 export class Sections extends APIResource {
   /**
-   * List the rules mapped to a section of a framework document.
-   *
-   * Pass `includeSubsectionRules=true` to also return the rules mapped to the
-   * section's subsections, which is how you get every rule covering a requirement
-   * and everything under it.
+   * List the rules mapped to a document section.
    *
    * @example
    * ```ts
@@ -40,6 +36,12 @@ export interface SectionListRulesResponse {
 }
 
 export namespace SectionListRulesResponse {
+  /**
+   * A single requirement Openlayer tracks. `platform` rules are evaluated
+   * automatically from the state of your workspace, and `evidence` rules are
+   * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+   * none.
+   */
   export interface Item {
     /**
      * The rule id.
@@ -63,13 +65,15 @@ export namespace SectionListRulesResponse {
 
     /**
      * Whether the rule is evaluated once for the whole workspace, or once per project
-     * the rule's frameworks apply to.
+     * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+     * the rule is created.
      */
     scope: 'project' | 'workspace';
 
     /**
      * `platform` rules are evaluated automatically from the state of your Openlayer
-     * workspace. `evidence` rules are satisfied by attaching evidence.
+     * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+     * rule is created.
      */
     type: 'platform' | 'evidence';
 
@@ -84,14 +88,16 @@ export namespace SectionListRulesResponse {
     assigneeId?: string | null;
 
     /**
-     * Configuration for the platform check, when the automation takes parameters.
+     * Configuration for the platform check, when the automation takes parameters. Omit
+     * or `null` for evidence rules. Fixed once the rule is created.
      */
     automationParams?: { [key: string]: unknown } | null;
 
     /**
      * Which workspace signal a platform rule checks, for example
-     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-     * evidence rules.
+     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+     * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+     * created.
      */
     automationType?: string | null;
 
@@ -106,7 +112,8 @@ export namespace SectionListRulesResponse {
     description?: string | null;
 
     /**
-     * The kind of evidence that satisfies the rule. `null` for platform rules.
+     * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+     * `null` for platform rules. Fixed once the rule is created.
      */
     evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -116,13 +123,15 @@ export namespace SectionListRulesResponse {
     frameworks?: Array<Item.Framework>;
 
     /**
-     * Whether the rule is managed by Openlayer and cannot be edited.
+     * Whether the rule is managed by Openlayer. These rules can't be renamed or
+     * deleted; set `deactivated` to exclude one from compliance instead.
      */
     immutable?: boolean;
 
     /**
      * How often evidence must be renewed, in days. Once evidence is older than this,
-     * the rule result becomes `due_soon` and then `failing`.
+     * the rule result becomes `due_soon` and then `failing`. The window restarts
+     * whenever evidence is attached. Omit or `null` for platform rules.
      */
     renewalCadenceDays?: number | null;
 
@@ -186,6 +195,10 @@ export namespace SectionListRulesResponse {
       }
     }
 
+    /**
+     * The compliance status of one rule for one entity: a project for project-scoped
+     * rules, or the workspace for workspace-scoped rules.
+     */
     export interface Result {
       /**
        * The rule result id.
@@ -203,7 +216,8 @@ export namespace SectionListRulesResponse {
       dateUpdated: string;
 
       /**
-       * Whether this result is excluded from compliance calculations.
+       * Whether this result is excluded from compliance calculations. Excludes just this
+       * result, without deactivating the rule everywhere.
        */
       deactivated: boolean;
 
@@ -213,7 +227,8 @@ export namespace SectionListRulesResponse {
       ruleId: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -258,7 +273,7 @@ export namespace SectionListRulesResponse {
       dateOfRenewal?: string | null;
 
       /**
-       * Why the result was excluded.
+       * Why the result was excluded. Required when setting `deactivated` to `true`.
        */
       deactivatedReason?: string | null;
 
@@ -278,7 +293,8 @@ export namespace SectionListRulesResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -287,7 +303,8 @@ export namespace SectionListRulesResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -303,6 +320,10 @@ export namespace SectionListRulesResponse {
       total?: number;
     }
 
+    /**
+     * A label that groups rules across frameworks, for example by team or control
+     * family.
+     */
     export interface Tag {
       /**
        * The rule tag id.
@@ -325,7 +346,7 @@ export namespace SectionListRulesResponse {
       dateUpdated: string;
 
       /**
-       * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+       * Whether the tag is managed by Openlayer. These tags can't be deleted.
        */
       immutable: boolean;
 

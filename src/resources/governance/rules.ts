@@ -8,19 +8,7 @@ import { path } from '../../internal/utils/path';
 
 export class Rules extends APIResource {
   /**
-   * Create a governance rule in a workspace.
-   *
-   * A rule is one requirement. Its `type` decides how it is satisfied, and the two
-   * types accept different fields:
-   *
-   * - `platform` rules are evaluated automatically from the state of your workspace.
-   *   Set `automationType` to the signal to check. Their `scope` must be `project`,
-   *   and `evidenceType` and `renewalCadenceDays` must be omitted or `null`.
-   * - `evidence` rules are satisfied by attaching evidence. Set `evidenceType` to
-   *   the kind of evidence that satisfies them. `automationType` and
-   *   `automationParams` must be omitted or `null`.
-   *
-   * A new rule belongs to no framework. Map it to one from the Openlayer app.
+   * Create a rule in a workspace.
    *
    * @example
    * ```ts
@@ -43,8 +31,7 @@ export class Rules extends APIResource {
   }
 
   /**
-   * Retrieve a governance rule by its id, including the frameworks it belongs to and
-   * its tags.
+   * Retrieve a rule with its frameworks and tags.
    *
    * @example
    * ```ts
@@ -58,12 +45,7 @@ export class Rules extends APIResource {
   }
 
   /**
-   * Update a governance rule. Only the fields you send are changed.
-   *
-   * Rules that ship with Openlayer report `immutable: true` and cannot be edited.
-   *
-   * A rule's `scope`, `type`, `evidenceType`, and automation are fixed once it
-   * exists -- create a new rule instead of converting one.
+   * Update a rule.
    *
    * @example
    * ```ts
@@ -77,16 +59,7 @@ export class Rules extends APIResource {
   }
 
   /**
-   * List the governance rules in a workspace.
-   *
-   * A rule is a single requirement Openlayer tracks. `platform` rules are evaluated
-   * automatically from the state of your workspace; `evidence` rules are satisfied
-   * by attaching evidence. A rule can belong to several frameworks at once, and
-   * rules that belong to none are returned too unless you pass
-   * `includeUnframed=false`.
-   *
-   * Pass `includeResults=true` to get each rule's compliance results inline instead
-   * of fetching them separately.
+   * List the rules in a workspace.
    *
    * @example
    * ```ts
@@ -104,11 +77,7 @@ export class Rules extends APIResource {
   }
 
   /**
-   * Delete a governance rule and its rule results.
-   *
-   * Only rules you created can be deleted. Rules that ship with Openlayer report
-   * `immutable: true` and cannot be deleted -- exclude one from compliance by
-   * setting `deactivated` with `PUT /rules/{ruleId}` instead.
+   * Delete a rule and its results.
    *
    * @example
    * ```ts
@@ -125,6 +94,12 @@ export class Rules extends APIResource {
   }
 }
 
+/**
+ * A single requirement Openlayer tracks. `platform` rules are evaluated
+ * automatically from the state of your workspace, and `evidence` rules are
+ * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+ * none.
+ */
 export interface RuleCreateResponse {
   /**
    * The rule id.
@@ -148,13 +123,15 @@ export interface RuleCreateResponse {
 
   /**
    * Whether the rule is evaluated once for the whole workspace, or once per project
-   * the rule's frameworks apply to.
+   * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+   * the rule is created.
    */
   scope: 'project' | 'workspace';
 
   /**
    * `platform` rules are evaluated automatically from the state of your Openlayer
-   * workspace. `evidence` rules are satisfied by attaching evidence.
+   * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+   * rule is created.
    */
   type: 'platform' | 'evidence';
 
@@ -169,14 +146,16 @@ export interface RuleCreateResponse {
   assigneeId?: string | null;
 
   /**
-   * Configuration for the platform check, when the automation takes parameters.
+   * Configuration for the platform check, when the automation takes parameters. Omit
+   * or `null` for evidence rules. Fixed once the rule is created.
    */
   automationParams?: { [key: string]: unknown } | null;
 
   /**
    * Which workspace signal a platform rule checks, for example
-   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-   * evidence rules.
+   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+   * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+   * created.
    */
   automationType?: string | null;
 
@@ -191,7 +170,8 @@ export interface RuleCreateResponse {
   description?: string | null;
 
   /**
-   * The kind of evidence that satisfies the rule. `null` for platform rules.
+   * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+   * `null` for platform rules. Fixed once the rule is created.
    */
   evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -201,13 +181,15 @@ export interface RuleCreateResponse {
   frameworks?: Array<RuleCreateResponse.Framework>;
 
   /**
-   * Whether the rule is managed by Openlayer and cannot be edited.
+   * Whether the rule is managed by Openlayer. These rules can't be renamed or
+   * deleted; set `deactivated` to exclude one from compliance instead.
    */
   immutable?: boolean;
 
   /**
    * How often evidence must be renewed, in days. Once evidence is older than this,
-   * the rule result becomes `due_soon` and then `failing`.
+   * the rule result becomes `due_soon` and then `failing`. The window restarts
+   * whenever evidence is attached. Omit or `null` for platform rules.
    */
   renewalCadenceDays?: number | null;
 
@@ -271,6 +253,10 @@ export namespace RuleCreateResponse {
     }
   }
 
+  /**
+   * The compliance status of one rule for one entity: a project for project-scoped
+   * rules, or the workspace for workspace-scoped rules.
+   */
   export interface Result {
     /**
      * The rule result id.
@@ -288,7 +274,8 @@ export namespace RuleCreateResponse {
     dateUpdated: string;
 
     /**
-     * Whether this result is excluded from compliance calculations.
+     * Whether this result is excluded from compliance calculations. Excludes just this
+     * result, without deactivating the rule everywhere.
      */
     deactivated: boolean;
 
@@ -298,7 +285,8 @@ export namespace RuleCreateResponse {
     ruleId: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -343,7 +331,7 @@ export namespace RuleCreateResponse {
     dateOfRenewal?: string | null;
 
     /**
-     * Why the result was excluded.
+     * Why the result was excluded. Required when setting `deactivated` to `true`.
      */
     deactivatedReason?: string | null;
 
@@ -363,7 +351,8 @@ export namespace RuleCreateResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -372,7 +361,8 @@ export namespace RuleCreateResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -388,6 +378,10 @@ export namespace RuleCreateResponse {
     total?: number;
   }
 
+  /**
+   * A label that groups rules across frameworks, for example by team or control
+   * family.
+   */
   export interface Tag {
     /**
      * The rule tag id.
@@ -410,7 +404,7 @@ export namespace RuleCreateResponse {
     dateUpdated: string;
 
     /**
-     * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+     * Whether the tag is managed by Openlayer. These tags can't be deleted.
      */
     immutable: boolean;
 
@@ -431,6 +425,12 @@ export namespace RuleCreateResponse {
   }
 }
 
+/**
+ * A single requirement Openlayer tracks. `platform` rules are evaluated
+ * automatically from the state of your workspace, and `evidence` rules are
+ * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+ * none.
+ */
 export interface RuleRetrieveResponse {
   /**
    * The rule id.
@@ -454,13 +454,15 @@ export interface RuleRetrieveResponse {
 
   /**
    * Whether the rule is evaluated once for the whole workspace, or once per project
-   * the rule's frameworks apply to.
+   * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+   * the rule is created.
    */
   scope: 'project' | 'workspace';
 
   /**
    * `platform` rules are evaluated automatically from the state of your Openlayer
-   * workspace. `evidence` rules are satisfied by attaching evidence.
+   * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+   * rule is created.
    */
   type: 'platform' | 'evidence';
 
@@ -475,14 +477,16 @@ export interface RuleRetrieveResponse {
   assigneeId?: string | null;
 
   /**
-   * Configuration for the platform check, when the automation takes parameters.
+   * Configuration for the platform check, when the automation takes parameters. Omit
+   * or `null` for evidence rules. Fixed once the rule is created.
    */
   automationParams?: { [key: string]: unknown } | null;
 
   /**
    * Which workspace signal a platform rule checks, for example
-   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-   * evidence rules.
+   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+   * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+   * created.
    */
   automationType?: string | null;
 
@@ -497,7 +501,8 @@ export interface RuleRetrieveResponse {
   description?: string | null;
 
   /**
-   * The kind of evidence that satisfies the rule. `null` for platform rules.
+   * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+   * `null` for platform rules. Fixed once the rule is created.
    */
   evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -507,13 +512,15 @@ export interface RuleRetrieveResponse {
   frameworks?: Array<RuleRetrieveResponse.Framework>;
 
   /**
-   * Whether the rule is managed by Openlayer and cannot be edited.
+   * Whether the rule is managed by Openlayer. These rules can't be renamed or
+   * deleted; set `deactivated` to exclude one from compliance instead.
    */
   immutable?: boolean;
 
   /**
    * How often evidence must be renewed, in days. Once evidence is older than this,
-   * the rule result becomes `due_soon` and then `failing`.
+   * the rule result becomes `due_soon` and then `failing`. The window restarts
+   * whenever evidence is attached. Omit or `null` for platform rules.
    */
   renewalCadenceDays?: number | null;
 
@@ -577,6 +584,10 @@ export namespace RuleRetrieveResponse {
     }
   }
 
+  /**
+   * The compliance status of one rule for one entity: a project for project-scoped
+   * rules, or the workspace for workspace-scoped rules.
+   */
   export interface Result {
     /**
      * The rule result id.
@@ -594,7 +605,8 @@ export namespace RuleRetrieveResponse {
     dateUpdated: string;
 
     /**
-     * Whether this result is excluded from compliance calculations.
+     * Whether this result is excluded from compliance calculations. Excludes just this
+     * result, without deactivating the rule everywhere.
      */
     deactivated: boolean;
 
@@ -604,7 +616,8 @@ export namespace RuleRetrieveResponse {
     ruleId: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -649,7 +662,7 @@ export namespace RuleRetrieveResponse {
     dateOfRenewal?: string | null;
 
     /**
-     * Why the result was excluded.
+     * Why the result was excluded. Required when setting `deactivated` to `true`.
      */
     deactivatedReason?: string | null;
 
@@ -669,7 +682,8 @@ export namespace RuleRetrieveResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -678,7 +692,8 @@ export namespace RuleRetrieveResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -694,6 +709,10 @@ export namespace RuleRetrieveResponse {
     total?: number;
   }
 
+  /**
+   * A label that groups rules across frameworks, for example by team or control
+   * family.
+   */
   export interface Tag {
     /**
      * The rule tag id.
@@ -716,7 +735,7 @@ export namespace RuleRetrieveResponse {
     dateUpdated: string;
 
     /**
-     * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+     * Whether the tag is managed by Openlayer. These tags can't be deleted.
      */
     immutable: boolean;
 
@@ -737,6 +756,12 @@ export namespace RuleRetrieveResponse {
   }
 }
 
+/**
+ * A single requirement Openlayer tracks. `platform` rules are evaluated
+ * automatically from the state of your workspace, and `evidence` rules are
+ * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+ * none.
+ */
 export interface RuleUpdateResponse {
   /**
    * The rule id.
@@ -760,13 +785,15 @@ export interface RuleUpdateResponse {
 
   /**
    * Whether the rule is evaluated once for the whole workspace, or once per project
-   * the rule's frameworks apply to.
+   * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+   * the rule is created.
    */
   scope: 'project' | 'workspace';
 
   /**
    * `platform` rules are evaluated automatically from the state of your Openlayer
-   * workspace. `evidence` rules are satisfied by attaching evidence.
+   * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+   * rule is created.
    */
   type: 'platform' | 'evidence';
 
@@ -781,14 +808,16 @@ export interface RuleUpdateResponse {
   assigneeId?: string | null;
 
   /**
-   * Configuration for the platform check, when the automation takes parameters.
+   * Configuration for the platform check, when the automation takes parameters. Omit
+   * or `null` for evidence rules. Fixed once the rule is created.
    */
   automationParams?: { [key: string]: unknown } | null;
 
   /**
    * Which workspace signal a platform rule checks, for example
-   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-   * evidence rules.
+   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+   * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+   * created.
    */
   automationType?: string | null;
 
@@ -803,7 +832,8 @@ export interface RuleUpdateResponse {
   description?: string | null;
 
   /**
-   * The kind of evidence that satisfies the rule. `null` for platform rules.
+   * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+   * `null` for platform rules. Fixed once the rule is created.
    */
   evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -813,13 +843,15 @@ export interface RuleUpdateResponse {
   frameworks?: Array<RuleUpdateResponse.Framework>;
 
   /**
-   * Whether the rule is managed by Openlayer and cannot be edited.
+   * Whether the rule is managed by Openlayer. These rules can't be renamed or
+   * deleted; set `deactivated` to exclude one from compliance instead.
    */
   immutable?: boolean;
 
   /**
    * How often evidence must be renewed, in days. Once evidence is older than this,
-   * the rule result becomes `due_soon` and then `failing`.
+   * the rule result becomes `due_soon` and then `failing`. The window restarts
+   * whenever evidence is attached. Omit or `null` for platform rules.
    */
   renewalCadenceDays?: number | null;
 
@@ -883,6 +915,10 @@ export namespace RuleUpdateResponse {
     }
   }
 
+  /**
+   * The compliance status of one rule for one entity: a project for project-scoped
+   * rules, or the workspace for workspace-scoped rules.
+   */
   export interface Result {
     /**
      * The rule result id.
@@ -900,7 +936,8 @@ export namespace RuleUpdateResponse {
     dateUpdated: string;
 
     /**
-     * Whether this result is excluded from compliance calculations.
+     * Whether this result is excluded from compliance calculations. Excludes just this
+     * result, without deactivating the rule everywhere.
      */
     deactivated: boolean;
 
@@ -910,7 +947,8 @@ export namespace RuleUpdateResponse {
     ruleId: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -955,7 +993,7 @@ export namespace RuleUpdateResponse {
     dateOfRenewal?: string | null;
 
     /**
-     * Why the result was excluded.
+     * Why the result was excluded. Required when setting `deactivated` to `true`.
      */
     deactivatedReason?: string | null;
 
@@ -975,7 +1013,8 @@ export namespace RuleUpdateResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -984,7 +1023,8 @@ export namespace RuleUpdateResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -1000,6 +1040,10 @@ export namespace RuleUpdateResponse {
     total?: number;
   }
 
+  /**
+   * A label that groups rules across frameworks, for example by team or control
+   * family.
+   */
   export interface Tag {
     /**
      * The rule tag id.
@@ -1022,7 +1066,7 @@ export namespace RuleUpdateResponse {
     dateUpdated: string;
 
     /**
-     * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+     * Whether the tag is managed by Openlayer. These tags can't be deleted.
      */
     immutable: boolean;
 
@@ -1048,6 +1092,12 @@ export interface RuleListResponse {
 }
 
 export namespace RuleListResponse {
+  /**
+   * A single requirement Openlayer tracks. `platform` rules are evaluated
+   * automatically from the state of your workspace, and `evidence` rules are
+   * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+   * none.
+   */
   export interface Item {
     /**
      * The rule id.
@@ -1071,13 +1121,15 @@ export namespace RuleListResponse {
 
     /**
      * Whether the rule is evaluated once for the whole workspace, or once per project
-     * the rule's frameworks apply to.
+     * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+     * the rule is created.
      */
     scope: 'project' | 'workspace';
 
     /**
      * `platform` rules are evaluated automatically from the state of your Openlayer
-     * workspace. `evidence` rules are satisfied by attaching evidence.
+     * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+     * rule is created.
      */
     type: 'platform' | 'evidence';
 
@@ -1092,14 +1144,16 @@ export namespace RuleListResponse {
     assigneeId?: string | null;
 
     /**
-     * Configuration for the platform check, when the automation takes parameters.
+     * Configuration for the platform check, when the automation takes parameters. Omit
+     * or `null` for evidence rules. Fixed once the rule is created.
      */
     automationParams?: { [key: string]: unknown } | null;
 
     /**
      * Which workspace signal a platform rule checks, for example
-     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-     * evidence rules.
+     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+     * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+     * created.
      */
     automationType?: string | null;
 
@@ -1114,7 +1168,8 @@ export namespace RuleListResponse {
     description?: string | null;
 
     /**
-     * The kind of evidence that satisfies the rule. `null` for platform rules.
+     * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+     * `null` for platform rules. Fixed once the rule is created.
      */
     evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -1124,13 +1179,15 @@ export namespace RuleListResponse {
     frameworks?: Array<Item.Framework>;
 
     /**
-     * Whether the rule is managed by Openlayer and cannot be edited.
+     * Whether the rule is managed by Openlayer. These rules can't be renamed or
+     * deleted; set `deactivated` to exclude one from compliance instead.
      */
     immutable?: boolean;
 
     /**
      * How often evidence must be renewed, in days. Once evidence is older than this,
-     * the rule result becomes `due_soon` and then `failing`.
+     * the rule result becomes `due_soon` and then `failing`. The window restarts
+     * whenever evidence is attached. Omit or `null` for platform rules.
      */
     renewalCadenceDays?: number | null;
 
@@ -1194,6 +1251,10 @@ export namespace RuleListResponse {
       }
     }
 
+    /**
+     * The compliance status of one rule for one entity: a project for project-scoped
+     * rules, or the workspace for workspace-scoped rules.
+     */
     export interface Result {
       /**
        * The rule result id.
@@ -1211,7 +1272,8 @@ export namespace RuleListResponse {
       dateUpdated: string;
 
       /**
-       * Whether this result is excluded from compliance calculations.
+       * Whether this result is excluded from compliance calculations. Excludes just this
+       * result, without deactivating the rule everywhere.
        */
       deactivated: boolean;
 
@@ -1221,7 +1283,8 @@ export namespace RuleListResponse {
       ruleId: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -1266,7 +1329,7 @@ export namespace RuleListResponse {
       dateOfRenewal?: string | null;
 
       /**
-       * Why the result was excluded.
+       * Why the result was excluded. Required when setting `deactivated` to `true`.
        */
       deactivatedReason?: string | null;
 
@@ -1286,7 +1349,8 @@ export namespace RuleListResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -1295,7 +1359,8 @@ export namespace RuleListResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -1311,6 +1376,10 @@ export namespace RuleListResponse {
       total?: number;
     }
 
+    /**
+     * A label that groups rules across frameworks, for example by team or control
+     * family.
+     */
     export interface Tag {
       /**
        * The rule tag id.
@@ -1333,7 +1402,7 @@ export namespace RuleListResponse {
       dateUpdated: string;
 
       /**
-       * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+       * Whether the tag is managed by Openlayer. These tags can't be deleted.
        */
       immutable: boolean;
 
@@ -1363,13 +1432,15 @@ export interface RuleCreateParams {
 
   /**
    * Whether the rule is evaluated once for the whole workspace, or once per project
-   * the rule's frameworks apply to.
+   * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+   * the rule is created.
    */
   scope: 'project' | 'workspace';
 
   /**
    * `platform` rules are evaluated automatically from the state of your Openlayer
-   * workspace. `evidence` rules are satisfied by attaching evidence.
+   * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+   * rule is created.
    */
   type: 'platform' | 'evidence';
 
@@ -1379,14 +1450,16 @@ export interface RuleCreateParams {
   assigneeId?: string | null;
 
   /**
-   * Configuration for the platform check, when the automation takes parameters.
+   * Configuration for the platform check, when the automation takes parameters. Omit
+   * or `null` for evidence rules. Fixed once the rule is created.
    */
   automationParams?: { [key: string]: unknown } | null;
 
   /**
    * Which workspace signal a platform rule checks, for example
-   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-   * evidence rules.
+   * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+   * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+   * created.
    */
   automationType?: string | null;
 
@@ -1401,13 +1474,15 @@ export interface RuleCreateParams {
   description?: string | null;
 
   /**
-   * The kind of evidence that satisfies the rule. `null` for platform rules.
+   * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+   * `null` for platform rules. Fixed once the rule is created.
    */
   evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
   /**
    * How often evidence must be renewed, in days. Once evidence is older than this,
-   * the rule result becomes `due_soon` and then `failing`.
+   * the rule result becomes `due_soon` and then `failing`. The window restarts
+   * whenever evidence is attached. Omit or `null` for platform rules.
    */
   renewalCadenceDays?: number | null;
 
@@ -1442,7 +1517,8 @@ export interface RuleUpdateParams {
 
   /**
    * How often evidence must be renewed, in days. Once evidence is older than this,
-   * the rule result becomes `due_soon` and then `failing`.
+   * the rule result becomes `due_soon` and then `failing`. The window restarts
+   * whenever evidence is attached. Omit or `null` for platform rules.
    */
   renewalCadenceDays?: number | null;
 

@@ -7,17 +7,18 @@ import { path } from '../internal/utils/path';
 
 export class BackgroundTasks extends APIResource {
   /**
-   * Retrieve a background task's status, progress and results.
-   *
-   * Endpoints that cannot answer within one request queue a task and hand back its
-   * id -- for example `POST /frameworks/{frameworkId}/export`. Poll this endpoint
-   * until `complete` is `true`, then read what the task produced from `outputs`.
+   * Retrieve a background task's status and outputs.
    */
   retrieve(taskID: string, options?: RequestOptions): APIPromise<BackgroundTaskRetrieveResponse> {
     return this._client.get(path`/background-tasks/${taskID}`, options);
   }
 }
 
+/**
+ * A job queued by an endpoint that can't answer within one request, such as a
+ * framework export. Poll it until `complete` is `true`, then read what it produced
+ * from `outputs`.
+ */
 export interface BackgroundTaskRetrieveResponse {
   /**
    * The background task id.

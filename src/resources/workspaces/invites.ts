@@ -25,7 +25,7 @@ export class Invites extends APIResource {
   }
 
   /**
-   * Retrieve a list of invites in a workspace.
+   * List the invites in a workspace.
    *
    * @example
    * ```ts

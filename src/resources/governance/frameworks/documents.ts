@@ -7,11 +7,7 @@ import { path } from '../../../internal/utils/path';
 
 export class Documents extends APIResource {
   /**
-   * Retrieve a framework document, including its sections, subsections, and the
-   * rules mapped to each.
-   *
-   * Each section and subsection carries a `ruleCount`, so you can tell which
-   * requirements have rules mapped to them before drilling in.
+   * Retrieve a framework document with its sections and rules.
    *
    * @example
    * ```ts
@@ -34,10 +30,6 @@ export class Documents extends APIResource {
   /**
    * List the documents attached to a framework.
    *
-   * A document holds the text of the standard the framework is based on, split into
-   * sections and subsections. Retrieve a single document to get that structure,
-   * along with the rules mapped to each part of it.
-   *
    * @example
    * ```ts
    * const documents =
@@ -55,6 +47,10 @@ export class Documents extends APIResource {
   }
 }
 
+/**
+ * The text of the standard a framework is based on, split into sections and
+ * subsections, with the rules mapped to each part.
+ */
 export interface DocumentRetrieveResponse {
   /**
    * The document id.
@@ -151,25 +147,29 @@ export namespace DocumentRetrieveResponse {
 
       /**
        * Whether the rule is evaluated once for the whole workspace, or once per project
-       * the rule's frameworks apply to.
+       * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+       * the rule is created.
        */
       scope: 'project' | 'workspace';
 
       /**
        * `platform` rules are evaluated automatically from the state of your Openlayer
-       * workspace. `evidence` rules are satisfied by attaching evidence.
+       * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+       * rule is created.
        */
       type: 'platform' | 'evidence';
 
       /**
-       * Configuration for the platform check, when the automation takes parameters.
+       * Configuration for the platform check, when the automation takes parameters. Omit
+       * or `null` for evidence rules. Fixed once the rule is created.
        */
       automationParams?: { [key: string]: unknown } | null;
 
       /**
        * Which workspace signal a platform rule checks, for example
-       * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-       * evidence rules.
+       * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+       * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+       * created.
        */
       automationType?: string | null;
 
@@ -194,22 +194,29 @@ export namespace DocumentRetrieveResponse {
       description?: string | null;
 
       /**
-       * The kind of evidence that satisfies the rule. `null` for platform rules.
+       * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+       * `null` for platform rules. Fixed once the rule is created.
        */
       evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
       /**
-       * Whether the rule is managed by Openlayer and cannot be edited.
+       * Whether the rule is managed by Openlayer. These rules can't be renamed or
+       * deleted; set `deactivated` to exclude one from compliance instead.
        */
       immutable?: boolean;
 
       /**
        * How often evidence must be renewed, in days. Once evidence is older than this,
-       * the rule result becomes `due_soon` and then `failing`.
+       * the rule result becomes `due_soon` and then `failing`. The window restarts
+       * whenever evidence is attached. Omit or `null` for platform rules.
        */
       renewalCadenceDays?: number | null;
     }
 
+    /**
+     * A subsection usually states one individual requirement of the standard, so it is
+     * where you see which rules cover a specific clause.
+     */
     export interface Subsection {
       /**
        * The subsection id.
@@ -266,25 +273,29 @@ export namespace DocumentRetrieveResponse {
 
         /**
          * Whether the rule is evaluated once for the whole workspace, or once per project
-         * the rule's frameworks apply to.
+         * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+         * the rule is created.
          */
         scope: 'project' | 'workspace';
 
         /**
          * `platform` rules are evaluated automatically from the state of your Openlayer
-         * workspace. `evidence` rules are satisfied by attaching evidence.
+         * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+         * rule is created.
          */
         type: 'platform' | 'evidence';
 
         /**
-         * Configuration for the platform check, when the automation takes parameters.
+         * Configuration for the platform check, when the automation takes parameters. Omit
+         * or `null` for evidence rules. Fixed once the rule is created.
          */
         automationParams?: { [key: string]: unknown } | null;
 
         /**
          * Which workspace signal a platform rule checks, for example
-         * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-         * evidence rules.
+         * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+         * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+         * created.
          */
         automationType?: string | null;
 
@@ -309,18 +320,21 @@ export namespace DocumentRetrieveResponse {
         description?: string | null;
 
         /**
-         * The kind of evidence that satisfies the rule. `null` for platform rules.
+         * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+         * `null` for platform rules. Fixed once the rule is created.
          */
         evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
         /**
-         * Whether the rule is managed by Openlayer and cannot be edited.
+         * Whether the rule is managed by Openlayer. These rules can't be renamed or
+         * deleted; set `deactivated` to exclude one from compliance instead.
          */
         immutable?: boolean;
 
         /**
          * How often evidence must be renewed, in days. Once evidence is older than this,
-         * the rule result becomes `due_soon` and then `failing`.
+         * the rule result becomes `due_soon` and then `failing`. The window restarts
+         * whenever evidence is attached. Omit or `null` for platform rules.
          */
         renewalCadenceDays?: number | null;
       }
@@ -333,6 +347,10 @@ export interface DocumentListResponse {
 }
 
 export namespace DocumentListResponse {
+  /**
+   * The text of the standard a framework is based on, split into sections and
+   * subsections, with the rules mapped to each part.
+   */
   export interface Item {
     /**
      * The document id.
@@ -429,25 +447,29 @@ export namespace DocumentListResponse {
 
         /**
          * Whether the rule is evaluated once for the whole workspace, or once per project
-         * the rule's frameworks apply to.
+         * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+         * the rule is created.
          */
         scope: 'project' | 'workspace';
 
         /**
          * `platform` rules are evaluated automatically from the state of your Openlayer
-         * workspace. `evidence` rules are satisfied by attaching evidence.
+         * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+         * rule is created.
          */
         type: 'platform' | 'evidence';
 
         /**
-         * Configuration for the platform check, when the automation takes parameters.
+         * Configuration for the platform check, when the automation takes parameters. Omit
+         * or `null` for evidence rules. Fixed once the rule is created.
          */
         automationParams?: { [key: string]: unknown } | null;
 
         /**
          * Which workspace signal a platform rule checks, for example
-         * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-         * evidence rules.
+         * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+         * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+         * created.
          */
         automationType?: string | null;
 
@@ -472,22 +494,29 @@ export namespace DocumentListResponse {
         description?: string | null;
 
         /**
-         * The kind of evidence that satisfies the rule. `null` for platform rules.
+         * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+         * `null` for platform rules. Fixed once the rule is created.
          */
         evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
         /**
-         * Whether the rule is managed by Openlayer and cannot be edited.
+         * Whether the rule is managed by Openlayer. These rules can't be renamed or
+         * deleted; set `deactivated` to exclude one from compliance instead.
          */
         immutable?: boolean;
 
         /**
          * How often evidence must be renewed, in days. Once evidence is older than this,
-         * the rule result becomes `due_soon` and then `failing`.
+         * the rule result becomes `due_soon` and then `failing`. The window restarts
+         * whenever evidence is attached. Omit or `null` for platform rules.
          */
         renewalCadenceDays?: number | null;
       }
 
+      /**
+       * A subsection usually states one individual requirement of the standard, so it is
+       * where you see which rules cover a specific clause.
+       */
       export interface Subsection {
         /**
          * The subsection id.
@@ -544,25 +573,29 @@ export namespace DocumentListResponse {
 
           /**
            * Whether the rule is evaluated once for the whole workspace, or once per project
-           * the rule's frameworks apply to.
+           * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+           * the rule is created.
            */
           scope: 'project' | 'workspace';
 
           /**
            * `platform` rules are evaluated automatically from the state of your Openlayer
-           * workspace. `evidence` rules are satisfied by attaching evidence.
+           * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+           * rule is created.
            */
           type: 'platform' | 'evidence';
 
           /**
-           * Configuration for the platform check, when the automation takes parameters.
+           * Configuration for the platform check, when the automation takes parameters. Omit
+           * or `null` for evidence rules. Fixed once the rule is created.
            */
           automationParams?: { [key: string]: unknown } | null;
 
           /**
            * Which workspace signal a platform rule checks, for example
-           * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-           * evidence rules.
+           * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+           * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+           * created.
            */
           automationType?: string | null;
 
@@ -587,18 +620,21 @@ export namespace DocumentListResponse {
           description?: string | null;
 
           /**
-           * The kind of evidence that satisfies the rule. `null` for platform rules.
+           * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+           * `null` for platform rules. Fixed once the rule is created.
            */
           evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
           /**
-           * Whether the rule is managed by Openlayer and cannot be edited.
+           * Whether the rule is managed by Openlayer. These rules can't be renamed or
+           * deleted; set `deactivated` to exclude one from compliance instead.
            */
           immutable?: boolean;
 
           /**
            * How often evidence must be renewed, in days. Once evidence is older than this,
-           * the rule result becomes `due_soon` and then `failing`.
+           * the rule result becomes `due_soon` and then `failing`. The window restarts
+           * whenever evidence is attached. Omit or `null` for platform rules.
            */
           renewalCadenceDays?: number | null;
         }

@@ -32,7 +32,7 @@ export class Workspaces extends APIResource {
   apiKeys: APIKeysAPI.APIKeys = new APIKeysAPI.APIKeys(this._client);
 
   /**
-   * Retrieve a workspace by its ID.
+   * Retrieve a workspace.
    *
    * @example
    * ```ts

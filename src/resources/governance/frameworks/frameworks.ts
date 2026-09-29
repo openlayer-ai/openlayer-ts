@@ -23,14 +23,7 @@ export class Frameworks extends APIResource {
   subsections: SubsectionsAPI.Subsections = new SubsectionsAPI.Subsections(this._client);
 
   /**
-   * Create a custom governance framework in a workspace.
-   *
-   * Use this to track compliance against an internal policy, or against a standard
-   * Openlayer does not ship as a built-in framework. A new framework starts with no
-   * rules -- add them from the Openlayer app, or map an existing rule to it.
-   *
-   * A framework is created disabled unless you pass `enabled: true`. While it is
-   * disabled its rules are not evaluated and do not count towards compliance.
+   * Create a custom framework in a workspace.
    *
    * @example
    * ```ts
@@ -49,7 +42,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * Retrieve a governance framework by its id.
+   * Retrieve a framework.
    *
    * @example
    * ```ts
@@ -64,17 +57,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * Update a governance framework.
-   *
-   * The most common use is activating or deactivating a framework for the workspace
-   * by setting `enabled`. Rules of a disabled framework are not evaluated and do not
-   * count towards compliance.
-   *
-   * Frameworks that ship with Openlayer report `immutable: true`. For those, only
-   * `enabled`, `tags`, and `projectSelector` can be changed -- their name and
-   * definition are managed by Openlayer.
-   *
-   * Only the fields you send are changed.
+   * Update a framework.
    *
    * @example
    * ```ts
@@ -92,12 +75,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * List the governance frameworks in a workspace.
-   *
-   * A framework is a set of rules -- drawn from a regulation, a standard, or your
-   * own internal policy -- that Openlayer tracks compliance against. Use this
-   * endpoint to find the framework you want to report on, then read its rules and
-   * rule results.
+   * List the frameworks in a workspace.
    *
    * @example
    * ```ts
@@ -115,29 +93,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * Export a framework's evidence and progress as an audit-ready zip archive.
-   *
-   * The archive holds every evidence file uploaded against the framework's
-   * evidence-based rules, a markdown report of the framework's progress and the
-   * status of all its rules (broken down by documentation section when the framework
-   * has documents), and CSV manifests of rules and evidence with SHA-256 checksums.
-   *
-   * Send `projectId` to export one project's compliance with the framework. Omit it
-   * for the workspace-wide view across every project in the framework, including
-   * workspace-scoped rules.
-   *
-   * The export runs as a background task, so this returns `202` immediately. To
-   * collect the archive:
-   *
-   * 1. Poll `GET /background-tasks/{taskId}` with the returned `taskResultId` until
-   *    `complete` is `true`.
-   * 2. Read `outputs.storageUri` off that task.
-   * 3. Exchange it for a download link at
-   *    `GET /storage/presigned-url?storageUri=<uri>`.
-   *
-   * Rate limited to 2 requests per minute per framework. Asking for an export while
-   * an identical one is still queued returns that task rather than starting a second
-   * one.
+   * Export a framework as an audit-ready zip archive.
    *
    * @example
    * ```ts
@@ -155,11 +111,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * Get a compliance roll-up for a framework, one row per project it applies to.
-   *
-   * Each row counts the project's rule results by status, so you can report on where
-   * a framework is complete and where it is not without fetching every individual
-   * rule result.
+   * List a framework's compliance stats per project.
    *
    * @example
    * ```ts
@@ -180,9 +132,6 @@ export class Frameworks extends APIResource {
   /**
    * List the projects a framework applies to.
    *
-   * Which projects a framework covers is determined by its `projectSelector`. A
-   * framework with an empty selector applies to every project in the workspace.
-   *
    * @example
    * ```ts
    * const response =
@@ -200,11 +149,7 @@ export class Frameworks extends APIResource {
   }
 
   /**
-   * List the rules that belong to a framework.
-   *
-   * To read the compliance status of these rules, use
-   * [List rule results](/api-reference/rest/governance/list-rule-results) with the
-   * `frameworkId` filter, or fetch the results of an individual rule.
+   * List the rules in a framework.
    *
    * @example
    * ```ts
@@ -223,6 +168,11 @@ export class Frameworks extends APIResource {
   }
 }
 
+/**
+ * A set of rules, drawn from a regulation, a standard, or your own internal
+ * policy, that Openlayer tracks compliance against. Openlayer ships built-in
+ * frameworks, and you can create your own.
+ */
 export interface FrameworkCreateResponse {
   /**
    * The framework id.
@@ -293,7 +243,8 @@ export interface FrameworkCreateResponse {
   href?: string | null;
 
   /**
-   * Whether the framework definition is managed by Openlayer and cannot be edited.
+   * Whether the framework definition is managed by Openlayer. For these frameworks
+   * only `enabled`, `tags`, and `projectSelector` can be changed.
    */
   immutable?: boolean;
 
@@ -455,6 +406,11 @@ export namespace FrameworkCreateResponse {
   }
 }
 
+/**
+ * A set of rules, drawn from a regulation, a standard, or your own internal
+ * policy, that Openlayer tracks compliance against. Openlayer ships built-in
+ * frameworks, and you can create your own.
+ */
 export interface FrameworkRetrieveResponse {
   /**
    * The framework id.
@@ -525,7 +481,8 @@ export interface FrameworkRetrieveResponse {
   href?: string | null;
 
   /**
-   * Whether the framework definition is managed by Openlayer and cannot be edited.
+   * Whether the framework definition is managed by Openlayer. For these frameworks
+   * only `enabled`, `tags`, and `projectSelector` can be changed.
    */
   immutable?: boolean;
 
@@ -687,6 +644,11 @@ export namespace FrameworkRetrieveResponse {
   }
 }
 
+/**
+ * A set of rules, drawn from a regulation, a standard, or your own internal
+ * policy, that Openlayer tracks compliance against. Openlayer ships built-in
+ * frameworks, and you can create your own.
+ */
 export interface FrameworkUpdateResponse {
   /**
    * The framework id.
@@ -757,7 +719,8 @@ export interface FrameworkUpdateResponse {
   href?: string | null;
 
   /**
-   * Whether the framework definition is managed by Openlayer and cannot be edited.
+   * Whether the framework definition is managed by Openlayer. For these frameworks
+   * only `enabled`, `tags`, and `projectSelector` can be changed.
    */
   immutable?: boolean;
 
@@ -924,6 +887,11 @@ export interface FrameworkListResponse {
 }
 
 export namespace FrameworkListResponse {
+  /**
+   * A set of rules, drawn from a regulation, a standard, or your own internal
+   * policy, that Openlayer tracks compliance against. Openlayer ships built-in
+   * frameworks, and you can create your own.
+   */
   export interface Item {
     /**
      * The framework id.
@@ -994,7 +962,8 @@ export namespace FrameworkListResponse {
     href?: string | null;
 
     /**
-     * Whether the framework definition is managed by Openlayer and cannot be edited.
+     * Whether the framework definition is managed by Openlayer. For these frameworks
+     * only `enabled`, `tags`, and `projectSelector` can be changed.
      */
     immutable?: boolean;
 
@@ -1176,6 +1145,9 @@ export interface FrameworkListProjectRuleStatsResponse {
 }
 
 export namespace FrameworkListProjectRuleStatsResponse {
+  /**
+   * One project's rule result counts by status, for a single framework.
+   */
   export interface Item {
     /**
      * The project id.
@@ -1482,6 +1454,12 @@ export interface FrameworkListRulesResponse {
 }
 
 export namespace FrameworkListRulesResponse {
+  /**
+   * A single requirement Openlayer tracks. `platform` rules are evaluated
+   * automatically from the state of your workspace, and `evidence` rules are
+   * satisfied by attaching evidence. A rule can belong to several frameworks, or to
+   * none.
+   */
   export interface Item {
     /**
      * The rule id.
@@ -1505,13 +1483,15 @@ export namespace FrameworkListRulesResponse {
 
     /**
      * Whether the rule is evaluated once for the whole workspace, or once per project
-     * the rule's frameworks apply to.
+     * the rule's frameworks apply to. Must be `project` for platform rules. Fixed once
+     * the rule is created.
      */
     scope: 'project' | 'workspace';
 
     /**
      * `platform` rules are evaluated automatically from the state of your Openlayer
-     * workspace. `evidence` rules are satisfied by attaching evidence.
+     * workspace. `evidence` rules are satisfied by attaching evidence. Fixed once the
+     * rule is created.
      */
     type: 'platform' | 'evidence';
 
@@ -1526,14 +1506,16 @@ export namespace FrameworkListRulesResponse {
     assigneeId?: string | null;
 
     /**
-     * Configuration for the platform check, when the automation takes parameters.
+     * Configuration for the platform check, when the automation takes parameters. Omit
+     * or `null` for evidence rules. Fixed once the rule is created.
      */
     automationParams?: { [key: string]: unknown } | null;
 
     /**
      * Which workspace signal a platform rule checks, for example
-     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. `null` for
-     * evidence rules.
+     * `monitoring_mode_enabled`, `test_setup`, or `project_owner_set`. Set it for
+     * platform rules; omit or `null` for evidence rules. Fixed once the rule is
+     * created.
      */
     automationType?: string | null;
 
@@ -1548,7 +1530,8 @@ export namespace FrameworkListRulesResponse {
     description?: string | null;
 
     /**
-     * The kind of evidence that satisfies the rule. `null` for platform rules.
+     * The kind of evidence that satisfies the rule. Set it for evidence rules; omit or
+     * `null` for platform rules. Fixed once the rule is created.
      */
     evidenceType?: 'document' | 'text' | 'url' | 'categoryValue' | null;
 
@@ -1558,13 +1541,15 @@ export namespace FrameworkListRulesResponse {
     frameworks?: Array<Item.Framework>;
 
     /**
-     * Whether the rule is managed by Openlayer and cannot be edited.
+     * Whether the rule is managed by Openlayer. These rules can't be renamed or
+     * deleted; set `deactivated` to exclude one from compliance instead.
      */
     immutable?: boolean;
 
     /**
      * How often evidence must be renewed, in days. Once evidence is older than this,
-     * the rule result becomes `due_soon` and then `failing`.
+     * the rule result becomes `due_soon` and then `failing`. The window restarts
+     * whenever evidence is attached. Omit or `null` for platform rules.
      */
     renewalCadenceDays?: number | null;
 
@@ -1628,6 +1613,10 @@ export namespace FrameworkListRulesResponse {
       }
     }
 
+    /**
+     * The compliance status of one rule for one entity: a project for project-scoped
+     * rules, or the workspace for workspace-scoped rules.
+     */
     export interface Result {
       /**
        * The rule result id.
@@ -1645,7 +1634,8 @@ export namespace FrameworkListRulesResponse {
       dateUpdated: string;
 
       /**
-       * Whether this result is excluded from compliance calculations.
+       * Whether this result is excluded from compliance calculations. Excludes just this
+       * result, without deactivating the rule everywhere.
        */
       deactivated: boolean;
 
@@ -1655,7 +1645,8 @@ export namespace FrameworkListRulesResponse {
       ruleId: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -1700,7 +1691,7 @@ export namespace FrameworkListRulesResponse {
       dateOfRenewal?: string | null;
 
       /**
-       * Why the result was excluded.
+       * Why the result was excluded. Required when setting `deactivated` to `true`.
        */
       deactivatedReason?: string | null;
 
@@ -1720,7 +1711,8 @@ export namespace FrameworkListRulesResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -1729,7 +1721,8 @@ export namespace FrameworkListRulesResponse {
         id?: string;
 
         /**
-         * The compliance status of the rule for this entity.
+         * The compliance status of the rule for this entity. Computed by Openlayer and
+         * can't be set directly.
          */
         status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
       }
@@ -1745,6 +1738,10 @@ export namespace FrameworkListRulesResponse {
       total?: number;
     }
 
+    /**
+     * A label that groups rules across frameworks, for example by team or control
+     * family.
+     */
     export interface Tag {
       /**
        * The rule tag id.
@@ -1767,7 +1764,7 @@ export namespace FrameworkListRulesResponse {
       dateUpdated: string;
 
       /**
-       * Whether the tag is managed by Openlayer and cannot be edited or deleted.
+       * Whether the tag is managed by Openlayer. These tags can't be deleted.
        */
       immutable: boolean;
 
@@ -2013,7 +2010,9 @@ export interface FrameworkListParams {
 
 export interface FrameworkExportParams {
   /**
-   * Scope the export to this project. It must belong to the framework.
+   * Scope the export to this project. It must belong to the framework. Omit it for
+   * the workspace-wide view across every project in the framework, including
+   * workspace-scoped rules.
    */
   projectId?: string | null;
 }

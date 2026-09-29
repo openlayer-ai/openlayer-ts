@@ -7,7 +7,7 @@ import { path } from '../../internal/utils/path';
 
 export class Tests extends APIResource {
   /**
-   * Create a test.
+   * Create a test in a project.
    *
    * @example
    * ```ts
@@ -33,7 +33,7 @@ export class Tests extends APIResource {
   }
 
   /**
-   * Update tests.
+   * Update tests in a project.
    *
    * @example
    * ```ts
@@ -56,7 +56,7 @@ export class Tests extends APIResource {
   }
 
   /**
-   * List tests under a project.
+   * List the tests in a project.
    *
    * @example
    * ```ts

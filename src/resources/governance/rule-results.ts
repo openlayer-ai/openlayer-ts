@@ -7,11 +7,7 @@ import { path } from '../../internal/utils/path';
 
 export class RuleResults extends APIResource {
   /**
-   * Retrieve a rule result by its id.
-   *
-   * Alongside the status, the response carries the evaluation and renewal dates that
-   * explain it: `dateLastEvaluated` and `dateOfNextEvaluation` for platform rules,
-   * `dateOfLatestEvidence` and `dateOfRenewal` for evidence rules.
+   * Retrieve a rule result.
    *
    * @example
    * ```ts
@@ -26,13 +22,7 @@ export class RuleResults extends APIResource {
   }
 
   /**
-   * Update a rule result. Only the fields you send are changed.
-   *
-   * Use this to assign an owner, or to exclude a single result from compliance
-   * without deactivating the rule everywhere. `deactivatedReason` is required when
-   * setting `deactivated` to `true`.
-   *
-   * A result's `status` is computed by Openlayer and cannot be set directly.
+   * Update a rule result.
    *
    * @example
    * ```ts
@@ -51,12 +41,7 @@ export class RuleResults extends APIResource {
   }
 
   /**
-   * List rule results across a workspace.
-   *
-   * A rule result is the compliance status of one rule for one entity: a project for
-   * project-scoped rules, or the workspace itself for workspace-scoped rules. This
-   * is the endpoint to poll or export when you want your current compliance state,
-   * filtered to a framework, a project, or a status.
+   * List the rule results in a workspace.
    *
    * @example
    * ```ts
@@ -75,16 +60,7 @@ export class RuleResults extends APIResource {
   }
 
   /**
-   * Attach evidence to a rule result, satisfying an evidence rule.
-   *
-   * Send the field that matches the rule's `evidenceType`: `storageUri` for an
-   * uploaded document, `text` for a written statement, or `url` for a link.
-   *
-   * For a document, upload the file first with `POST /storage/presigned-url` and
-   * send the resulting storage URI as `storageUri`.
-   *
-   * Attaching evidence re-evaluates the rule result. If the rule sets
-   * `renewalCadenceDays`, the renewal window restarts from this evidence.
+   * Attach evidence to a rule result.
    *
    * @example
    * ```ts
@@ -105,10 +81,6 @@ export class RuleResults extends APIResource {
   /**
    * List the evidence attached to a rule result.
    *
-   * Which field carries the evidence depends on the rule's `evidenceType`:
-   * `storageUri` for uploaded documents, `text` for written statements, and `url`
-   * for links.
-   *
    * @example
    * ```ts
    * const response =
@@ -126,6 +98,10 @@ export class RuleResults extends APIResource {
   }
 }
 
+/**
+ * The compliance status of one rule for one entity: a project for project-scoped
+ * rules, or the workspace for workspace-scoped rules.
+ */
 export interface RuleResultRetrieveResponse {
   /**
    * The rule result id.
@@ -143,7 +119,8 @@ export interface RuleResultRetrieveResponse {
   dateUpdated: string;
 
   /**
-   * Whether this result is excluded from compliance calculations.
+   * Whether this result is excluded from compliance calculations. Excludes just this
+   * result, without deactivating the rule everywhere.
    */
   deactivated: boolean;
 
@@ -153,7 +130,8 @@ export interface RuleResultRetrieveResponse {
   ruleId: string;
 
   /**
-   * The compliance status of the rule for this entity.
+   * The compliance status of the rule for this entity. Computed by Openlayer and
+   * can't be set directly.
    */
   status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -198,7 +176,7 @@ export interface RuleResultRetrieveResponse {
   dateOfRenewal?: string | null;
 
   /**
-   * Why the result was excluded.
+   * Why the result was excluded. Required when setting `deactivated` to `true`.
    */
   deactivatedReason?: string | null;
 
@@ -218,7 +196,8 @@ export namespace RuleResultRetrieveResponse {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
@@ -227,12 +206,17 @@ export namespace RuleResultRetrieveResponse {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
 }
 
+/**
+ * The compliance status of one rule for one entity: a project for project-scoped
+ * rules, or the workspace for workspace-scoped rules.
+ */
 export interface RuleResultUpdateResponse {
   /**
    * The rule result id.
@@ -250,7 +234,8 @@ export interface RuleResultUpdateResponse {
   dateUpdated: string;
 
   /**
-   * Whether this result is excluded from compliance calculations.
+   * Whether this result is excluded from compliance calculations. Excludes just this
+   * result, without deactivating the rule everywhere.
    */
   deactivated: boolean;
 
@@ -260,7 +245,8 @@ export interface RuleResultUpdateResponse {
   ruleId: string;
 
   /**
-   * The compliance status of the rule for this entity.
+   * The compliance status of the rule for this entity. Computed by Openlayer and
+   * can't be set directly.
    */
   status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -305,7 +291,7 @@ export interface RuleResultUpdateResponse {
   dateOfRenewal?: string | null;
 
   /**
-   * Why the result was excluded.
+   * Why the result was excluded. Required when setting `deactivated` to `true`.
    */
   deactivatedReason?: string | null;
 
@@ -325,7 +311,8 @@ export namespace RuleResultUpdateResponse {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
@@ -334,7 +321,8 @@ export namespace RuleResultUpdateResponse {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
@@ -345,6 +333,10 @@ export interface RuleResultListResponse {
 }
 
 export namespace RuleResultListResponse {
+  /**
+   * The compliance status of one rule for one entity: a project for project-scoped
+   * rules, or the workspace for workspace-scoped rules.
+   */
   export interface Item {
     /**
      * The rule result id.
@@ -362,7 +354,8 @@ export namespace RuleResultListResponse {
     dateUpdated: string;
 
     /**
-     * Whether this result is excluded from compliance calculations.
+     * Whether this result is excluded from compliance calculations. Excludes just this
+     * result, without deactivating the rule everywhere.
      */
     deactivated: boolean;
 
@@ -372,7 +365,8 @@ export namespace RuleResultListResponse {
     ruleId: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
 
@@ -417,7 +411,7 @@ export namespace RuleResultListResponse {
     dateOfRenewal?: string | null;
 
     /**
-     * Why the result was excluded.
+     * Why the result was excluded. Required when setting `deactivated` to `true`.
      */
     deactivatedReason?: string | null;
 
@@ -437,7 +431,8 @@ export namespace RuleResultListResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
@@ -446,13 +441,19 @@ export namespace RuleResultListResponse {
       id?: string;
 
       /**
-       * The compliance status of the rule for this entity.
+       * The compliance status of the rule for this entity. Computed by Openlayer and
+       * can't be set directly.
        */
       status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
     }
   }
 }
 
+/**
+ * Evidence attached to a rule result to satisfy an evidence rule. Which field
+ * holds it depends on the rule's `evidenceType`: `storageUri` for a document,
+ * `text` for a written statement, or `url` for a link.
+ */
 export interface RuleResultCreateEvidenceResponse {
   /**
    * The evidence id.
@@ -486,7 +487,8 @@ export interface RuleResultCreateEvidenceResponse {
 
   /**
    * Where the uploaded file is stored. Set when the rule's `evidenceType` is
-   * `document`.
+   * `document`. Upload the file first with `POST /storage/presigned-url` and send
+   * the storage URI it returns.
    */
   storageUri?: string | null;
 
@@ -506,6 +508,11 @@ export interface RuleResultListEvidenceResponse {
 }
 
 export namespace RuleResultListEvidenceResponse {
+  /**
+   * Evidence attached to a rule result to satisfy an evidence rule. Which field
+   * holds it depends on the rule's `evidenceType`: `storageUri` for a document,
+   * `text` for a written statement, or `url` for a link.
+   */
   export interface Item {
     /**
      * The evidence id.
@@ -539,7 +546,8 @@ export namespace RuleResultListEvidenceResponse {
 
     /**
      * Where the uploaded file is stored. Set when the rule's `evidenceType` is
-     * `document`.
+     * `document`. Upload the file first with `POST /storage/presigned-url` and send
+     * the storage URI it returns.
      */
     storageUri?: string | null;
 
@@ -572,12 +580,13 @@ export interface RuleResultUpdateParams {
   blocking?: Array<RuleResultUpdateParams.Blocking>;
 
   /**
-   * Whether this result is excluded from compliance calculations.
+   * Whether this result is excluded from compliance calculations. Excludes just this
+   * result, without deactivating the rule everywhere.
    */
   deactivated?: boolean;
 
   /**
-   * Why the result was excluded.
+   * Why the result was excluded. Required when setting `deactivated` to `true`.
    */
   deactivatedReason?: string | null;
 }
@@ -587,7 +596,8 @@ export namespace RuleResultUpdateParams {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
@@ -596,7 +606,8 @@ export namespace RuleResultUpdateParams {
     id?: string;
 
     /**
-     * The compliance status of the rule for this entity.
+     * The compliance status of the rule for this entity. Computed by Openlayer and
+     * can't be set directly.
      */
     status?: 'running' | 'passing' | 'failing' | 'skipped' | 'error' | 'pending' | 'due_soon';
   }
@@ -672,7 +683,8 @@ export interface RuleResultCreateEvidenceParams {
 
   /**
    * Where the uploaded file is stored. Set when the rule's `evidenceType` is
-   * `document`.
+   * `document`. Upload the file first with `POST /storage/presigned-url` and send
+   * the storage URI it returns.
    */
   storageUri?: string | null;
 

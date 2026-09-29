@@ -11,7 +11,7 @@ export class Commits extends APIResource {
   testResults: TestResultsAPI.TestResults = new TestResultsAPI.TestResults(this._client);
 
   /**
-   * Retrieve a project version (commit) by its id.
+   * Retrieve a project commit.
    */
   retrieve(projectVersionID: string, options?: RequestOptions): APIPromise<CommitRetrieveResponse> {
     return this._client.get(path`/versions/${projectVersionID}`, options);
