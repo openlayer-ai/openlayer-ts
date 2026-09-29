@@ -4,6 +4,146 @@
   "clientClass": "Openlayer",
   "methods": [
     {
+      "base": "workspaces.apiKeys",
+      "name": "retrieve",
+      "params": [
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "workspaceId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "workspaces.apiKeys",
+      "name": "update",
+      "params": [
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "workspaceId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "workspaces.apiKeys",
+      "name": "delete",
+      "params": [
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "workspaceId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
+      "base": "workspaces.apiKeys",
+      "name": "rotate",
+      "params": [
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": false
+        },
+        {
+          "type": "options"
+        }
+      ],
+      "oldParams": [
+        {
+          "type": "param",
+          "key": "workspaceId",
+          "location": "path"
+        },
+        {
+          "type": "param",
+          "key": "apiKeyId",
+          "location": "path"
+        },
+        {
+          "type": "params",
+          "maybeOverload": true
+        },
+        {
+          "type": "options"
+        }
+      ]
+    },
+    {
       "base": "inferencePipelines.rows",
       "name": "retrieve",
       "params": [

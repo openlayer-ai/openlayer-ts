@@ -80,10 +80,19 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyCreateResponse</a></code>
+- <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyRetrieveResponse</a></code>
+- <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyUpdateResponse</a></code>
+- <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyListResponse</a></code>
+- <code><a href="./src/resources/workspaces/api-keys.ts">APIKeyRotateResponse</a></code>
 
 Methods:
 
 - <code title="post /workspaces/{workspaceId}/api-keys">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">create</a>(workspaceID, { ...params }) -> APIKeyCreateResponse</code>
+- <code title="get /workspaces/{workspaceId}/api-keys/{apiKeyId}">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">retrieve</a>(apiKeyID, { ...params }) -> APIKeyRetrieveResponse</code>
+- <code title="put /workspaces/{workspaceId}/api-keys/{apiKeyId}">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">update</a>(apiKeyID, { ...params }) -> APIKeyUpdateResponse</code>
+- <code title="get /workspaces/{workspaceId}/api-keys">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">list</a>(workspaceID) -> APIKeyListResponse</code>
+- <code title="delete /workspaces/{workspaceId}/api-keys/{apiKeyId}">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">delete</a>(apiKeyID, { ...params }) -> void</code>
+- <code title="post /workspaces/{workspaceId}/api-keys/{apiKeyId}/rotate">client.workspaces.apiKeys.<a href="./src/resources/workspaces/api-keys.ts">rotate</a>(apiKeyID, { ...params }) -> APIKeyRotateResponse</code>
 
 # Commits
 
