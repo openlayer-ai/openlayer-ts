@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.32.0...v0.33.0) (2026-09-29)
+
+
+### Features
+
+* **api:** add API key CRUD, expiry, and rotation ([52f5ed1](https://github.com/openlayer-ai/openlayer-ts/commit/52f5ed173313298b3e9ed240970f1a7554bf0027))
+* **api:** add API key CRUD, expiry, and rotation ([28f4680](https://github.com/openlayer-ai/openlayer-ts/commit/28f4680f3122755445d364a9e894278756edb08b))
+
+
+### Chores
+
+* **stlc:** seal custom-code tracking files ([52ee00e](https://github.com/openlayer-ai/openlayer-ts/commit/52ee00eca224e15bfc0aadc79a0edabe960a3113))
+* **stlc:** seal custom-code tracking files ([a2b1eb8](https://github.com/openlayer-ai/openlayer-ts/commit/a2b1eb838f9c0a975624fbe005f3313ba34515da))
+
 ## [0.32.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.31.0...v0.32.0) (2026-09-24)
 
 
