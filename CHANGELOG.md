@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.1](https://github.com/openlayer-ai/openlayer-ts/compare/v0.33.0...v0.33.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **deps:** bump zod, body-parser and follow-redirects ([#236](https://github.com/openlayer-ai/openlayer-ts/issues/236)) ([6a2776c](https://github.com/openlayer-ai/openlayer-ts/commit/6a2776cc9788f19b8586d4bca1a5e9c8fdfb319b))
+
+
+### Chores
+
+* **deps:** bump vulnerable transitive dev dependencies ([#235](https://github.com/openlayer-ai/openlayer-ts/issues/235)) ([11b50e4](https://github.com/openlayer-ai/openlayer-ts/commit/11b50e49cb36da97f8fa99857920095f7213f668))
+* **deps:** patch vulnerable dependencies in examples and dev lockfile ([73a80b5](https://github.com/openlayer-ai/openlayer-ts/commit/73a80b5bad300252743e9e0b2afd280ad62a1b7e))
+* **deps:** patch vulnerable dependencies in examples and dev lockfile ([ede0b15](https://github.com/openlayer-ai/openlayer-ts/commit/ede0b1593bde1bda955d7f40a562bae9c598718b))
+
 ## [0.33.0](https://github.com/openlayer-ai/openlayer-ts/compare/v0.32.0...v0.33.0) (2026-09-29)
 
 
